@@ -57,6 +57,11 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
+        /* Otomatik büyük harf için stil */
+        input[type="text"], input[type="search"], textarea {
+            text-transform: uppercase;
+        }
+
         .bg-primary { background-color: var(--bg-primary); }
         .bg-secondary { background-color: var(--bg-secondary); }
         .bg-tertiary { background-color: var(--bg-tertiary); }
@@ -258,7 +263,7 @@
              <div id="modal-content"></div>
         </div>
     </div>
-
+    
     <script type="module">
         // Firebase Modüllerini İçe Aktar
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -267,7 +272,9 @@
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
             onSnapshot, query, where, serverTimestamp, writeBatch 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+        // PDF için Türkçe karakterleri destekleyen font dosyası
+        import { robotoFont } from "https://gist.githubusercontent.com/sargunv/52258752095f03932a39e0a039a046c6/raw/9454de7e3a246d8498d3637152014605963f2b60/Roboto-Regular-normal.js";
+        
         // --- FIREBASE YAPILANDIRMASI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
@@ -340,6 +347,7 @@
                 bags_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L11.5 13.293V1.5a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
                 date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
                 date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
                 edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
                 delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
                 save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
@@ -347,6 +355,7 @@
             };
 
             // --- YARDIMCI FONKSİYONLAR ---
+            const toTrUpperCase = (str) => str.toLocaleUpperCase('tr-TR');
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem('emanet-settings-v2')) || { theme: 'dark', fontSize: 16 };
             const saveSettingsToStorage = (settings) => localStorage.setItem('emanet-settings-v2', JSON.stringify(settings));
             const formatDate = (iso) => {
@@ -405,8 +414,8 @@
             }
             
             function renderItems(items) {
-                const searchQuery = allElements.searchItemsInput.value.toLowerCase();
-                let filteredItems = items.filter(item => item.customerName.toLowerCase().includes(searchQuery));
+                const searchQuery = toTrUpperCase(allElements.searchItemsInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
                 allElements.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
 
@@ -422,7 +431,7 @@
                 
                 allElements.itemList.innerHTML = '';
                 allElements.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
-                allElements.emptyItemListMessage.textContent = searchQuery ? `Aramanızla eşleşen sonuç bulunamadı.` : `Henüz bekleyen poşet bulunmuyor.`;
+                allElements.emptyItemListMessage.textContent = searchQuery ? `ARAMANIZLA EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
                 filteredItems.forEach(item => allElements.itemList.appendChild(createItemElement(item)));
             }
             
@@ -453,13 +462,14 @@
                         <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg></button>
                         <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note ? 'accent-text' : ''}" title="Notu Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
                         <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
+                        <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="İptal Et">${icons.cancel_item}</button>
                     </div>`;
                 return div;
             }
             
             function renderArchive(items) {
-                const searchQuery = allElements.searchArchiveInput.value.toLowerCase();
-                let filteredItems = items.filter(item => item.customerName.toLowerCase().includes(searchQuery));
+                const searchQuery = toTrUpperCase(allElements.searchArchiveInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
                 filteredItems.sort((a,b) => {
                     const dateA = a.deliveredAt?.seconds || 0;
@@ -602,7 +612,7 @@
             // --- FIRESTORE İŞLEMLERİ ---
             async function handleAddItem(e) {
                 e.preventDefault();
-                const customerName = allElements.customerNameInput.value.trim();
+                const customerName = toTrUpperCase(allElements.customerNameInput.value.trim());
                 const bagCount = parseInt(allElements.bagCountInput.value, 10);
                 if (!customerName || isNaN(bagCount) || bagCount < 1) return;
 
@@ -633,6 +643,9 @@
             }
 
             async function updateItem(id, data) {
+                if (data.note) {
+                    data.note = toTrUpperCase(data.note);
+                }
                 const itemRef = doc(db, 'items', id);
                 await updateDoc(itemRef, { ...data, lastModified: serverTimestamp() });
             }
@@ -642,26 +655,24 @@
             }
             
             async function deleteCustomer(id) {
-                // Sadece müşteri silinir, müşteriye ait poşet kayıtları etkilenmez.
                 await deleteDoc(doc(db, 'customers', id));
             }
             
             async function updateCustomerNameAndItems(customerId, oldName, newName) {
+                const upperNewName = toTrUpperCase(newName);
                 allElements.loadingText.textContent = 'Müşteri adı ve ilgili poşetler güncelleniyor...';
                 allElements.loadingOverlay.style.display = 'flex';
                 allElements.loadingOverlay.style.opacity = '1';
                 try {
                     const batch = writeBatch(db);
 
-                    // 1. Müşteri belgesini güncelle
                     const customerRef = doc(db, 'customers', customerId);
-                    batch.update(customerRef, { name: newName });
+                    batch.update(customerRef, { name: upperNewName });
                     
-                    // 2. Eski isme sahip tüm poşetleri bul ve güncelle
                     const itemsQuery = query(collection(db, 'items'), where("customerName", "==", oldName));
                     const itemsSnapshot = await getDocs(itemsQuery);
                     itemsSnapshot.forEach(itemDoc => {
-                        batch.update(itemDoc.ref, { customerName: newName });
+                        batch.update(itemDoc.ref, { customerName: upperNewName });
                     });
                     
                     await batch.commit();
@@ -696,7 +707,9 @@
                 data.allItems.forEach(item => {
                     const newItemRef = doc(collection(db, 'items'));
                     const cleanItem = { ...item };
-                    delete cleanItem.id; 
+                    delete cleanItem.id;
+                    if (cleanItem.customerName) cleanItem.customerName = toTrUpperCase(cleanItem.customerName);
+                    if (cleanItem.note) cleanItem.note = toTrUpperCase(cleanItem.note);
                     if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
                     if (cleanItem.lastModified) cleanItem.lastModified = new Date(cleanItem.lastModified.seconds ? cleanItem.lastModified.seconds * 1000 : cleanItem.lastModified);
                     if (cleanItem.deliveredAt) cleanItem.deliveredAt = new Date(cleanItem.deliveredAt.seconds ? cleanItem.deliveredAt.seconds * 1000 : cleanItem.deliveredAt);
@@ -708,6 +721,7 @@
                 data.allCustomers.forEach(customer => {
                     const newCustomerRef = doc(collection(db, 'customers'));
                     const cleanCustomer = { ...customer };
+                    if (cleanCustomer.name) cleanCustomer.name = toTrUpperCase(cleanCustomer.name);
                     delete cleanCustomer.id;
                     newCustomersBatch.set(newCustomerRef, cleanCustomer);
                 });
@@ -776,6 +790,17 @@
                     allElements.retryContainer.classList.add('hidden');
                     startFirebaseConnection();
                 });
+                
+                // Event listener for uppercase conversion
+                document.body.addEventListener('input', e => {
+                    if (e.target.matches('input[type="text"], input[type="search"], textarea')) {
+                        const start = e.target.selectionStart;
+                        const end = e.target.selectionEnd;
+                        e.target.value = toTrUpperCase(e.target.value);
+                        e.target.setSelectionRange(start, end);
+                    }
+                });
+
                 startFirebaseConnection();
             }
 
@@ -847,6 +872,13 @@
                             `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
                             () => deleteItem(id),
                             "Kalıcı Olarak Sil", true
+                        );
+                        break;
+                    case 'delete-item':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
+                            () => deleteItem(id),
+                            "İptal Et ve Sil", true
                         );
                         break;
                     case 'edit-count': {
@@ -970,7 +1002,7 @@
             });
 
             allElements.customerNameInput.addEventListener("input", () => {
-                const searchTerm = allElements.customerNameInput.value.trim().toLowerCase();
+                const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
                 allElements.suggestionsBox.innerHTML = "";
                 if (searchTerm.length === 0) {
                     allElements.suggestionsBox.classList.add("hidden");
@@ -978,7 +1010,7 @@
                 }
 
                 const filtered = allCustomers
-                    .filter(c => c.name.toLowerCase().includes(searchTerm))
+                    .filter(c => toTrUpperCase(c.name).includes(searchTerm))
                     .map(c => c.name);
 
                 if (filtered.length > 0) {
@@ -1080,9 +1112,7 @@
 
                         const input = allElements.modalContent.querySelector('input, textarea');
                         const value = input ? input.value : true;
-
-                        // Sadece `modal-close` veya `modal-cancel` butonlarına basıldığında listener'ı kaldır ve pencereyi kapat.
-                        // Diğer butonlar (`modal-confirm` gibi) pencereyi açık bırakabilir.
+                        
                         const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
 
                         if (isClosingButton) {
@@ -1090,10 +1120,6 @@
                             hideModalUI();
                             resolve({ confirmed: false });
                         } else if (button.id === 'modal-confirm') {
-                             // "Onayla" butonu için `confirmed: true` ile resolve et, ama pencereyi kapatma.
-                             // Kapatma işlemi, çağıran fonksiyonun sorumluluğundadır.
-                             // Not: Bazı durumlarda yine de kapatmak isteyebiliriz, bu yüzden bu mantık özelleştirilebilir.
-                             // Şimdilik, `showConfirmationModal` gibi fonksiyonlar kapatmayı kendileri yönetecek.
                             resolve({ confirmed: true, value });
                         }
                     };
@@ -1142,7 +1168,6 @@
                 if (result.confirmed) {
                     await onConfirm();
                 }
-                // Her durumda modal'ı kapat
                 hideModalUI();
             }
 
@@ -1170,8 +1195,9 @@
                 const listContainer = document.getElementById('modal-customers-list');
                 if (!listContainer) return;
                 listContainer.innerHTML = '';
+                const ucFilter = toTrUpperCase(filter);
                 const filtered = allCustomers
-                    .filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
+                    .filter(c => toTrUpperCase(c.name).includes(ucFilter))
                     .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
                 if(filtered.length === 0) {
@@ -1185,7 +1211,6 @@
                     div.dataset.customerId = customer.id;
                     div.dataset.customerName = customer.name; // Orijinal ismi sakla
                     div.innerHTML = `
-                        <!-- Varsayılan Görünüm -->
                         <div class="customer-display flex justify-between items-center">
                             <span class="customer-name-text text-primary text-sm">${customer.name}</span>
                             <div class="flex items-center gap-2">
@@ -1193,7 +1218,6 @@
                                 <button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button>
                             </div>
                         </div>
-                        <!-- Düzenleme Görünümü -->
                         <div class="customer-edit hidden flex items-center gap-2">
                             <input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
                              <div class="flex items-center gap-1">
@@ -1201,7 +1225,6 @@
                                 <button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button>
                             </div>
                         </div>
-                        <!-- Silme Onayı Görünümü -->
                         <div class="customer-delete-confirm hidden flex justify-between items-center">
                             <span class="text-red-300 text-sm">Silinsin mi?</span>
                             <div class="flex items-center gap-2">
@@ -1270,7 +1293,6 @@
                             break;
                         case 'confirm-delete':
                             await deleteCustomer(customerId);
-                            // onSnapshot will auto-refresh the list
                             break;
                         case 'edit':
                             displayView.classList.add('hidden');
@@ -1290,28 +1312,26 @@
                                 showModalError("Müşteri adı boş olamaz.");
                                 return;
                             }
-                            if (newName.toLowerCase() === oldName.toLowerCase()) {
-                                // No change, just revert the view
+                            if (toTrUpperCase(newName) === toTrUpperCase(oldName)) {
                                 editView.classList.add('hidden');
                                 displayView.classList.remove('hidden');
                                 return;
                             }
-                            const isDuplicate = allCustomers.some(c => c.name.toLowerCase() === newName.toLowerCase() && c.id !== customerId);
+                            const isDuplicate = allCustomers.some(c => toTrUpperCase(c.name) === toTrUpperCase(newName) && c.id !== customerId);
                             if (isDuplicate) {
                                 showModalError("Bu isimde başka bir müşteri zaten var.");
                                 return;
                             }
                             
                             await updateCustomerNameAndItems(customerId, oldName, newName);
-                            // onSnapshot will handle the UI update.
                             break;
                     }
                 });
                 
                 addForm.addEventListener('submit', async e => {
                     e.preventDefault();
-                    const name = addInput.value.trim();
-                    if (name && !allCustomers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                    const name = toTrUpperCase(addInput.value.trim());
+                    if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) {
                        await addDoc(collection(db, 'customers'), { name });
                        addInput.value = '';
                     } else if (name) {
@@ -1356,9 +1376,15 @@
 
             function exportToPDF() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                 if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
 
                 const pdf = new jsPDF();
+                
+                // Fontu ekle ve ayarla
+                pdf.addFileToVFS('Roboto-Regular-normal.ttf', robotoFont);
+                pdf.addFont('Roboto-Regular-normal.ttf', 'Roboto-Regular', 'normal');
+                pdf.setFont('Roboto-Regular');
+
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
                 
                 const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
@@ -1374,7 +1400,13 @@
                 });
 
                 pdf.autoTable({
-                    head: [tableColumn], body: tableRows, startY: 20,
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 20,
+                    styles: { 
+                        font: "Roboto-Regular",
+                        fontStyle: 'normal'
+                    }
                 });
 
                 pdf.save('poset_listesi.pdf');
