@@ -1,32 +1,28 @@
 {
-  "name": "MAK Taksit Asistanı",
-  "short_name": "MAK Taksit",
-  "description": "Kişisel taksit ve harcama takip asistanı.",
-  "lang": "tr-TR",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#6d28d9",
-  "orientation": "portrait-primary",
+  "short_name": "Poşet Takip",
+  "name": "Emre Bebe Poşet Takip",
+  "description": "Emre Bebe Toptan Müşteri Poşet Takip Uygulaması",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "https://placehold.co/192x192/1e293b/ffffff?text=ET",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any"
+      "sizes": "192x192"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "https://placehold.co/512x512/1e293b/ffffff?text=ET",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "https://placehold.co/512x512/1e293b/ffffff?text=ET&maskable=1",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable.png",
-      "type": "image/png",
-      "sizes": "192x192",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "display": "standalone",
+  "scope": ".",
+  "theme_color": "#1e293b",
+  "background_color": "#0f172a"
 }
