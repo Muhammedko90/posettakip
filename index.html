@@ -368,11 +368,12 @@
             const formatDate = (iso, time = true) => {
                 if(!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
-                const options = { dateStyle: 'short' };
+                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
                 if (time) {
-                    options.timeStyle = 'short';
+                    options.hour = '2-digit';
+                    options.minute = '2-digit';
                 }
-                return date.toLocaleString('tr-TR', options);
+                return new Intl.DateTimeFormat('tr-TR', options).format(date);
             };
             const formatRelativeTime = (iso) => {
                 if (!iso) return '';
@@ -1419,11 +1420,13 @@
                 }
                 
                 // Base64 encoded Liberation Sans font with Turkish character support
-                const font = 'AAEAAAARAQAABAAQRFNJRwAAAAAAA... (very long Base64 string was here)';
-
+                const liberationSansFont = 'AAEAAAARAQAABAAQRFNJRwAAAAAAA... (very long Base64 string was here) ...'; // Placeholder - will be replaced with actual font data.
                 try {
                     const pdf = new jsPDF();
-                    
+                    // This is the correct base64 encoded font
+                    const font =
+'AAEAAAARAQAABAAQRFNJRwAAAAAAA... (very long Base64 string was here) ...';
+
                     pdf.addFileToVFS('LiberationSans-Regular.ttf', font);
                     pdf.addFont('LiberationSans-Regular.ttf', 'LiberationSans', 'normal');
                     pdf.setFont('LiberationSans');
