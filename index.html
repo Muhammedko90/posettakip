@@ -1,659 +1,1448 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emre Bebe Toptan Müşteri Poşet Takibi (Bulut Tabanlı)</title>
+    <meta name="description" content="Emre Bebe Toptan Müşteri Poşet Takip Uygulaması">
 
-    <title>MAK Taksit Asistanı</title>
+    <!-- PWA için Gerekli Etiketler -->
+    <meta name="theme-color" content="#1e293b"/>
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=ET">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6d28d9">
-    <!-- GÜNCELLEME: Apple dokunmatik ikonu yerel dosya yolunu kullanacak şekilde düzeltildi. -->
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isSameOrBefore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isSameOrAfter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/localizedFormat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/tr.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
-    <script type="module">
-        // Firebase SDK'larını içe aktar
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            onAuthStateChanged, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            signOut 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore,
-            collection,
-            doc,
-            onSnapshot,
-            addDoc,
-            updateDoc,
-            deleteDoc,
-            writeBatch,
-            serverTimestamp,
-            query,
-            setDoc
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- FIREBASE KURULUMU ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyA0ZOlfP0egAypBwBI2UR0QhoobDRVF_Ew",
-            authDomain: "mak-taksit-asistani-394e8.firebaseapp.com",
-            projectId: "mak-taksit-asistani-394e8",
-            storageBucket: "mak-taksit-asistani-394e8.appspot.com",
-            messagingSenderId: "27410630069",
-            appId: "1:27410630069:web:29c69ce5395944708805fc"
-        };
-        
-        // --- UYGULAMA BAŞLANGICI ---
-        try {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            
-            window.startApp(auth, db, {
-                collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, setDoc,
-                GoogleAuthProvider, signInWithPopup, signOut,
-                onAuthStateChanged
-            });
-
-        } catch (error) {
-            console.error("Firebase başlatma hatası:", error);
-            document.body.innerHTML = `<div class="flex items-center justify-center h-screen bg-gray-900 text-white"><div class="text-center"><h1 class="text-2xl font-bold text-red-500">Uygulama Başlatılamadı</h1><p class="mt-2 text-gray-400">Firebase yapılandırması eksik veya hatalı. Lütfen konsolu kontrol edin.</p></div></div>`;
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Genel Stil ve Geçişler */
+        :root {
+            --bg-primary: #1e293b; /* bg-slate-800 */
+            --bg-secondary: #0f172a; /* bg-slate-900 */
+            --bg-tertiary: #334155; /* bg-slate-700 */
+            --text-primary: #cbd5e1; /* text-slate-300 */
+            --text-secondary: #94a3b8; /* text-slate-400 */
+            --border-color: #475569; /* border-slate-600 */
+            --accent-color: #a78bfa; /* purple-400 */
+            --accent-color-dark: #8b5cf6; /* purple-600 */
+            --font-size-base: 16px;
         }
 
-    </script>
+        .theme-light {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f1f5f9;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border-color: #cbd5e1;
+            --accent-color: #8b5cf6;
+            --accent-color-dark: #7c3aed;
+        }
 
-    <style>
-        :root { --primary-color: #6d28d9; --primary-color-light: #8b5cf6; --primary-text-color: #a78bfa; --summary-grad-from: #6d28d9; --summary-grad-to: #8b5cf6; }
-        html.theme-blue { --primary-color: #2563eb; --primary-color-light: #3b82f6; --primary-text-color: #60a5fa; --summary-grad-from: #2563eb; --summary-grad-to: #3b82f6; }
-        html.theme-green { --primary-color: #16a34a; --primary-color-light: #22c55e; --primary-text-color: #4ade80; --summary-grad-from: #16a34a; --summary-grad-to: #22c55e; }
-        body { font-family: 'Inter', sans-serif; padding-bottom: 80px; }
-        html.dark { color-scheme: dark; }
-        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 40; }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; max-height: 90vh; overflow-y: auto; }
-        .main-panel { display: none; }
-        .main-panel.active { display: block; animation: fadeIn 0.5s ease-in-out; }
-        .bottom-nav-btn { transition: all 0.2s ease-in-out; }
-        .bottom-nav-btn.active { color: var(--primary-text-color); background-color: #374151; }
-        .summary-card { background: linear-gradient(135deg, var(--summary-grad-from), var(--summary-grad-to)); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
-        .item-fade-out { animation: fadeOut 0.3s ease-out forwards; }
-        .hidden { display: none; }
+        .theme-night-blue {
+            --bg-primary: #1c2a4a;
+            --bg-secondary: #0d1a33;
+            --bg-tertiary: #2a3a5a;
+            --text-primary: #e0e7ff;
+            --text-secondary: #a0b3d4;
+            --border-color: #3a4a6a;
+            --accent-color: #7aa2f7;
+            --accent-color-dark: #5a82e7;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Otomatik büyük harf için stil */
+        input[type="text"], input[type="search"], textarea {
+            text-transform: uppercase;
+        }
+
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .bg-tertiary { background-color: var(--bg-tertiary); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .border-dynamic { border-color: var(--border-color); }
+        .accent-text { color: var(--accent-color); }
+        .accent-bg { background-color: var(--accent-color-dark); }
+        .accent-bg-hover:hover { background-color: var(--accent-color); }
+        .ring-accent:focus { --tw-ring-color: var(--accent-color); }
+        
+        .tab-active { border-color: var(--accent-color) !important; color: var(--text-primary) !important; }
+        .sort-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
+
+        .panel { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; will-change: opacity, transform; }
+        .panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
+        
+        #modal-container.hidden { pointer-events: none; opacity: 0; }
+        #modal-content-wrapper.hidden { transform: scale(0.95); opacity: 0; }
+        .pagination-btn { min-width: 2.5rem; }
+        .pagination-btn.active { background-color: var(--accent-color-dark); color: white; font-weight: bold; }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.9);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            color: var(--text-primary);
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+            padding: 2rem;
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-slate-200 transition-colors duration-300">
+<body class="bg-secondary text-primary">
 
-    <div id="auth-container" class="flex items-center justify-center h-screen">
-        <div class="text-center p-8 bg-slate-800 rounded-2xl shadow-2xl max-w-sm mx-auto">
-            <h1 class="text-3xl font-bold text-white">MAK Taksit Asistanı</h1>
-            <p class="text-slate-400 mt-2 mb-8">Harcamalarınızı yönetmek için giriş yapın.</p>
-            <button id="login-btn" class="w-full bg-white text-gray-800 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors">
-                <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-                Google ile Giriş Yap
-            </button>
+    <div id="loading-overlay">
+        <div id="loading-spinner">
+            <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+        <p id="loading-text">Veritabanına bağlanılıyor...</p>
+        <div id="retry-container" class="hidden mt-4">
+            <button id="retry-button" class="accent-bg text-white font-semibold py-2 px-4 rounded-lg accent-bg-hover transition">Yeniden Dene</button>
         </div>
     </div>
-    
-    <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-7xl hidden">
-        <header class="mb-8">
-             <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">MAK Taksit Asistanı</h1>
-                <p id="welcome-message" class="text-gray-600 dark:text-slate-400 mt-2">Yükleniyor...</p>
-            </div>
+
+    <div id="app-container" class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen opacity-0 transition-opacity duration-500">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-primary">Emre Bebe Toptan Müşteri Poşet Takibi</h1>
+            <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
         </header>
 
-        <main id="main-content">
-            <div id="panel-home" class="main-panel active space-y-8">
-                <div id="summary-panel" class="summary-card text-white p-6 rounded-2xl shadow-lg"></div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                        <h2 class="text-xl font-bold dark:text-white">Aylık Ödeme Planı</h2>
-                        <select id="plan-month-selector" class="w-full sm:w-auto px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-sm"></select>
-                    </div>
-                    <div id="payment-plan"></div>
+        <!-- Sekme Navigasyonu -->
+        <div class="mb-6 border-b border-dynamic">
+            <nav class="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
+                <button id="tab-list" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Liste</button>
+                <button id="tab-archive" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Teslim Edilenler</button>
+                <button id="tab-reports" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Raporlar</button>
+                <button id="tab-notes" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Notlarım</button>
+                <button id="tab-settings" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Ayarlar</button>
+            </nav>
+        </div>
+
+        <!-- Sekme İçerikleri -->
+        <main id="main-content" class="relative">
+            <!-- Liste Sekmesi -->
+            <div id="panel-list" class="panel space-y-8">
+                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle</h2>
+                    <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                        <div class="relative sm:col-span-3">
+                            <input type="text" id="customer-name" placeholder="Müşteri Adı Soyadı" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
+                            <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
+                        </div>
+                        <input type="number" id="bag-count" placeholder="Poşet Sayısı" value="1" min="1" class="sm:col-span-1 w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
+                        <button type="submit" class="sm:col-span-1 w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Ekle</button>
+                    </form>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Harcama Dağılımı</h2>
-                    <div class="max-w-sm mx-auto"><canvas id="categoryChart"></canvas></div>
+                <div>
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-semibold text-primary">Bekleyen Poşetler</h2>
+                            <span id="total-customers-counter" class="text-base font-medium bg-sky-500/20 text-sky-300 py-1 px-3 rounded-full" title="Bekleyen Müşteri Sayısı"></span>
+                            <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <input type="search" id="search-items-input" placeholder="Listede ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
+                             <div class="flex border border-dynamic rounded-lg">
+                                <button id="sort-alpha" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Alfabetik Sırala"></button>
+                                <button id="sort-bags" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic" title="Poşet Sayısına Göre Sırala"></button>
+                                <button id="sort-date" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic rounded-r-md" title="Tarihe Göre Sırala"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="item-list" class="space-y-2"></div>
+                    <p id="empty-item-list-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Henüz bekleyen poşet bulunmuyor.</p>
                 </div>
             </div>
 
-            <div id="panel-purchases" class="main-panel space-y-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Yeni Harcama Ekle</h2>
-                    <form id="add-purchase-form" class="space-y-4">
-                       <input type="text" id="purchase-name" placeholder="Harcama Açıklaması" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required>
-                       <select id="purchase-category" class="mt-1 block w-full pl-3 pr-10 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required></select>
-                       <input type="date" id="purchase-date" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required>
-                       <input type="number" id="total-amount" step="0.01" min="0.01" placeholder="Toplam Tutar (₺)" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required>
-                       <input type="number" id="installments-count" min="1" placeholder="Taksit Sayısı" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required>
-                       <select id="card-select" class="mt-1 block w-full pl-3 pr-10 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700" required><option value="">Kart Seçin</option></select>
-                       <div class="flex items-center">
-                           <input id="purchase-recurring" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                           <label for="purchase-recurring" class="ml-2 block text-sm text-gray-900 dark:text-slate-300">Aylık Tekrarla (Fatura, Abonelik vb.)</label>
-                        </div>
-                       <button type="submit" class="w-full text-white py-2 px-4 rounded-md font-semibold transition-colors" style="background-color: var(--primary-color);">Harcamayı Ekle</button>
-                    </form>
+            <!-- Arşiv Sekmesi -->
+            <div id="panel-archive" class="panel hidden space-y-4">
+                 <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                    <h2 class="text-2xl font-semibold text-primary">Teslim Edilenler Arşivi</h2>
+                    <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Kayıtlı Harcamalarınız</h2>
-                    <div class="flex flex-col md:flex-row gap-4 mb-4">
-                        <input type="text" id="search-input" placeholder="Harcama ara..." class="flex-grow px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        <select id="filter-category" class="px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700"></select>
-                    </div>
-                    <div id="purchase-list-details" class="space-y-4"></div>
-                </div>
+                <div id="archive-list" class="space-y-2"></div>
+                <div id="archive-pagination" class="flex justify-center items-center mt-4 space-x-2"></div>
+                <p id="empty-archive-list-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Arşivde hiç kayıt bulunmuyor.</p>
             </div>
             
-            <div id="panel-history" class="main-panel space-y-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Ödeme Geçmişi</h2>
-                    <p class="text-sm text-slate-400 mb-6">"Ödendi" olarak işaretlediğiniz tüm ekstreleriniz burada listelenir.</p>
-                    <div id="history-list" class="space-y-4"></div>
-                    <div id="history-pagination" class="flex justify-between items-center mt-6"></div>
-                </div>
-            </div>
-
-            <div id="panel-subscriptions" class="main-panel space-y-8">
-                 <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Aylık Abonelikleriniz</h2>
-                    <p class="text-sm text-slate-400 mb-6">"Aylık Tekrarla" olarak işaretlediğiniz düzenli harcamalarınız burada listelenir.</p>
-                    <div id="subscription-list" class="space-y-4"></div>
-                </div>
-            </div>
-
-            <div id="panel-reports" class="main-panel space-y-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Tarihe Göre Raporla</h2>
+            <!-- Raporlar Sekmesi -->
+            <div id="panel-reports" class="panel hidden space-y-8">
+                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary">Dönemsel Raporlar</h2>
                     <div class="flex gap-2 mb-4">
-                        <button data-range="week" class="quick-range-btn flex-1 bg-slate-700 text-white py-2 px-4 rounded-md hover:bg-slate-600 font-semibold transition-colors text-sm">Son 1 Hafta</button>
-                        <button data-range="month" class="quick-range-btn flex-1 bg-slate-700 text-white py-2 px-4 rounded-md hover:bg-slate-600 font-semibold transition-colors text-sm">Son 1 Ay</button>
-                        <button data-range="year" class="quick-range-btn flex-1 bg-slate-700 text-white py-2 px-4 rounded-md hover:bg-slate-600 font-semibold transition-colors text-sm">Son 1 Yıl</button>
+                        <button data-range="7" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Son 7 Gün</button>
+                        <button data-range="30" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Son 30 Gün</button>
+                        <button data-range="all" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Tüm Zamanlar</button>
                     </div>
-                    <div class="flex flex-col md:flex-row gap-4 items-end">
-                        <div>
-                            <label for="start-date" class="text-sm font-medium">Başlangıç Tarihi</label>
-                            <input type="date" id="start-date" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label for="end-date" class="text-sm font-medium">Bitiş Tarihi</label>
-                            <input type="date" id="end-date" class="mt-1 block w-full px-3 py-2 border dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                        <button id="generate-report-btn" class="w-full md:w-auto bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 font-semibold transition-colors">Rapor Oluştur</button>
+                    <div id="periodic-report-content" class="text-center p-4 bg-secondary rounded-lg border border-dynamic">
+                        Raporu görmek için bir zaman aralığı seçin.
                     </div>
-                    <div id="report-output" class="mt-6"></div>
+                </div>
+                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary">En Uzun Süredir Bekleyen 10 Poşet</h2>
+                    <div id="overdue-report-list" class="space-y-2"></div>
+                     <p id="empty-overdue-report-message" class="hidden text-center text-secondary p-4">Tüm poşetler teslim edilmiş veya yeni.</p>
                 </div>
             </div>
 
-            <div id="panel-settings" class="main-panel space-y-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                     <h2 class="text-xl font-bold mb-4 dark:text-white">Tema Seçenekleri</h2>
-                     <div class="flex items-center gap-4">
-                         <div id="theme-selector" class="flex gap-4">
-                            <button data-theme="" class="w-14 h-10 rounded-lg border-2 border-slate-400 flex overflow-hidden" title="Mor Tema"><span class="w-1/3 h-full" style="background-color: #6d28d9;"></span><span class="w-1/3 h-full" style="background-color: #8b5cf6;"></span><span class="w-1/3 h-full" style="background-color: #a78bfa;"></span></button>
-                            <button data-theme="theme-blue" class="w-14 h-10 rounded-lg border-2 border-slate-400 flex overflow-hidden" title="Mavi Tema"><span class="w-1/3 h-full" style="background-color: #2563eb;"></span><span class="w-1/3 h-full" style="background-color: #3b82f6;"></span><span class="w-1/3 h-full" style="background-color: #60a5fa;"></span></button>
-                            <button data-theme="theme-green" class="w-14 h-10 rounded-lg border-2 border-slate-400 flex overflow-hidden" title="Yeşil Tema"><span class="w-1/3 h-full" style="background-color: #16a34a;"></span><span class="w-1/3 h-full" style="background-color: #22c55e;"></span><span class="w-1/3 h-full" style="background-color: #4ade80;"></span></button>
+            <!-- Notlar Sekmesi -->
+            <div id="panel-notes" class="panel hidden space-y-4">
+                <h2 class="text-2xl font-semibold text-primary">Tüm Notlar</h2>
+                <div id="notes-list" class="space-y-2"></div>
+                <p id="empty-notes-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Henüz not eklenmiş bir kayıt bulunmuyor.</p>
+            </div>
+
+            <!-- Ayarlar Sekmesi -->
+            <div id="panel-settings" class="panel hidden space-y-8">
+                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
+                    <h2 class="text-2xl font-semibold text-primary">Görünüm Ayarları</h2>
+                    <div>
+                        <h3 class="text-lg font-medium text-primary mb-2">Tema</h3>
+                        <div class="flex gap-2">
+                            <button data-theme="dark" class="theme-btn flex-1 p-2 rounded-lg border-2 border-slate-700 bg-slate-800 text-slate-300">Varsayılan</button>
+                            <button data-theme="light" class="theme-btn flex-1 p-2 rounded-lg border-2 border-gray-300 bg-white text-black">Açık</button>
+                            <button data-theme="night-blue" class="theme-btn flex-1 p-2 rounded-lg border-2 border-indigo-900 bg-blue-950 text-blue-200">Gece Mavisi</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-primary mb-2">Yazı Tipi Boyutu (<span id="font-size-preview">16px</span>)</h3>
+                        <input type="range" id="font-size-slider" min="12" max="20" step="1" value="16" class="w-full h-2 bg-tertiary rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
+                    <h2 class="text-2xl font-semibold text-primary">Müşteri Yönetimi</h2>
+                    <div>
+                        <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi Yönetimi</h3>
+                        <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
+                            Müşteri Listesini Görüntüle ve Yönet
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
+                    <h2 class="text-2xl font-semibold text-primary">Veri Yönetimi</h2>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="export-json-btn" class="w-full bg-sky-600 text-white font-semibold p-3 rounded-lg hover:bg-sky-700 transition">Yedekle (JSON)</button>
+                        <button id="import-json-btn" class="w-full bg-teal-600 text-white font-semibold p-3 rounded-lg hover:bg-teal-700 transition">Geri Yükle (JSON)</button>
+                        <button id="export-pdf-btn" class="w-full bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Listeyi PDF Aktar</button>
+                        <button id="export-csv-btn" class="w-full bg-emerald-600 text-white font-semibold p-3 rounded-lg hover:bg-emerald-700 transition">Listeyi CSV Aktar</button>
+                         <input type="file" id="import-file-input" class="hidden" accept=".json">
+                    </div>
+                    <div>
+                         <h3 class="text-lg font-medium text-red-400 mb-2">Tehlikeli Alan</h3>
+                         <div class="p-4 border border-red-500/30 bg-red-500/10 rounded-lg space-y-3">
+                            <p class="text-sm text-red-300">Bu işlemler geri alınamaz. Lütfen dikkatli olun.</p>
+                             <button id="reset-items-btn" class="w-full bg-red-700 text-white font-semibold p-2 rounded-lg hover:bg-red-800 transition">Sadece Poşet Listesini Sıfırla</button>
+                            <button id="reset-all-btn" class="w-full bg-red-600 text-white font-bold p-3 rounded-lg hover:bg-red-700 transition">TÜM VERİLERİ SIFIRLA</button>
                          </div>
-                         <div class="border-l border-slate-600 pl-4">
-                            <label for="custom-theme-picker" class="block text-sm font-medium text-slate-400 mb-2">Özel Renk</label>
-                            <input type="color" id="custom-theme-picker" class="w-14 h-10 p-1 bg-slate-700 rounded-lg cursor-pointer">
-                        </div>
-                     </div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Kartlarınızı Yönetin</h2>
-                    <form id="add-card-form" class="space-y-4">
-                        <input type="text" id="card-name" placeholder="Kart Adı (Örn: Maaş Kartım)" class="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700" required>
-                        <input type="number" id="statement-day" min="1" max="31" placeholder="Ekstre Kesim Günü (1-31)" class="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700" required>
-                        <input type="number" id="card-limit" min="0" placeholder="Kart Limiti (₺)" class="w-full px-3 py-2 border border-slate-600 rounded-md bg-slate-700" required>
-                        <button type="submit" class="w-full text-white py-2 px-4 rounded-md font-semibold transition-colors" style="background-color: var(--primary-color);">Kart Ekle</button>
-                    </form>
-                    <div id="card-list" class="mt-6 space-y-4"></div>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Gizlilik</h2>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <label for="privacy-mode-toggle" class="font-medium text-white">Gizlilik Modu</label>
-                            <p class="text-sm text-slate-400 mt-1">Uygulamadaki tüm finansal tutarları gizler.</p>
-                        </div>
-                        <label for="privacy-mode-toggle" class="relative inline-flex items-center cursor-pointer"><input type="checkbox" value="" id="privacy-mode-toggle" class="sr-only peer"><div class="w-11 h-6 bg-slate-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:bg-violet-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div></label>
                     </div>
                 </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4 dark:text-white">Hesap Yönetimi</h2>
-                    <div class="space-y-4">
-                        <button id="logout-btn" class="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 font-semibold transition-colors">Çıkış Yap</button>
-                        <div class="border-t border-slate-600 !mt-6 !mb-2"></div>
-                         <button id="delete-all-data-btn" class="w-full bg-red-800 text-white py-2 px-4 rounded-md hover:bg-red-900 font-semibold transition-colors">TÜM VERİLERİ SİL</button>
-                         <p class="text-xs text-slate-500 text-center">Bu işlem geri alınamaz. Tüm kartlarınız ve harcamalarınız kalıcı olarak silinir.</p>
-                    </div>
+                 <div class="text-center mt-4 mb-4">
+                    <p class="text-xs text-secondary">Program yapımcısı Muhammed Ali KOÇ</p>
                 </div>
             </div>
         </main>
     </div>
 
-    <footer id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-lg z-30 hidden">
-        <nav class="flex justify-around items-center h-16 max-w-7xl mx-auto px-1">
-            <button data-panel="home" class="bottom-nav-btn active flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg><span class="text-xs mt-1">Ana Sayfa</span></button>
-            <button data-panel="purchases" class="bottom-nav-btn flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg><span class="text-xs mt-1">Harcamalar</span></button>
-            <button data-panel="history" class="bottom-nav-btn flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span class="text-xs mt-1">Geçmiş</span></button>
-            <button data-panel="subscriptions" class="bottom-nav-btn flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm5 2a1 1 0 00-1 1v8a1 1 0 102 0V6a1 1 0 00-1-1zm5-2a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1z" clip-rule="evenodd" /></svg><span class="text-xs mt-1">Abonelikler</span></button>
-            <button data-panel="reports" class="bottom-nav-btn flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg><span class="text-xs mt-1">Raporlar</span></button>
-            <button data-panel="settings" class="bottom-nav-btn flex flex-col items-center justify-center text-slate-400 w-full h-full rounded-lg m-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg><span class="text-xs mt-1">Ayarlar</span></button>
-        </nav>
-    </footer>
+    <!-- Modal Container -->
+    <div id="modal-container" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+        <div id="modal-content-wrapper" class="bg-primary border border-dynamic rounded-lg shadow-xl p-6 w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0">
+             <div id="modal-content"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Firebase Modüllerini İçe Aktar
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
+            onSnapshot, query, where, serverTimestamp, writeBatch 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- FIREBASE YAPILANDIRMASI ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
+            authDomain: "emre-bebe-takip.firebaseapp.com",
+            projectId: "emre-bebe-takip",
+            storageBucket: "emre-bebe-takip.firebasestorage.app",
+            messagingSenderId: "174642780473",
+            appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
+        };
+        
+        // Gerekli kütüphaneleri yükle
+        const { jsPDF } = window.jspdf;
 
-    <div id="delete-confirm-modal-backdrop" class="modal-backdrop"></div>
-    <div id="delete-confirm-modal" class="modal bg-slate-800 p-6 rounded-lg shadow-xl max-w-sm w-full"></div>
-    <div id="edit-purchase-modal-backdrop" class="modal-backdrop"></div>
-    <div id="edit-purchase-modal" class="modal bg-slate-800 p-6 rounded-2xl shadow-xl max-w-lg w-full"></div>
-    <div id="edit-card-modal-backdrop" class="modal-backdrop"></div>
-    <div id="edit-card-modal" class="modal bg-slate-800 p-6 rounded-2xl shadow-xl max-w-lg w-full"></div>
-    <div id="info-modal-backdrop" class="modal-backdrop"></div>
-    <div id="info-modal" class="modal bg-slate-800 p-6 rounded-lg shadow-xl max-w-sm w-full"></div>
-
-    <script>
-    window.startApp = (auth, db, fb) => {
-        const {
-            collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, setDoc,
-            GoogleAuthProvider, signInWithPopup, signOut,
-            onAuthStateChanged
-        } = fb;
-
+        // --- UYGULAMA MANTIĞI ---
         document.addEventListener('DOMContentLoaded', () => {
-            dayjs.extend(window.dayjs_plugin_customParseFormat);
-            dayjs.extend(window.dayjs_plugin_isSameOrBefore);
-            dayjs.extend(window.dayjs_plugin_isSameOrAfter);
-            dayjs.extend(window.dayjs_plugin_localizedFormat);
-            dayjs.locale('tr');
-            
-            // --- STATE (DURUM) DEĞİŞKENLERİ ---
-            let cards = [];
-            let purchases = [];
-            let userSettings = {};
-            let currentUser = null;
-            let unsubscribeCards = null;
-            let unsubscribePurchases = null;
-            let unsubscribeSettings = null;
-            let historyCurrentPage = 1;
-            const HISTORY_ITEMS_PER_PAGE = 5;
-            const CATEGORIES = ['Gıda', 'Fatura', 'Ulaşım', 'Giyim', 'Eğlence', 'Sağlık', 'Ev Eşyası', 'Dijital Servis', 'Diğer'];
-            let categoryChartInstance = null;
-            let itemToDelete = {};
-            let confirmCallback = null;
-            // DÜZELTME: Ay seçimi artık localStorage'dan okunmayacak, her yenilemede sıfırlanacak.
-            let selectedPlanMonth = null;
-
             // --- DOM ELEMENTLERİ ---
-            const el = {
-                authContainer: document.getElementById('auth-container'),
+            const allElements = {
+                loadingOverlay: document.getElementById('loading-overlay'),
+                loadingSpinner: document.getElementById('loading-spinner'),
+                loadingText: document.getElementById('loading-text'),
+                retryContainer: document.getElementById('retry-container'),
+                retryButton: document.getElementById('retry-button'),
                 appContainer: document.getElementById('app-container'),
-                bottomNav: document.getElementById('bottom-nav'),
-                loginBtn: document.getElementById('login-btn'),
-                logoutBtn: document.getElementById('logout-btn'),
-                welcomeMessage: document.getElementById('welcome-message'),
-                infoModal: document.getElementById('info-modal'),
-                infoModalBackdrop: document.getElementById('info-modal-backdrop'),
-                deleteConfirmModal: document.getElementById('delete-confirm-modal'),
-                deleteConfirmBackdrop: document.getElementById('delete-confirm-modal-backdrop'),
-                editPurchaseModal: document.getElementById('edit-purchase-modal'),
-                editPurchaseBackdrop: document.getElementById('edit-purchase-modal-backdrop'),
-                editCardModal: document.getElementById('edit-card-modal'),
-                editCardBackdrop: document.getElementById('edit-card-modal-backdrop'),
-                cardList: document.getElementById('card-list'),
-                purchaseList: document.getElementById('purchase-list-details'),
-                subscriptionList: document.getElementById('subscription-list'),
-                paymentPlan: document.getElementById('payment-plan'),
-                historyList: document.getElementById('history-list'),
-                historyPagination: document.getElementById('history-pagination'),
-                summaryPanel: document.getElementById('summary-panel'),
-                categoryChartCanvas: document.getElementById('categoryChart'),
-                purchaseDateInput: document.getElementById('purchase-date'),
-                planMonthSelector: document.getElementById('plan-month-selector'),
-                privacyModeToggle: document.getElementById('privacy-mode-toggle'),
-                customThemePicker: document.getElementById('custom-theme-picker')
+                mainContent: document.getElementById('main-content'),
+                itemList: document.getElementById('item-list'),
+                emptyItemListMessage: document.getElementById('empty-item-list-message'),
+                searchItemsInput: document.getElementById('search-items-input'),
+                totalBagsCounter: document.getElementById('total-bags-counter'),
+                totalCustomersCounter: document.getElementById('total-customers-counter'),
+                sortAlphaBtn: document.getElementById('sort-alpha'),
+                sortBagsBtn: document.getElementById('sort-bags'),
+                sortDateBtn: document.getElementById('sort-date'),
+                addItemForm: document.getElementById('add-item-form'),
+                customerNameInput: document.getElementById('customer-name'),
+                bagCountInput: document.getElementById('bag-count'),
+                suggestionsBox: document.getElementById('suggestions-box'),
+                archiveList: document.getElementById('archive-list'),
+                emptyArchiveListMessage: document.getElementById('empty-archive-list-message'),
+                searchArchiveInput: document.getElementById('search-archive-input'),
+                archivePagination: document.getElementById('archive-pagination'),
+                notesList: document.getElementById('notes-list'),
+                emptyNotesMessage: document.getElementById('empty-notes-message'),
+                manageCustomersBtn: document.getElementById('manage-customers-btn'),
+                exportJsonBtn: document.getElementById('export-json-btn'),
+                importJsonBtn: document.getElementById('import-json-btn'),
+                importFileInput: document.getElementById('import-file-input'),
+                resetItemsBtn: document.getElementById('reset-items-btn'),
+                resetAllBtn: document.getElementById('reset-all-btn'),
+                modalContainer: document.getElementById('modal-container'),
+                modalContentWrapper: document.getElementById('modal-content-wrapper'),
+                modalContent: document.getElementById('modal-content'),
             };
 
-            // --- KİMLİK DOĞRULAMA (AUTHENTICATION) ---
-            onAuthStateChanged(auth, user => {
-                if (user) {
-                    currentUser = user;
-                    el.authContainer.classList.add('hidden');
-                    el.appContainer.classList.remove('hidden');
-                    el.bottomNav.classList.remove('hidden');
-                    el.welcomeMessage.textContent = `Hoşgeldin, ${user.displayName || 'Kullanıcı'}!`;
-                    listenToData(user.uid);
-                } else {
-                    currentUser = null;
-                    el.authContainer.classList.remove('hidden');
-                    el.appContainer.classList.add('hidden');
-                    el.bottomNav.classList.add('hidden');
-                    if (unsubscribeCards) unsubscribeCards();
-                    if (unsubscribePurchases) unsubscribePurchases();
-                    if (unsubscribeSettings) unsubscribeSettings();
-                    cards = [];
-                    purchases = [];
-                    userSettings = {};
-                }
-            });
+            // --- STATE (DURUM) YÖNETİMİ ---
+            let app, auth, db;
+            let allItems = [];
+            let allCustomers = [];
+            let settings = {};
+            let sortState = { type: 'alpha', direction: 'asc' };
+            let archiveCurrentPage = 1;
+            const itemsPerPage = 10;
+            let itemsUnsubscribe = null;
+            let customersUnsubscribe = null;
+            let connectionTimeout = null;
+            let isAppInitialized = false;
 
-            el.loginBtn.addEventListener('click', async () => {
-                const provider = new GoogleAuthProvider();
-                try {
-                    await signInWithPopup(auth, provider);
-                } catch (error) {
-                    console.error("Giriş hatası:", error);
-                    showInfoModal('Google ile giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.', 'Hata', 'error');
-                }
-            });
+            // --- İKONLAR ---
+            const icons = {
+                alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
+                alpha_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 3.629 9.664 2H8.598l1.789 5.332h1.234L13.402 2h-1.12l-.419 1.371h-1.781zm1.57 1.055h-1.296l.648 2.042.648 2.042z"/><path d="M12.96 10.022c.16.21.283-.417.371.622h.043c.09-.205.214-.412.375-.622L15.04 8.5h-1.2l-.71 1.258h-.043l-.71-1.258h-1.21l1.83 3.05zM4.5 13.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L4.5 3.707V13.5z"/></svg>',
+                bags_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11.5 2.707V14.5a.5.5 0 0 0 .5.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
+                bags_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L11.5 13.293V1.5a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
+                date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
+                cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
+            };
 
-            el.logoutBtn.addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                } catch (error) {
-                    console.error("Çıkış hatası:", error);
-                }
-            });
+            // --- YARDIMCI FONKSİYONLAR ---
+            const toTrUpperCase = (str) => {
+                if (typeof str !== 'string') return '';
+                return str.toLocaleUpperCase('tr-TR');
+            }
+            const getSettingsFromStorage = () => JSON.parse(localStorage.getItem('emanet-settings-v2')) || { theme: 'dark', fontSize: 16 };
+            const saveSettingsToStorage = (settings) => localStorage.setItem('emanet-settings-v2', JSON.stringify(settings));
+            const formatDate = (iso) => {
+                if(!iso) return '';
+                const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
+                return date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short'});
+            };
+            const formatRelativeTime = (iso) => {
+                if (!iso) return '';
+                const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
+                const now = new Date();
+                const diffDays = Math.floor((now.setHours(0,0,0,0) - date.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) return '';
+                if (diffDays === 0) return 'bugün';
+                if (diffDays === 1) return 'dün';
+                return `${diffDays} gün önce`;
+            };
 
-            // --- VERİ DİNLEME (FIRESTORE REAL-TIME) ---
-            function listenToData(userId) {
-                const cardsRef = collection(db, 'users', userId, 'cards');
-                const purchasesRef = collection(db, 'users', userId, 'purchases');
-                const settingsRef = doc(db, 'users', userId, 'settings', 'userProfile');
+            function showApp() {
+                if (isAppInitialized) return;
+                isAppInitialized = true;
+                clearTimeout(connectionTimeout);
+                allElements.loadingOverlay.style.opacity = '0';
+                allElements.appContainer.style.opacity = '1';
+                setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
+            }
+
+            function showConnectionError(message) {
+                clearTimeout(connectionTimeout);
+                allElements.loadingSpinner.style.display = 'none';
+                allElements.retryContainer.classList.remove('hidden');
+                allElements.loadingText.innerHTML = `<span class="text-red-400 font-semibold">${message}</span>`;
+            }
+
+            // --- AYARLAR ---
+            function applySettings() {
+                document.body.className = `theme-${settings.theme} text-primary`;
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.toggle('ring-2', btn.dataset.theme === settings.theme);
+                    btn.classList.toggle('ring-accent', btn.dataset.theme === settings.theme);
+                });
+
+                document.body.style.fontSize = `${settings.fontSize}px`;
+                const fontSizeSlider = document.getElementById('font-size-slider');
+                const fontSizePreview = document.getElementById('font-size-preview');
+                if(fontSizeSlider) fontSizeSlider.value = settings.fontSize;
+                if(fontSizePreview) fontSizePreview.textContent = `${settings.fontSize}px`;
+            }
+
+            // --- RENDER FONKSİYONLARI ---
+            function renderAll() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                const archivedItems = allItems.filter(item => item.status === 'delivered');
                 
-                unsubscribeCards = onSnapshot(cardsRef, (snapshot) => {
-                    cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    refreshUI();
-                });
+                renderItems(activeItems);
+                renderArchive(archivedItems);
+                renderNotes();
+                renderReports();
+            }
+            
+            function renderItems(items) {
+                const searchQuery = toTrUpperCase(allElements.searchItemsInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
+                
+                // Müşteri ve poşet sayaçlarını güncelle
+                allElements.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
+                const customerNames = new Set(filteredItems.map(item => item.customerName));
+                allElements.totalCustomersCounter.textContent = customerNames.size;
 
-                unsubscribePurchases = onSnapshot(purchasesRef, (snapshot) => {
-                    purchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    refreshUI();
-                });
 
-                unsubscribeSettings = onSnapshot(settingsRef, (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        userSettings = docSnapshot.data();
-                    } else {
-                        const defaultSettings = { theme: '', customThemeColor: null, privacyMode: false, paidMonths: {} };
-                        setDoc(settingsRef, defaultSettings);
-                        userSettings = defaultSettings;
+                const direction = sortState.direction === 'asc' ? 1 : -1;
+                filteredItems.sort((a, b) => {
+                    if (sortState.type === 'alpha') return a.customerName.localeCompare(b.customerName, 'tr') * direction;
+                    if (sortState.type === 'bags') return (a.bagCount - b.bagCount) * direction;
+                    
+                    const dateA = a.lastModified?.seconds ? a.lastModified.seconds : new Date(a.lastModified).getTime() / 1000;
+                    const dateB = b.lastModified?.seconds ? b.lastModified.seconds : new Date(b.lastModified).getTime() / 1000;
+                    return (dateB - dateA) * direction;
+                });
+                
+                allElements.itemList.innerHTML = '';
+                allElements.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+                allElements.emptyItemListMessage.textContent = searchQuery ? `ARAMANIZLA EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
+                filteredItems.forEach(item => allElements.itemList.appendChild(createItemElement(item)));
+            }
+            
+            function createItemElement(item) {
+                const div = document.createElement('div');
+                const date = item.lastModified?.seconds ? new Date(item.lastModified.seconds * 1000) : new Date();
+                const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
+
+                const overdueClass = (() => {
+                    if (diffDays >= 15) return 'border-red-500/60 bg-red-500/10';
+                    if (diffDays >= 7) return 'border-yellow-500/60 bg-yellow-500/10';
+                    return 'border-dynamic';
+                })();
+                const noteIndicatorHTML = item.note ? `<span class="accent-text text-xs" title="Not Mevcut">●</span>` : '';
+                
+                div.className = `bg-primary p-4 rounded-lg shadow-md flex items-center justify-between border ${overdueClass} transition-colors duration-300`;
+                div.dataset.id = item.id;
+                div.innerHTML = `
+                    <div class="item-details flex-1 flex items-center gap-4">
+                        <div class="item-bag-count bg-purple-500/20 text-purple-300 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="flex-1">
+                            <p class="item-customer-name font-semibold text-lg text-primary flex items-center gap-2">${item.customerName} ${noteIndicatorHTML}</p>
+                            <p class="item-subtext text-sm text-secondary">Poşet Sayısı</p>
+                            <p class="item-subtext text-xs text-secondary/70 mt-1">Son Değişiklik: ${formatRelativeTime(item.lastModified)}</p>
+                        </div>
+                    </div>
+                    <div class="item-actions flex items-center gap-1 sm:gap-2 ml-2">
+                        <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg></button>
+                        <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note ? 'accent-text' : ''}" title="Notu Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
+                        <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
+                        <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="İptal Et">${icons.cancel_item}</button>
+                    </div>`;
+                return div;
+            }
+            
+            function renderArchive(items) {
+                const searchQuery = toTrUpperCase(allElements.searchArchiveInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
+                
+                filteredItems.sort((a,b) => {
+                    const dateA = a.deliveredAt?.seconds || 0;
+                    const dateB = b.deliveredAt?.seconds || 0;
+                    return dateB - dateA;
+                });
+                
+                allElements.emptyArchiveListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+
+                const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+                if(archiveCurrentPage > totalPages && totalPages > 0) archiveCurrentPage = totalPages;
+
+                const startIndex = (archiveCurrentPage - 1) * itemsPerPage;
+                const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+                allElements.archiveList.innerHTML = '';
+                paginatedItems.forEach(item => allElements.archiveList.appendChild(createArchiveItemElement(item)));
+
+                renderArchivePagination(totalPages);
+            }
+            
+            function createArchiveItemElement(item) {
+                const div = document.createElement('div');
+                div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
+                div.dataset.id = item.id;
+                div.innerHTML = `
+                    <div class="item-details flex-1 flex items-center gap-4">
+                        <div class="item-bag-count bg-slate-600/50 text-slate-400 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="flex-1">
+                            <p class="item-customer-name font-semibold text-lg text-primary/80">${item.customerName}</p>
+                            <p class="item-subtext text-sm text-secondary">Teslim Edildi: ${formatDate(item.deliveredAt)}</p>
+                        </div>
+                    </div>
+                    <div class="item-actions flex items-center gap-2 ml-2">
+                        <button data-action="restore" class="p-2 text-secondary hover:text-yellow-400 rounded-full transition" title="Geri Yükle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg></button>
+                        <button data-action="delete-permanent" class="p-2 text-secondary hover:text-red-500 rounded-full transition" title="Kalıcı Olarak Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
+                    </div>`;
+                return div;
+            }
+            
+            function renderNotes() {
+                const itemsWithNotes = allItems.filter(item => item.note && item.note.trim() !== '').sort((a,b) => {
+                    const dateA = a.lastModified?.seconds || 0;
+                    const dateB = b.lastModified?.seconds || 0;
+                    return dateB - dateA;
+                });
+                allElements.notesList.innerHTML = '';
+                allElements.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
+                itemsWithNotes.forEach(item => allElements.notesList.appendChild(createNoteElement(item)));
+            }
+
+            function createNoteElement(item) {
+                const div = document.createElement('div');
+                div.className = 'bg-primary p-4 rounded-lg shadow-md border border-dynamic';
+                div.dataset.id = item.id;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                         <p class="font-semibold accent-text">${item.customerName}</p>
+                         <button data-action="delete-note-from-tab" class="p-1 -mt-1 -mr-1 text-secondary hover:text-red-500 rounded-full transition" title="Notu Sil">
+                            <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>
+                        </button>
+                    </div>
+                    <p class="text-primary mt-2 whitespace-pre-wrap">${item.note}</p>
+                `;
+                return div;
+            }
+            
+            function renderReports() {
+                renderPeriodicReport(); 
+                renderOverdueReport();
+            }
+            
+            function renderOverdueReport() {
+                const overdueList = document.getElementById('overdue-report-list');
+                const overdueMessage = document.getElementById('empty-overdue-report-message');
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+
+                if (activeItems.length === 0) {
+                    overdueList.innerHTML = '';
+                    overdueMessage.classList.remove('hidden');
+                    return;
+                }
+                
+                overdueMessage.classList.add('hidden');
+                activeItems.sort((a, b) => {
+                     const dateA = a.lastModified?.seconds || 0;
+                     const dateB = b.lastModified?.seconds || 0;
+                     return dateA - dateB;
+                });
+                const top10 = activeItems.slice(0, 10);
+
+                overdueList.innerHTML = top10.map((item, index) => {
+                    return `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center">
+                                <span class="text-primary">${index + 1}. ${item.customerName}</span>
+                                <span class="text-sm text-secondary">${formatRelativeTime(item.lastModified)}</span>
+                            </div>`;
+                }).join('');
+            }
+            
+            function renderPeriodicReport(range = null) {
+                const contentDiv = document.getElementById('periodic-report-content');
+                if(range === null) {
+                    const activeBtn = document.querySelector('.report-range-btn.accent-bg');
+                    if (activeBtn) range = activeBtn.dataset.range;
+                    else {
+                         contentDiv.innerHTML = 'Raporu görmek için bir zaman aralığı seçin.';
+                         return; 
                     }
-                    applySettings();
-                    refreshUI();
-                });
-            }
-
-            // --- MODAL YÖNETİMİ ---
-            function showInfoModal(message, title = 'Bilgi', type = 'info') { const colors = { info: 'indigo', success: 'green', error: 'red' }; const color = colors[type] || 'indigo'; el.infoModal.innerHTML = `<h3 class="text-lg font-medium text-white">${title}</h3><p class="text-sm text-slate-400 mt-4">${message}</p><div class="mt-5 flex justify-end gap-3"><button id="info-modal-ok-btn" class="bg-${color}-600 text-white py-2 px-4 rounded-md">Tamam</button></div>`; el.infoModal.style.display = 'block'; el.infoModalBackdrop.style.display = 'block'; document.getElementById('info-modal-ok-btn').addEventListener('click', hideInfoModal); }
-            function showConfirmModal(message, title = 'Onay', callback, confirmText = 'Onayla', cancelText = 'İptal') { el.infoModal.innerHTML = `<h3 class="text-lg font-medium text-white">${title}</h3><p class="text-sm text-slate-400 mt-4">${message}</p><div class="mt-5 flex justify-end gap-3"><button id="info-modal-cancel-btn" class="bg-slate-600 text-slate-200 py-2 px-4 rounded-md">${cancelText}</button><button id="info-modal-confirm-btn" class="bg-green-600 text-white py-2 px-4 rounded-md">${confirmText}</button></div>`; el.infoModal.style.display = 'block'; el.infoModalBackdrop.style.display = 'block'; confirmCallback = callback; document.getElementById('info-modal-cancel-btn').addEventListener('click', hideInfoModal); document.getElementById('info-modal-confirm-btn').addEventListener('click', () => { if (confirmCallback) confirmCallback(); hideInfoModal(); }); }
-            function hideInfoModal() { el.infoModal.style.display = 'none'; el.infoModalBackdrop.style.display = 'none'; confirmCallback = null; }
-            function openDeleteModal(id, type, name, element) { itemToDelete = { id, type, element }; const modalBody = el.deleteConfirmModal; modalBody.innerHTML = `<div class="flex items-center"><div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-900/50 sm:mx-0 sm:h-10 sm:w-10"><svg class="h-6 w-6 text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><h3 class="ml-4 text-lg font-medium text-white">Silme Onayı</h3></div><p class="text-sm text-slate-400 mt-4 ml-14">"${name}" öğesini silmek istediğinizden emin misiniz? ${type === 'card' ? 'Bu karta ait tüm harcamalar da silinecektir.' : ''}</p><div class="mt-5 flex justify-end gap-3"><button id="cancel-delete-btn" class="bg-slate-600 text-slate-200 py-2 px-4 rounded-md">İptal</button><button id="confirm-delete-btn" class="bg-red-600 text-white py-2 px-4 rounded-md">Evet, Sil</button></div>`; el.deleteConfirmModal.style.display = 'block'; el.deleteConfirmBackdrop.style.display = 'block'; }
-            function closeDeleteModal() { el.deleteConfirmModal.style.display = 'none'; el.deleteConfirmBackdrop.style.display = 'none'; }
-            function openEditCardModal(id) { const card = cards.find(c => c.id === id); if (!card) return; el.editCardModal.innerHTML = `<h2 class="text-xl font-bold mb-4 text-white">Kartı Düzenle</h2><form id="edit-card-form" class="space-y-4"><input type="hidden" id="edit-card-id" value="${card.id}"><label>Kart Adı</label><input type="text" id="edit-card-name" value="${card.cardName}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Kesim Günü</label><input type="number" id="edit-statement-day" value="${card.statementDay}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Limit</label><input type="number" id="edit-card-limit" value="${card.cardLimit}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><div class="mt-6 flex justify-end space-x-3"><button type="button" id="cancel-edit-card-btn" class="bg-slate-600 px-4 py-2 rounded-md">İptal</button><button type="submit" class="text-white px-4 py-2 rounded-md" style="background-color: var(--primary-color);">Kaydet</button></div></form>`; el.editCardModal.style.display = 'block'; el.editCardBackdrop.style.display = 'block'; }
-            function closeEditCardModal() { el.editCardModal.style.display = 'none'; el.editCardBackdrop.style.display = 'none'; }
-            function openEditPurchaseModal(id) { const p = purchases.find(p => p.id === id); if (!p) return; el.editPurchaseModal.innerHTML = `<h2 class="text-xl font-bold mb-4 text-white">Harcamayı Düzenle</h2><form id="edit-purchase-form" class="space-y-4"><input type="hidden" id="edit-purchase-id" value="${p.id}"><label>Açıklama</label><input type="text" id="edit-purchase-name" value="${p.purchaseName}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Kategori</label><select id="edit-purchase-category" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required></select><label>Tarih</label><input type="date" id="edit-purchase-date" value="${p.purchaseDate}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Tutar</label><input type="number" id="edit-total-amount" step="0.01" value="${p.totalAmount}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Taksit</label><input type="number" id="edit-installments-count" min="1" value="${p.installmentsCount}" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required><label>Kart</label><select id="edit-card-select" class="mt-1 block w-full border border-slate-600 rounded-md p-2 bg-slate-700" required></select><div class="flex items-center mt-4"><input id="edit-purchase-recurring" type="checkbox" ${p.isRecurring ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="edit-purchase-recurring" class="ml-2 block text-sm">Aylık Tekrarla</label></div><div class="mt-6 flex justify-end space-x-3"><button type="button" id="cancel-edit-purchase-btn" class="bg-slate-600 px-4 py-2 rounded-md">İptal</button><button type="submit" class="text-white px-4 py-2 rounded-md" style="background-color: var(--primary-color);">Kaydet</button></div></form>`; updateCardSelects(); populateCategorySelects(); document.querySelector('#edit-purchase-form #edit-card-select').value = p.cardId; document.querySelector('#edit-purchase-form #edit-purchase-category').value = p.category || 'Diğer'; el.editPurchaseModal.style.display = 'block'; el.editPurchaseBackdrop.style.display = 'block'; }
-            function closeEditPurchaseModal() { el.editPurchaseModal.style.display = 'none'; el.editPurchaseBackdrop.style.display = 'none'; }
-            
-            // --- AYAR YÖNETİMİ & TEMA ---
-            async function updateSettings(settings) {
-                if (!currentUser) return;
-                const settingsRef = doc(db, 'users', currentUser.uid, 'settings', 'userProfile');
-                await updateDoc(settingsRef, settings);
-            }
-
-            function formatCurrency(value) { if (userSettings.privacyMode) return '₺ --,--'; const numberValue = parseFloat(value); return isNaN(numberValue) ? '₺ 0.00' : `₺ ${numberValue.toFixed(2)}`; }
-            function lightenColor(hex, percent) { let r = parseInt(hex.substring(1, 3), 16); let g = parseInt(hex.substring(3, 5), 16); let b = parseInt(hex.substring(5, 7), 16); r = parseInt(r * (100 + percent) / 100); g = parseInt(g * (100 + percent) / 100); b = parseInt(b * (100 + percent) / 100); r = (r<255) ? r : 255; g = (g<255) ? g : 255; b = (b<255) ? b : 255; const toHex = (c) => ('0'+(c.toString(16))).slice(-2); return `#${toHex(r)}${toHex(g)}${toHex(b)}`; }
-            function applyCustomTheme(hexColor) { const root = document.documentElement; root.className = 'dark'; const colorLight = lightenColor(hexColor, 20); const colorText = lightenColor(hexColor, 40); root.style.setProperty('--primary-color', hexColor); root.style.setProperty('--primary-color-light', colorLight); root.style.setProperty('--primary-text-color', colorText); root.style.setProperty('--summary-grad-from', hexColor); root.style.setProperty('--summary-grad-to', colorLight); }
-            function applyTheme(themeName) { const root = document.documentElement; root.style.removeProperty('--primary-color'); root.style.removeProperty('--primary-color-light'); root.style.removeProperty('--primary-text-color'); root.style.removeProperty('--summary-grad-from'); root.style.removeProperty('--summary-grad-to'); root.className = `dark ${themeName || ''}`; }
-            function applySettings() { if (userSettings.theme === 'custom' && userSettings.customThemeColor) { applyCustomTheme(userSettings.customThemeColor); el.customThemePicker.value = userSettings.customThemeColor; } else { applyTheme(userSettings.theme); } el.privacyModeToggle.checked = userSettings.privacyMode; }
-            
-            // --- UI GÜNCELLEME FONKSİYONLARI ---
-            function refreshUI() {
-                if (!currentUser) return;
-                const paymentSchedule = calculatePaymentSchedule();
+                }
                 
-                // DÜZELTME: Sayfa yenilendiğinde seçili ay'ı her zaman ilk ödenmemiş aya ayarla
-                if (selectedPlanMonth === null) {
-                    selectedPlanMonth = findFirstUnpaidMonth(paymentSchedule);
-                }
-
-                populateMonthSelector(paymentSchedule, selectedPlanMonth);
-                renderSummary(paymentSchedule);
-                renderPaymentPlan(paymentSchedule, selectedPlanMonth);
-                renderHistory(paymentSchedule);
-                renderCategoryChart();
-                renderCards();
-                renderPurchasesList();
-                renderSubscriptions();
-                updateCardSelects();
-                populateCategorySelects();
-            }
-
-            // DÜZENLENDİ: "Tüm Aylar" seçeneği en alta alındı.
-            function populateMonthSelector(schedule, currentSelection) {
-                if (!el.planMonthSelector) return;
-
-                el.planMonthSelector.innerHTML = ''; 
-                const allUnpaidMonths = Object.keys(schedule).filter(m => schedule[m].unpaidTotal > 0).sort();
-
-                allUnpaidMonths.forEach(monthKey => {
-                    el.planMonthSelector.add(new Option(dayjs(monthKey).format('MMMM YYYY'), monthKey));
-                });
-
-                el.planMonthSelector.add(new Option('Tüm Aylar', 'all'));
-
-                if (el.planMonthSelector.querySelector(`[value="${currentSelection}"]`)) {
-                    el.planMonthSelector.value = currentSelection;
+                let added, delivered;
+                
+                if (range === 'all') {
+                    added = allItems.length;
+                    delivered = allItems.filter(i => i.status === 'delivered').length;
                 } else {
-                    el.planMonthSelector.value = 'all';
+                    const rangeNum = parseInt(range, 10);
+                    const endDate = new Date();
+                    const startDate = new Date();
+                    startDate.setDate(endDate.getDate() - rangeNum);
+
+                    added = allItems.filter(i => (i.createdAt?.seconds ? new Date(i.createdAt.seconds * 1000) : new Date(i.createdAt)) >= startDate).length;
+                    delivered = allItems.filter(i => i.status === 'delivered' && (i.deliveredAt?.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt)) >= startDate).length;
                 }
+
+                contentDiv.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <p class="text-3xl font-bold text-green-400">${added}</p>
+                            <p class="text-sm text-secondary">Yeni Poşet Eklendi</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-blue-400">${delivered}</p>
+                            <p class="text-sm text-secondary">Poşet Teslim Edildi</p>
+                        </div>
+                    </div>
+                `;
             }
 
-            function renderCards() { if (!el.cardList) return; el.cardList.innerHTML = cards.length === 0 ? `<div class="text-center py-8"><p class="mt-1 text-sm text-slate-400">Başlamak için ilk kartınızı ekleyin!</p></div>` : ''; cards.forEach(card => { const totalSpending = purchases.filter(p => p.cardId === card.id).reduce((sum, p) => sum + parseFloat(p.totalAmount), 0); const remainingLimit = parseFloat(card.cardLimit) - totalSpending; const usagePercentage = card.cardLimit > 0 ? (totalSpending / card.cardLimit) * 100 : 0; const cardEl = document.createElement('div'); cardEl.className = 'bg-slate-700 p-4 rounded-lg border border-slate-600 transition-all duration-300'; cardEl.style.animation = 'fadeIn 0.5s'; cardEl.innerHTML = ` <div class="flex justify-between items-start"> <div> <p class="font-semibold text-lg text-white">${card.cardName}</p> <p class="text-xs text-slate-400">Kesim: Ayın ${card.statementDay}. günü</p> </div> <div class="flex items-center space-x-2"> <button data-id="${card.id}" class="edit-card-btn text-sm bg-blue-900/50 text-blue-300 font-semibold px-3 py-1 rounded-md hover:bg-blue-800/50">Düzenle</button> <button data-id="${card.id}" class="delete-card-btn text-sm bg-red-900/50 text-red-300 font-semibold px-3 py-1 rounded-md hover:bg-red-800/50">Sil</button> </div> </div> <div class="mt-3"> <div class="flex justify-between text-xs mb-1"> <span class="text-slate-400">Kullanılan: <span class="font-medium text-white">${formatCurrency(totalSpending)}</span></span> <span class="text-slate-400">Limit: <span class="font-medium text-white">${formatCurrency(card.cardLimit)}</span></span> </div> <div class="w-full bg-slate-600 rounded-full h-2.5"> <div class="h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(usagePercentage, 100)}%; background-color: ${usagePercentage > 90 ? '#ef4444' : usagePercentage > 70 ? '#f97316' : 'var(--primary-color)'};"></div> </div> <p class="text-right text-xs mt-1 text-green-400">Kalan Limit: <span class="font-bold">${formatCurrency(remainingLimit)}</span></p> </div>`; el.cardList.appendChild(cardEl); }); }
-            function renderPurchasesList() { if (!el.purchaseList) return; const searchTerm = document.getElementById('search-input').value.toLowerCase(); const category = document.getElementById('filter-category').value; let filtered = purchases.filter(p => p.purchaseName.toLowerCase().includes(searchTerm) && (category ? p.category === category : true)); el.purchaseList.innerHTML = filtered.length === 0 ? '<p class="text-sm text-slate-400 text-center py-4">Filtreye uygun harcama yok.</p>' : ''; [...filtered].sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate)).forEach(p => { const card = cards.find(c => c.id === p.cardId); const purchaseEl = document.createElement('div'); purchaseEl.className = 'flex justify-between items-center bg-slate-700 p-4 rounded-lg border border-slate-600'; const recurringIcon = p.isRecurring ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-2 text-cyan-400" title="Tekrarlayan Harcama" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 12A8 8 0 1013 5.372" /></svg>` : ''; purchaseEl.innerHTML = `<div><p class="font-semibold text-white">${p.purchaseName}${recurringIcon}</p><p class="text-sm text-slate-300"><span class="font-medium" style="color:var(--primary-text-color);">${p.category || 'Diğer'}</span> - ${formatCurrency(p.totalAmount / p.installmentsCount)} x ${p.installmentsCount} Taksit</p><p class="text-xs text-slate-400">Tarih: ${dayjs(p.purchaseDate).format('DD.MM.YYYY')} | Kart: ${card ? card.cardName : 'Bilinmeyen'}</p></div><div class="flex items-center space-x-2"><button data-id="${p.id}" class="edit-purchase-btn text-sm bg-blue-900/50 text-blue-300 font-semibold px-3 py-1 rounded-md hover:bg-blue-800/50">Düzenle</button><button data-id="${p.id}" class="delete-purchase-btn text-sm bg-red-900/50 text-red-300 font-semibold px-3 py-1 rounded-md hover:bg-red-800/50">Sil</button></div>`; el.purchaseList.appendChild(purchaseEl); }); }
-            function renderSubscriptions() { if (!el.subscriptionList) return; const subscriptions = purchases.filter(p => p.isRecurring); if (subscriptions.length === 0) { el.subscriptionList.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Gösterilecek abonelik bulunmuyor.</p>'; return; } el.subscriptionList.innerHTML = ''; let monthlyTotal = 0; subscriptions.forEach(p => { const card = cards.find(c => c.id === p.cardId); const monthlyCost = parseFloat(p.totalAmount) / parseInt(p.installmentsCount); monthlyTotal += monthlyCost; const subEl = document.createElement('div'); subEl.className = 'flex justify-between items-center bg-slate-700 p-4 rounded-lg border border-slate-600'; subEl.innerHTML = ` <div> <p class="font-semibold text-white">${p.purchaseName}</p> <p class="text-sm text-slate-300">${p.category || 'Diğer'}</p> <p class="text-xs text-slate-400">Kart: ${card ? card.cardName : 'Bilinmeyen'}</p> </div> <div class="text-right flex items-center space-x-3"> <div> <p class="font-semibold text-lg text-white">${formatCurrency(monthlyCost)}</p> <p class="text-xs text-slate-400">aylık</p> </div> <div class="flex flex-col space-y-2"> <button data-id="${p.id}" class="edit-subscription-btn text-blue-400 hover:text-blue-300" title="Düzenle"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button> <button data-id="${p.id}" class="cancel-subscription-btn text-red-400 hover:text-red-300" title="Aboneliği İptal Et"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></button> </div> </div>`; el.subscriptionList.appendChild(subEl); }); const summaryEl = document.createElement('div'); summaryEl.className = 'mt-6 pt-4 border-t border-slate-700 text-right'; summaryEl.innerHTML = `<p class="text-sm text-slate-300">Aylık Toplam Abonelik Gideri</p><p class="font-bold text-2xl text-white">${formatCurrency(monthlyTotal)}</p>`; el.subscriptionList.appendChild(summaryEl); }
-            function calculatePaymentSchedule() { const schedule = {}; purchases.forEach(p => { const card = cards.find(c => c.id === p.cardId); if (!card) return; const purchaseDate = dayjs(p.purchaseDate); const statementDay = parseInt(card.statementDay); const installmentAmount = parseFloat(p.totalAmount) / parseInt(p.installmentsCount); let firstStatementDate = purchaseDate.date(statementDay); if (purchaseDate.date() > statementDay) firstStatementDate = firstStatementDate.add(1, 'month'); for (let i = 0; i < p.installmentsCount; i++) { const currentStatementDate = firstStatementDate.add(i, 'month'); const dueDate = currentStatementDate.add(10, 'days'); const paymentMonthKey = dueDate.format('YYYY-MM'); if (!schedule[paymentMonthKey]) schedule[paymentMonthKey] = { total: 0, unpaidTotal: 0, details: {} }; if (!schedule[paymentMonthKey].details[p.cardId]) schedule[paymentMonthKey].details[p.cardId] = { amount: 0, dueDate: dueDate.format('YYYY-MM-DD') }; schedule[paymentMonthKey].details[p.cardId].amount += installmentAmount; schedule[paymentMonthKey].total += installmentAmount; const paymentKey = `${paymentMonthKey}_${p.cardId}`; if (!userSettings?.paidMonths?.[paymentKey]) schedule[paymentMonthKey].unpaidTotal += installmentAmount; } }); return schedule; }
-            
-            function renderPaymentPlan(schedule, selectedMonthKey) {
-                if (!el.paymentPlan) return;
+            // --- FIRESTORE İŞLEMLERİ ---
+            async function handleAddItem(e) {
+                e.preventDefault();
+                const customerName = toTrUpperCase(allElements.customerNameInput.value.trim());
+                const bagCount = parseInt(allElements.bagCountInput.value, 10);
+                if (!customerName || isNaN(bagCount) || bagCount < 1) return;
 
-                const monthsToRender = selectedMonthKey === 'all'
-                    ? Object.keys(schedule).filter(m => schedule[m].unpaidTotal > 0).sort()
-                    : (schedule[selectedMonthKey] ? [selectedMonthKey] : []);
+                try {
+                    const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
+                    if (!customerExists) {
+                        await addDoc(collection(db, 'customers'), { name: customerName });
+                    }
 
-                let content = '';
-                let hasAnyPayment = false;
-
-                monthsToRender.forEach((monthKey, index) => {
-                    const monthData = schedule[monthKey];
-                    if (!monthData) return; 
-
-                    let monthCardsContent = '';
-                    let unpaidTotalForMonth = 0;
-
-                    cards.forEach(card => {
-                        const paymentData = monthData.details[card.id];
-                        
-                        if (paymentData && paymentData.amount > 0) {
-                            const paymentKey = `${monthKey}_${card.id}`;
-                            const isPaid = userSettings?.paidMonths?.[paymentKey];
-
-                            if (isPaid) return; 
-
-                            hasAnyPayment = true;
-                            unpaidTotalForMonth += paymentData.amount;
-                            const dueDate = dayjs(paymentData.dueDate);
-                            const lateClass = dayjs().isAfter(dueDate, 'day') ? 'border-red-500/50' : 'border-slate-600';
-
-                            monthCardsContent += `
-                                <div class="bg-slate-900/50 p-4 rounded-lg border ${lateClass}">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <p class="font-bold text-white">${card.cardName}</p>
-                                            <p class="text-xs text-slate-400">Son Ödeme: ${dueDate.format('DD MMMM YYYY')}</p>
-                                        </div>
-                                        <p class="text-xl font-semibold text-white">${formatCurrency(paymentData.amount)}</p>
-                                    </div>
-                                    <div class="mt-3 text-right">
-                                        <button data-key="${paymentKey}" class="pay-btn text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full sm:w-auto">Ödendi Olarak İşaretle</button>
-                                    </div>
-                                </div>`;
-                        }
+                    await addDoc(collection(db, 'items'), {
+                        customerName,
+                        bagCount,
+                        note: '',
+                        status: 'active',
+                        createdAt: serverTimestamp(),
+                        lastModified: serverTimestamp(),
+                        deliveredAt: null
                     });
 
-                    if (monthCardsContent) {
-                        if (selectedMonthKey === 'all') {
-                            content += `
-                                <div class="${index > 0 ? 'mt-8' : ''}">
-                                    <h3 class="text-lg font-semibold text-white border-b border-slate-600 pb-2 mb-4">${dayjs(monthKey).format('MMMM YYYY')}</h3>
-                                    <div class="space-y-4">${monthCardsContent}</div>
-                                </div>`;
-                        } else {
-                            content += `
-                                <div class="space-y-4">${monthCardsContent}</div>
-                                <div class="mt-6 pt-4 border-t border-slate-700 text-right">
-                                    <p class="text-sm text-slate-300">${dayjs(monthKey).format('MMMM YYYY')} Kalan Toplam Ödeme</p>
-                                    <p class="font-bold text-2xl text-red-500">${formatCurrency(unpaidTotalForMonth)}</p>
-                                </div>`;
-                        }
-                    }
-                });
+                    allElements.addItemForm.reset();
+                    allElements.bagCountInput.value = 1;
+                    allElements.customerNameInput.focus();
 
-                if (!hasAnyPayment) {
-                    el.paymentPlan.innerHTML = `<p class="text-center text-slate-400 py-8">Görüntülenecek ödeme bulunmuyor.</p>`;
-                } else {
-                    el.paymentPlan.innerHTML = content;
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
                 }
             }
-            
-            function renderHistory(schedule) { if (!el.historyList || !el.historyPagination) return; const paidMonths = userSettings?.paidMonths || {}; const allPaidItems = Object.keys(paidMonths).map(paymentKey => { const paidInfo = paidMonths[paymentKey]; if (typeof paidInfo !== 'object' || !paidInfo.paidDate) return null; const [monthKey, cardId] = paymentKey.split('_'); const card = cards.find(c => c.id === cardId); const amount = schedule[monthKey]?.details[cardId]?.amount || 0; if (!card || amount <= 0) return null; return { cardName: card.cardName, amount: amount, key: paymentKey, paidDate: paidInfo.paidDate, month: monthKey }; }).filter(item => item !== null).sort((a, b) => dayjs(b.paidDate).valueOf() - dayjs(a.paidDate).valueOf()); if (allPaidItems.length === 0) { el.historyList.innerHTML = '<p class="text-center text-slate-400 py-8">Henüz ödenmiş harcama yok.</p>'; el.historyPagination.innerHTML = ''; return; } const totalPages = Math.ceil(allPaidItems.length / HISTORY_ITEMS_PER_PAGE); historyCurrentPage = Math.max(1, Math.min(historyCurrentPage, totalPages)); const startIndex = (historyCurrentPage - 1) * HISTORY_ITEMS_PER_PAGE; const pageItems = allPaidItems.slice(startIndex, startIndex + HISTORY_ITEMS_PER_PAGE); let content = '<div class="space-y-4">'; pageItems.forEach(item => { content += ` <div class="bg-slate-700/50 p-4 rounded-lg"> <div class="flex justify-between items-start"> <div> <p class="font-semibold text-white">${item.cardName}</p> <p class="text-sm" style="color:var(--primary-text-color);">${dayjs(item.month).format('MMMM YYYY')} Ekstresi</p> </div> <span class="font-semibold text-xl text-green-400">${formatCurrency(item.amount)}</span> </div> <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-600/50"> <p class="text-xs text-slate-400">Ödendi: ${dayjs(item.paidDate).format('DD MMMM YYYY, dddd')}</p> <button data-key="${item.key}" class="undo-pay-btn text-xs text-slate-500 hover:text-white">[Geri Al]</button> </div> </div>`; }); content += '</div>'; el.historyList.innerHTML = content; let paginationContent = ''; if (totalPages > 1) paginationContent = ` <button id="history-prev-btn" class="px-4 py-2 text-sm font-medium text-white bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed" ${historyCurrentPage === 1 ? 'disabled' : ''}>Geri</button> <span class="text-sm text-slate-400">Sayfa ${historyCurrentPage} / ${totalPages}</span> <button id="history-next-btn" class="px-4 py-2 text-sm font-medium text-white bg-slate-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed" ${historyCurrentPage === totalPages ? 'disabled' : ''}>İleri</button> `; el.historyPagination.innerHTML = paginationContent; }
-            function renderCategoryChart() { if (!el.categoryChartCanvas) return; const ctx = el.categoryChartCanvas.getContext('2d'); if (categoryChartInstance) categoryChartInstance.destroy(); if(userSettings.privacyMode) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.font = "16px Inter"; ctx.fillStyle = '#94a3b8'; ctx.textAlign = "center"; ctx.fillText("Veriler Gizlilik Modu'nda gizlenmiştir.", ctx.canvas.width / 2, ctx.canvas.height / 2); return; } const categoryTotals = purchases.reduce((acc, p) => { acc[p.category || 'Diğer'] = (acc[p.category || 'Diğer'] || 0) + parseFloat(p.totalAmount); return acc; }, {}); const labels = Object.keys(categoryTotals); const data = Object.values(categoryTotals); if (labels.length === 0) { ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.font = "16px Inter"; ctx.fillStyle = '#94a3b8'; ctx.textAlign = "center"; ctx.fillText("Gösterilecek harcama verisi yok.", ctx.canvas.width / 2, ctx.canvas.height / 2); return; } categoryChartInstance = new Chart(ctx, { type: 'pie', data: { labels, datasets: [{ label: 'Harcama Dağılımı', data, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'], borderColor: '#1f2937', borderWidth: 2 }] }, options: { responsive: true, plugins: { legend: { position: 'top', labels: { color: '#e2e8f0' } } } } }); }
-            function renderSummary(schedule) { if (!el.summaryPanel) return; let thisMonthPayment = 0; let totalDebt = 0; let nextDueDateInfo = null; let nextStatementDateInfo = null; const today = dayjs(); const paidMonths = userSettings?.paidMonths || {}; Object.entries(schedule).forEach(([monthKey, monthData]) => { Object.entries(monthData.details).forEach(([cardId, cardData]) => { const paymentKey = `${monthKey}_${cardId}`; if (!paidMonths[paymentKey]) { const amount = cardData.amount; const dueDate = dayjs(cardData.dueDate); totalDebt += amount; if (dueDate.format('YYYY-MM') === today.format('YYYY-MM')) thisMonthPayment += amount; if (dueDate.isAfter(today) && (!nextDueDateInfo || dueDate.isBefore(nextDueDateInfo.date))) { const card = cards.find(c => c.id === cardId); nextDueDateInfo = { date: dueDate, cardName: card?.cardName || 'Bilinmeyen Kart' }; } } }); }); cards.forEach(card => { const statementDay = parseInt(card.statementDay); if (isNaN(statementDay)) return; let nextStatementDate = today.date(statementDay); if (today.isSameOrAfter(nextStatementDate, 'day')) nextStatementDate = nextStatementDate.add(1, 'month'); if (!nextStatementDateInfo || nextStatementDate.isBefore(nextStatementDateInfo.date)) nextStatementDateInfo = { date: nextStatementDate, cardName: card.cardName }; }); el.summaryPanel.innerHTML = `<h2 class="text-xl font-bold mb-4">Durum Özeti</h2><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"><div><p class="text-sm opacity-80">Bu Ay Kalan Ödeme</p><p class="text-2xl font-bold">${formatCurrency(thisMonthPayment)}</p></div><div><p class="text-sm opacity-80">En Yakın Son Ödeme</p><p class="text-2xl font-bold">${nextDueDateInfo ? nextDueDateInfo.date.format('DD.MM.YYYY') : '-'}</p><p class="text-xs opacity-80">${nextDueDateInfo ? nextDueDateInfo.cardName : ''}</p></div><div><p class="text-sm opacity-80">En Yakın Kesim Tarihi</p><p class="text-2xl font-bold">${nextStatementDateInfo ? nextStatementDateInfo.date.format('DD.MM.YYYY') : '-'}</p><p class="text-xs opacity-80">${nextStatementDateInfo ? nextStatementDateInfo.cardName : ''}</p></div><div><p class="text-sm opacity-80">Toplam Kalan Borç</p><p class="text-2xl font-bold">${formatCurrency(totalDebt)}</p></div></div>`; }
-            function findFirstUnpaidMonth(schedule) { const today = dayjs(); const currentMonthKey = today.format('YYYY-MM'); const sortedMonths = Object.keys(schedule).sort(); for (const monthKey of sortedMonths) if (monthKey >= currentMonthKey && schedule[monthKey].unpaidTotal > 0) return monthKey; const unpaidMonths = sortedMonths.filter(m => schedule[m].unpaidTotal > 0); if(unpaidMonths.length > 0) return unpaidMonths[0]; return 'all'; }
-            function getFirstPaymentMonthKey(purchase) { const card = cards.find(c => c.id === purchase.cardId); if (!card) return dayjs().format('YYYY-MM'); const purchaseDate = dayjs(purchase.purchaseDate); const statementDay = parseInt(card.statementDay); let firstStatementDate = purchaseDate.date(statementDay); if (purchaseDate.date() > statementDay) firstStatementDate = firstStatementDate.add(1, 'month'); return firstStatementDate.add(10, 'days').format('YYYY-MM'); }
-            function updateCardSelects() { document.querySelectorAll('#card-select, #edit-card-select').forEach(select => { if (!select) return; const currentVal = select.value; select.innerHTML = '<option value="">Kart Seçin</option>'; cards.forEach(card => select.add(new Option(card.cardName, card.id))); if (cards.find(c => c.id === currentVal)) select.value = currentVal; }); }
-            function populateCategorySelects() { document.querySelectorAll('#purchase-category, #edit-purchase-category, #filter-category').forEach(select => { if (!select) return; const isFilter = select.id === 'filter-category'; select.innerHTML = `<option value="">${isFilter ? 'Tüm Kategoriler' : 'Kategori Seçin'}</option>`; CATEGORIES.forEach(cat => select.add(new Option(cat, cat))); }); }
-            function handleQuickReportRange(range) { const endDateInput = document.getElementById('end-date'); const startDateInput = document.getElementById('start-date'); const today = dayjs(); endDateInput.value = today.format('YYYY-MM-DD'); let startDate; if (range === 'week') startDate = today.subtract(7, 'day'); else if (range === 'month') startDate = today.subtract(1, 'month'); else if (range === 'year') startDate = today.subtract(1, 'year'); if (startDate) { startDateInput.value = startDate.format('YYYY-MM-DD'); handleGenerateReport(); } }
-            function handleGenerateReport() { const startDate = document.getElementById('start-date').value; const endDate = document.getElementById('end-date').value; if (!startDate || !endDate) { showInfoModal('Lütfen bir başlangıç ve bitiş tarihi seçin.', 'Uyarı', 'error'); return; } const filteredPurchases = purchases.filter(p => { const purchaseDate = dayjs(p.purchaseDate); return purchaseDate.isAfter(dayjs(startDate).subtract(1, 'day')) && purchaseDate.isBefore(dayjs(endDate).add(1, 'day')); }); const outputEl = document.getElementById('report-output'); if (filteredPurchases.length === 0) { outputEl.innerHTML = '<p class="text-center text-slate-400">Seçili tarih aralığında raporlanacak veri bulunamadı.</p>'; return; } let total = 0; let reportHTML = '<div class="space-y-4">'; filteredPurchases.sort((a,b) => dayjs(b.purchaseDate).valueOf() - dayjs(a.purchaseDate).valueOf()).forEach(p => { const card = cards.find(c => c.id === p.cardId); total += parseFloat(p.totalAmount); reportHTML += `<div class="bg-slate-700 p-4 rounded-lg"><p class="font-semibold">${p.purchaseName}</p><p class="text-sm text-slate-300">${p.category || 'Diğer'} - ${formatCurrency(p.totalAmount)}</p><p class="text-xs text-slate-400">${dayjs(p.purchaseDate).format('DD.MM.YYYY')} - ${card?.cardName || 'Bilinmeyen'}</p></div>`; }); reportHTML += `</div><div class="mt-6 text-right font-bold text-xl">Toplam Harcama: ${formatCurrency(total)}</div><div class="mt-4 flex justify-end"><button id="export-pdf-btn" class="bg-red-600 text-white py-2 px-4 rounded-md font-semibold">PDF İndir</button></div>`; outputEl.innerHTML = reportHTML; }
-            function exportReportAsPDF(startDate, endDate, filteredPurchases) { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.setFont('Helvetica', 'normal'); doc.setFontSize(18); doc.text("Harcama Raporu", 14, 22); doc.setFontSize(11); doc.text(`Tarih Araligi: ${dayjs(startDate).format('DD.MM.YYYY')} - ${dayjs(endDate).format('DD.MM.YYYY')}`, 14, 30); const tableColumn = ["Tarih", "Aciklama", "Kategori", "Kart", "Tutar (TL)"]; const tableRows = []; let totalAmount = 0; filteredPurchases.sort((a,b) => dayjs(b.purchaseDate).valueOf() - dayjs(a.purchaseDate).valueOf()).forEach(p => { const card = cards.find(c => c.id === p.cardId); const purchaseData = [ dayjs(p.purchaseDate).format('DD.MM.YYYY'), p.purchaseName, p.category || 'Diger', card ? card.cardName : 'Bilinmiyor', parseFloat(p.totalAmount).toFixed(2) ]; tableRows.push(purchaseData); totalAmount += parseFloat(p.totalAmount); }); doc.autoTable({ head: [tableColumn], body: tableRows, startY: 35, theme: 'grid', headStyles: { fillColor: [109, 40, 217] }, }); const finalY = doc.lastAutoTable.finalY || 50; doc.setFontSize(12); doc.text(`Toplam Harcama: ${totalAmount.toFixed(2)} TL`, 14, finalY + 15); doc.save(`harcama-raporu-${dayjs().format('YYYY-MM-DD')}.pdf`); showInfoModal('Raporunuz başarıyla PDF olarak indirildi.', 'Başarılı', 'success'); }
 
-            // --- OLAY İŞLEYİCİLER (EVENT HANDLERS) ---
-            async function handleFormSubmits(e) {
-                if (!currentUser) return;
-                e.preventDefault();
-                const form = e.target;
-                
-                if (form.id === 'add-purchase-form') {
-                    const newPurchase = { purchaseName: form.elements['purchase-name'].value, purchaseDate: form.elements['purchase-date'].value, totalAmount: parseFloat(form.elements['total-amount'].value), installmentsCount: parseInt(form.elements['installments-count'].value), cardId: form.elements['card-select'].value, category: form.elements['purchase-category'].value, isRecurring: form.elements['purchase-recurring'].checked, createdAt: serverTimestamp() };
+            async function updateItem(id, data) {
+                if (data.note) {
+                    data.note = toTrUpperCase(data.note);
+                }
+                const itemRef = doc(db, 'items', id);
+                await updateDoc(itemRef, { ...data, lastModified: serverTimestamp() });
+            }
+
+            async function deleteItem(id) {
+                await deleteDoc(doc(db, 'items', id));
+            }
+            
+            async function deleteCustomer(id) {
+                await deleteDoc(doc(db, 'customers', id));
+            }
+            
+            async function updateCustomerNameAndItems(customerId, oldName, newName) {
+                const upperNewName = toTrUpperCase(newName);
+                allElements.loadingText.textContent = 'Müşteri adı ve ilgili poşetler güncelleniyor...';
+                allElements.loadingOverlay.style.display = 'flex';
+                allElements.loadingOverlay.style.opacity = '1';
+                try {
+                    const batch = writeBatch(db);
+
+                    const customerRef = doc(db, 'customers', customerId);
+                    batch.update(customerRef, { name: upperNewName });
                     
-                    selectedPlanMonth = getFirstPaymentMonthKey(newPurchase);
-
-                    await addDoc(collection(db, 'users', currentUser.uid, 'purchases'), newPurchase);
-                    form.reset();
-                    el.purchaseDateInput.valueAsDate = new Date();
-                    showInfoModal('Harcama başarıyla eklendi.', 'Başarılı', 'success');
-                } else if (form.id === 'add-card-form') {
-                    const newCard = { cardName: form.elements['card-name'].value, statementDay: parseInt(form.elements['statement-day'].value), cardLimit: parseFloat(form.elements['card-limit'].value), createdAt: serverTimestamp() };
-                    await addDoc(collection(db, 'users', currentUser.uid, 'cards'), newCard);
-                    form.reset();
-                } else if (form.id === 'edit-card-form') {
-                    const cardId = form.elements['edit-card-id'].value;
-                    const updatedCard = { cardName: form.elements['edit-card-name'].value, statementDay: parseInt(form.elements['edit-statement-day'].value), cardLimit: parseFloat(form.elements['edit-card-limit'].value) };
-                    await updateDoc(doc(db, 'users', currentUser.uid, 'cards', cardId), updatedCard);
-                    closeEditCardModal();
-                } else if (form.id === 'edit-purchase-form') {
-                    const purchaseId = form.elements['edit-purchase-id'].value;
-                    const updatedPurchase = { purchaseName: form.elements['edit-purchase-name'].value, purchaseDate: form.elements['edit-purchase-date'].value, totalAmount: parseFloat(form.elements['edit-total-amount'].value), installmentsCount: parseInt(form.elements['edit-installments-count'].value), cardId: form.elements['edit-card-select'].value, category: form.elements['edit-purchase-category'].value, isRecurring: form.elements['edit-purchase-recurring'].checked };
-                    await updateDoc(doc(db, 'users', currentUser.uid, 'purchases', purchaseId), updatedPurchase);
-                    closeEditPurchaseModal();
+                    const itemsQuery = query(collection(db, 'items'), where("customerName", "==", oldName));
+                    const itemsSnapshot = await getDocs(itemsQuery);
+                    itemsSnapshot.forEach(itemDoc => {
+                        batch.update(itemDoc.ref, { customerName: upperNewName });
+                    });
+                    
+                    await batch.commit();
+                } catch(error) {
+                     console.error("Müşteri adı güncellenirken hata:", error);
+                     showSimpleMessageModal("Hata", "Müşteri adı güncellenirken bir sorun oluştu.");
+                } finally {
+                    allElements.loadingOverlay.style.opacity = '0';
+                    setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
                 }
             }
-            function bindEventListeners() {
-                document.body.addEventListener('submit', handleFormSubmits);
-                document.body.addEventListener('input', e => {
-                    if (e.target.id === 'search-input') renderPurchasesList();
-                    if (e.target.id === 'custom-theme-picker') updateSettings({ theme: 'custom', customThemeColor: e.target.value });
+
+            async function importDataFromJSON(data) {
+                if (!data.allItems || !data.allCustomers) {
+                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.');
+                    return;
+                }
+
+                allElements.loadingText.textContent = 'Veriler siliniyor...';
+                
+                const itemsBatch = writeBatch(db);
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
+                await itemsBatch.commit();
+                
+                const customersBatch = writeBatch(db);
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
+                await customersBatch.commit();
+
+                allElements.loadingText.textContent = 'Veriler içe aktarılıyor...';
+                
+                const newItemsBatch = writeBatch(db);
+                data.allItems.forEach(item => {
+                    const newItemRef = doc(collection(db, 'items'));
+                    const cleanItem = { ...item };
+                    delete cleanItem.id;
+                    if (cleanItem.customerName) cleanItem.customerName = toTrUpperCase(cleanItem.customerName);
+                    if (cleanItem.note) cleanItem.note = toTrUpperCase(cleanItem.note);
+                    if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
+                    if (cleanItem.lastModified) cleanItem.lastModified = new Date(cleanItem.lastModified.seconds ? cleanItem.lastModified.seconds * 1000 : cleanItem.lastModified);
+                    if (cleanItem.deliveredAt) cleanItem.deliveredAt = new Date(cleanItem.deliveredAt.seconds ? cleanItem.deliveredAt.seconds * 1000 : cleanItem.deliveredAt);
+                    newItemsBatch.set(newItemRef, cleanItem);
                 });
-                document.body.addEventListener('change', e => {
-                    if (e.target.id === 'filter-category') renderPurchasesList();
-                    if (e.target.id === 'privacy-mode-toggle') updateSettings({ privacyMode: e.target.checked });
-                    if (e.target.id === 'plan-month-selector') {
-                        selectedPlanMonth = e.target.value;
-                        renderPaymentPlan(calculatePaymentSchedule(), selectedPlanMonth);
+                await newItemsBatch.commit();
+
+                const newCustomersBatch = writeBatch(db);
+                data.allCustomers.forEach(customer => {
+                    const newCustomerRef = doc(collection(db, 'customers'));
+                    const cleanCustomer = { ...customer };
+                    if (cleanCustomer.name) cleanCustomer.name = toTrUpperCase(cleanCustomer.name);
+                    delete cleanCustomer.id;
+                    newCustomersBatch.set(newCustomerRef, cleanCustomer);
+                });
+                await newCustomersBatch.commit();
+
+                showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
+            }
+            
+            async function resetAllData() {
+                 allElements.loadingText.textContent = 'Tüm veriler siliniyor...';
+                 allElements.loadingOverlay.style.display = 'flex';
+                 allElements.loadingOverlay.style.opacity = '1';
+
+                const itemsBatch = writeBatch(db);
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
+                await itemsBatch.commit();
+                
+                const customersBatch = writeBatch(db);
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
+                await customersBatch.commit();
+                
+                allElements.loadingOverlay.style.opacity = '0';
+                setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
+            }
+
+            // --- UYGULAMA BAŞLATMA VE VERİ DİNLEME ---
+            function startFirebaseConnection() {
+                clearTimeout(connectionTimeout);
+                connectionTimeout = setTimeout(() => {
+                    showConnectionError('Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin.');
+                }, 10000); 
+
+                try {
+                    if (!app) {
+                        app = initializeApp(firebaseConfig);
+                        auth = getAuth(app);
+                        db = getFirestore(app);
+                    }
+                    
+                    onAuthStateChanged(auth, user => {
+                        clearTimeout(connectionTimeout);
+                        if (user) {
+                            listenToData();
+                        } else {
+                            signInAnonymously(auth).catch(error => {
+                                console.error("Anonymous sign-in failed: ", error);
+                                showConnectionError('Veritabanı ile kimlik doğrulaması yapılamadı.');
+                            });
+                        }
+                    });
+                } catch(e) {
+                    clearTimeout(connectionTimeout);
+                    console.error("Firebase initialization error:", e);
+                    showConnectionError('Uygulama başlatılamadı. Yapılandırmayı kontrol edin.');
+                }
+            }
+
+            function initialize() {
+                settings = getSettingsFromStorage();
+                applySettings();
+                updateSortButtons();
+                switchTab('list', true);
+                allElements.retryButton.addEventListener('click', () => {
+                    allElements.loadingText.textContent = 'Veritabanına bağlanılıyor...';
+                    allElements.loadingSpinner.style.display = 'block';
+                    allElements.retryContainer.classList.add('hidden');
+                    isAppInitialized = false; // Allow re-initialization
+                    startFirebaseConnection();
+                });
+                
+                document.body.addEventListener('input', e => {
+                    if (e.target.matches('input[type="text"], input[type="search"], textarea')) {
+                        const start = e.target.selectionStart;
+                        const end = e.target.selectionEnd;
+                        e.target.value = toTrUpperCase(e.target.value);
+                        e.target.setSelectionRange(start, end);
                     }
                 });
-                document.body.addEventListener('click', handleBodyClicks);
-            }
-            async function handleBodyClicks(e) {
-                const btn = e.target.closest('button');
-                if (!btn || !currentUser) return;
-                const id = btn.dataset.id, key = btn.dataset.key;
-                
-                if (btn.matches('.pay-btn')) { 
-                    const newPaidStatus = { ...userSettings.paidMonths, [key]: { paidDate: dayjs().toISOString() } };
-                    await updateSettings({ paidMonths: newPaidStatus });
-                    selectedPlanMonth = findFirstUnpaidMonth(calculatePaymentSchedule());
-                    refreshUI();
-                    return;
-                }
-                if (btn.matches('.undo-pay-btn')) { 
-                    const newPaidStatus = { ...userSettings.paidMonths };
-                    delete newPaidStatus[key];
-                    await updateSettings({ paidMonths: newPaidStatus });
-                    selectedPlanMonth = key.split('_')[0]; 
-                    refreshUI();
-                    return;
-                }
 
-                if (btn.id === 'history-prev-btn') { if(historyCurrentPage > 1) { historyCurrentPage--; renderHistory(calculatePaymentSchedule()); } return; }
-                if (btn.id === 'history-next-btn') { historyCurrentPage++; renderHistory(calculatePaymentSchedule()); return; }
-                if (btn.closest('#bottom-nav')) { document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.main-panel').forEach(p => p.classList.remove('active')); document.getElementById(`panel-${btn.dataset.panel}`).classList.add('active'); return; } 
-                if (btn.closest('#theme-selector') && btn.dataset.theme !== undefined) { updateSettings({ theme: btn.dataset.theme, customThemeColor: null }); return; } 
-                if (btn.matches('.quick-range-btn')) { handleQuickReportRange(btn.dataset.range); return; } 
-                if (btn.id === 'generate-report-btn') { handleGenerateReport(); return; } 
-                if (btn.id === 'export-pdf-btn') { exportReportAsPDF(document.getElementById('start-date').value, document.getElementById('end-date').value, purchases); return; } 
-                if (btn.id === 'delete-all-data-btn') { handleDeleteAllData(); return; } 
-                if (btn.id === 'cancel-delete-btn') closeDeleteModal(); 
-                if (btn.id === 'confirm-delete-btn') { handleConfirmDelete(); return; } 
-                if (btn.matches('.delete-card-btn')) { const card = cards.find(c => c.id === id); openDeleteModal(id, 'card', card.cardName, btn.closest('.bg-slate-700')); return; } 
-                if (btn.matches('.delete-purchase-btn')) { const purchase = purchases.find(p => p.id === id); openDeleteModal(id, 'purchase', purchase.purchaseName, btn.closest('.flex')); return; } 
-                if (btn.matches('.edit-card-btn')) { openEditCardModal(id); return; } 
-                if (btn.matches('.edit-purchase-btn') || btn.matches('.edit-subscription-btn')) { openEditPurchaseModal(id); return; } 
-                if (btn.matches('.cancel-subscription-btn')) { handleCancelSubscription(id); return; }
+                startFirebaseConnection();
             }
 
-            function handleDeleteAllData() { showConfirmModal('<b>Bu işlem KESİNLİKLE GERİ ALINAMAZ.</b><br><br>Tüm kart ve harcama verileriniz kalıcı olarak silinecektir. Devam etmek istediğinizden emin misiniz?', 'Tüm Verileri Sil', async () => { if(!currentUser) return; const batch = writeBatch(db); const cardsRef = collection(db, 'users', currentUser.uid, 'cards'); const purchasesRef = collection(db, 'users', currentUser.uid, 'purchases'); cards.forEach(c => batch.delete(doc(cardsRef, c.id))); purchases.forEach(p => batch.delete(doc(purchasesRef, p.id))); await batch.commit(); showInfoModal('Tüm verileriniz başarıyla silindi.', 'Başarılı', 'success'); }, 'EVET, TÜMÜNÜ SİL'); }
-            async function handleConfirmDelete() { if(!currentUser) return; if(itemToDelete.element) itemToDelete.element.classList.add('item-fade-out'); setTimeout(async () => { if (itemToDelete.type === 'card') { const batch = writeBatch(db); const cardRef = doc(db, 'users', currentUser.uid, 'cards', itemToDelete.id); batch.delete(cardRef); const associatedPurchases = purchases.filter(p => p.cardId === itemToDelete.id); associatedPurchases.forEach(p => { const purchaseRef = doc(db, 'users', currentUser.uid, 'purchases', p.id); batch.delete(purchaseRef); }); await batch.commit(); } else if(itemToDelete.type === 'purchase') { await deleteDoc(doc(db, 'users', currentUser.uid, 'purchases', itemToDelete.id)); } closeDeleteModal(); }, 300); }
-            async function handleCancelSubscription(id) { const purchase = purchases.find(p => p.id === id); if(!purchase || !currentUser) return; showConfirmModal(`"${purchase.purchaseName}" aboneliğini iptal etmek istediğinize emin misiniz? Bu işlem harcamayı silmez, sadece tekrarlama özelliğini kapatır.`, 'Abonelik İptali', async () => { await updateDoc(doc(db, 'users', currentUser.uid, 'purchases', id), { isRecurring: false }); }); }
+            function listenToData() {
+                if (itemsUnsubscribe) itemsUnsubscribe();
+                if (customersUnsubscribe) customersUnsubscribe();
+
+                const itemsQuery = query(collection(db, "items"));
+                itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
+                    allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAll();
+                    showApp(); 
+                }, error => {
+                    console.error("Error listening to items: ", error);
+                    showConnectionError('Veri alınırken bir hata oluştu.');
+                });
+
+                const customersQuery = query(collection(db, "customers"));
+                customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
+                    allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const modalList = document.getElementById('modal-customers-list');
+                    if (modalList && !allElements.modalContainer.classList.contains('hidden')) {
+                        const searchInput = document.getElementById('modal-customer-search');
+                        renderCustomerModalList(searchInput?.value || '');
+                    }
+                }, error => {
+                    console.error("Error listening to customers: ", error)
+                    showConnectionError('Müşteri verileri alınamadı.');
+                });
+            }
             
-            // --- BAŞLANGIÇ ---
-            function init() {
-                if ('serviceWorker' in navigator) {
-                    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(reg => console.log('Service Worker registered.')).catch(err => console.log('Service Worker registration failed:', err)); });
+            // --- EVENT LISTENERS ---
+            allElements.addItemForm.addEventListener('submit', handleAddItem);
+            
+            allElements.searchItemsInput.addEventListener('input', () => renderItems(allItems.filter(item => item.status !== 'delivered')));
+            allElements.searchArchiveInput.addEventListener('input', () => {
+                archiveCurrentPage = 1;
+                renderArchive(allItems.filter(item => item.status === 'delivered'));
+            });
+            allElements.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
+            allElements.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
+            allElements.sortDateBtn.addEventListener('click', () => handleSort('date'));
+
+            allElements.mainContent.addEventListener('click', async (e) => {
+                const button = e.target.closest('button[data-action]');
+                if (!button) return;
+
+                const itemDiv = button.closest('div[data-id]');
+                if (!itemDiv) return;
+                
+                const id = itemDiv.dataset.id;
+                const action = button.dataset.action;
+                const item = allItems.find(i => i.id === id);
+                if (!item) return;
+
+                switch(action) {
+                    case 'deliver':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`,
+                            () => updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() })
+                        );
+                        break;
+                    case 'restore':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`,
+                            () => updateItem(id, { status: 'active', deliveredAt: null }),
+                            "Geri Yükle"
+                        );
+                        break;
+                    case 'delete-permanent':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
+                            () => deleteItem(id),
+                            "Kalıcı Olarak Sil", true
+                        );
+                        break;
+                    case 'delete-item':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
+                            () => deleteItem(id),
+                            "İptal Et ve Sil", true
+                        );
+                        break;
+                    case 'edit-count': {
+                        const result = await showInputModal("Poşet Sayısını Düzenle", `'${item.customerName}' için yeni poşet sayısını girin:`, 'number', item.bagCount);
+                        if (result.confirmed && result.value && !isNaN(result.value) && result.value > 0) {
+                            updateItem(id, { bagCount: parseInt(result.value, 10) });
+                        }
+                        break;
+                    }
+                    case 'edit-note': {
+                        const result = await showInputModal("Notu Düzenle", `'${item.customerName}' için not:`, 'textarea', item.note || '');
+                        if (result.confirmed) {
+                           updateItem(id, { note: result.value.trim() });
+                        }
+                        break;
+                    }
+                     case 'delete-note-from-tab':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`,
+                            () => updateItem(id, { note: '' }),
+                            "Notu Sil", true
+                        );
+                        break;
                 }
-                bindEventListeners();
-                el.purchaseDateInput.valueAsDate = new Date();
+            });
+            
+            document.querySelector('#panel-settings').addEventListener('click', async (e) => {
+                 const themeBtn = e.target.closest('.theme-btn');
+                 if(themeBtn) {
+                     settings.theme = themeBtn.dataset.theme;
+                     saveSettingsToStorage(settings);
+                     applySettings();
+                     return;
+                 }
+                 
+                 const targetId = e.target.id;
+                 switch(targetId) {
+                    case 'manage-customers-btn':
+                        showCustomerManagementModal();
+                        break;
+                    case 'export-json-btn':
+                        exportDataToJSON();
+                        break;
+                    case 'import-json-btn':
+                        allElements.importFileInput.click();
+                        break;
+                    case 'export-pdf-btn':
+                        exportToPDF();
+                        break;
+                    case 'export-csv-btn':
+                        exportToCSV();
+                        break;
+                    case 'reset-items-btn':
+                        showConfirmationModal(
+                            "Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.",
+                            async () => {
+                                allElements.loadingText.textContent = 'Poşetler siliniyor...';
+                                allElements.loadingOverlay.style.display = 'flex';
+                                const batch = writeBatch(db);
+                                allItems.forEach(item => batch.delete(doc(db, 'items', item.id)));
+                                await batch.commit();
+                                allElements.loadingOverlay.style.display = 'none';
+                            }, "Evet, Sil", true
+                        );
+                        break;
+                    case 'reset-all-btn':
+                        showConfirmationModal(
+                            "Uygulamadaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+                            resetAllData, "EVET, TÜMÜNÜ SİL", true
+                        );
+                        break;
+                 }
+            });
+            
+            allElements.importFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        await showConfirmationModal(
+                            "Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Bu işlem geri alınamaz. Emin misiniz?",
+                            async () => {
+                                allElements.loadingOverlay.style.display = 'flex';
+                                await importDataFromJSON(data);
+                                allElements.loadingOverlay.style.display = 'none';
+                            }, "Onayla ve Yükle"
+                        );
+                    } catch (error) {
+                        console.error("Import error:", error);
+                        showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = null;
+            });
+            
+            document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
+                settings.fontSize = e.target.value;
+                document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
+                document.body.style.fontSize = `${settings.fontSize}px`;
+             });
+            document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
+                settings.fontSize = e.target.value;
+                 saveSettingsToStorage(settings);
+             });
+            
+            document.querySelectorAll('.report-range-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
+                    btn.classList.add('accent-bg');
+                    renderPeriodicReport(btn.dataset.range);
+                });
+            });
+
+            document.querySelector('nav').addEventListener('click', (e) => {
+                if (e.target.id && e.target.id.startsWith('tab-')) {
+                    switchTab(e.target.id.replace('tab-', ''));
+                }
+            });
+
+            allElements.customerNameInput.addEventListener("input", () => {
+                const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
+                allElements.suggestionsBox.innerHTML = "";
+                if (searchTerm.length === 0) {
+                    allElements.suggestionsBox.classList.add("hidden");
+                    return;
+                }
+
+                const filtered = allCustomers
+                    .filter(c => toTrUpperCase(c.name).includes(searchTerm))
+                    .map(c => c.name);
+
+                if (filtered.length > 0) {
+                    filtered.forEach(name => {
+                        const div = document.createElement("div");
+                        div.textContent = name;
+                        div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
+                        div.addEventListener("click", () => {
+                            allElements.customerNameInput.value = name;
+                            allElements.suggestionsBox.classList.add("hidden");
+                            allElements.bagCountInput.focus();
+                        });
+                        allElements.suggestionsBox.appendChild(div);
+                    });
+                    allElements.suggestionsBox.classList.remove("hidden");
+                } else {
+                    allElements.suggestionsBox.classList.add("hidden");
+                }
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest('.relative')) {
+                    allElements.suggestionsBox.classList.add("hidden");
+                }
+            });
+            
+            // --- MODAL, SIRALAMA VE DİĞER YARDIMCI FONKSİYONLAR ---
+            function switchTab(target, instant = false) {
+                const tabs = document.querySelectorAll('nav button[id^="tab-"]');
+                const panels = document.querySelectorAll('.panel[id^="panel-"]');
+                
+                tabs.forEach(tab => tab.classList.remove('tab-active'));
+                document.getElementById(`tab-${target}`).classList.add('tab-active');
+
+                panels.forEach(panel => {
+                    const isTargetPanel = panel.id === `panel-${target}`;
+                    if (instant) {
+                        panel.style.transition = 'none';
+                        panel.classList.toggle('hidden', !isTargetPanel);
+                        requestAnimationFrame(() => panel.style.transition = '');
+                    } else {
+                        panel.classList.toggle('hidden', !isTargetPanel);
+                    }
+                });
             }
 
-            init();
+            function handleSort(type) {
+                if (sortState.type === type) {
+                    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortState.type = type;
+                    sortState.direction = (type === 'bags' || type === 'date') ? 'desc' : 'asc';
+                }
+                updateSortButtons();
+                renderItems(allItems.filter(item => item.status !== 'delivered'));
+            }
+
+            function updateSortButtons() {
+                [allElements.sortAlphaBtn, allElements.sortBagsBtn, allElements.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
+                const activeBtn = document.getElementById(`sort-${sortState.type}`);
+                if (activeBtn) activeBtn.classList.add('sort-active');
+
+                allElements.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
+                allElements.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
+                allElements.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
+            }
+            
+            function renderArchivePagination(totalPages) {
+                allElements.archivePagination.innerHTML = '';
+                if(totalPages <= 1) return;
+
+                const createBtn = (text, onClick, disabled = false) => {
+                    const btn = document.createElement('button');
+                    btn.innerHTML = text;
+                    btn.className = 'pagination-btn p-2 bg-tertiary rounded-lg hover:accent-bg transition disabled:opacity-50 disabled:cursor-not-allowed';
+                    btn.disabled = disabled;
+                    btn.onclick = onClick;
+                    return btn;
+                }
+
+                allElements.archivePagination.appendChild(createBtn('&laquo;', () => { archiveCurrentPage--; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === 1));
+
+                for(let i = 1; i <= totalPages; i++) {
+                    const pageBtn = createBtn(i, () => { archiveCurrentPage = i; renderArchive(allItems.filter(i => i.status === 'delivered')) });
+                    if (i === archiveCurrentPage) pageBtn.classList.add('active');
+                    allElements.archivePagination.appendChild(pageBtn);
+                }
+
+                allElements.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
+            }
+            
+            function showModal(htmlContent) {
+                return new Promise(resolve => {
+                    allElements.modalContent.innerHTML = htmlContent;
+                    
+                    const modalClickListener = (e) => {
+                        const button = e.target.closest('button');
+                        if (!button) return;
+
+                        const input = allElements.modalContent.querySelector('input, textarea');
+                        const value = input ? input.value : true;
+                        
+                        const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
+
+                        if (isClosingButton) {
+                            allElements.modalContent.removeEventListener('click', modalClickListener);
+                            hideModalUI();
+                            resolve({ confirmed: false });
+                        } else if (button.id === 'modal-confirm') {
+                            resolve({ confirmed: true, value });
+                        }
+                    };
+
+                    allElements.modalContent.addEventListener('click', modalClickListener);
+
+                    allElements.modalContainer.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        allElements.modalContainer.style.opacity = '1';
+                        allElements.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
+                    });
+                });
+            }
+
+            function hideModalUI() {
+                allElements.modalContainer.style.opacity = '0';
+                allElements.modalContentWrapper.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    allElements.modalContainer.classList.add('hidden');
+                    allElements.modalContent.innerHTML = '';
+                }, 300);
+            }
+            
+            async function showSimpleMessageModal(title, message) {
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                    <p class="text-secondary mb-4">${message}</p>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
+                    </div>`);
+                if(result.confirmed) {
+                    hideModalUI();
+                }
+            }
+
+            async function showConfirmationModal(message, onConfirm, confirmText = "Onayla", isDestructive = false) {
+                const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3>
+                    <p class="text-secondary mb-4">${message}</p>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                        <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
+                    </div>`);
+                
+                if (result.confirmed) {
+                    await onConfirm();
+                }
+                hideModalUI();
+            }
+
+            async function showInputModal(title, message, type = 'text', value = '') {
+                const inputHtml = type === 'textarea'
+                    ? `<textarea class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-28 mb-4">${value}</textarea>`
+                    : `<input type="${type}" value="${value}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition mb-4">`;
+
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                    <p class="text-secondary mb-2">${message}</p>
+                    ${inputHtml}
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
+                    </div>`);
+                
+                if (result.confirmed || result.confirmed === false) {
+                     hideModalUI();
+                }
+                return result;
+            }
+
+            function renderCustomerModalList(filter = '') {
+                const listContainer = document.getElementById('modal-customers-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '';
+                const ucFilter = toTrUpperCase(filter);
+                const filtered = allCustomers
+                    .filter(c => toTrUpperCase(c.name).includes(ucFilter))
+                    .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+
+                if(filtered.length === 0) {
+                    listContainer.innerHTML = '<p class="text-center text-secondary">Müşteri bulunamadı.</p>';
+                    return;
+                }
+
+                filtered.forEach(customer => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.customerId = customer.id;
+                    div.dataset.customerName = customer.name; // Orijinal ismi sakla
+                    div.innerHTML = `
+                        <div class="customer-display flex justify-between items-center">
+                            <span class="customer-name-text text-primary text-sm">${customer.name}</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button>
+                                <button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button>
+                            </div>
+                        </div>
+                        <div class="customer-edit hidden flex items-center gap-2">
+                            <input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                             <div class="flex items-center gap-1">
+                                <button data-cust-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                                <button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button>
+                            </div>
+                        </div>
+                        <div class="customer-delete-confirm hidden flex justify-between items-center">
+                            <span class="text-red-300 text-sm">Silinsin mi?</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="confirm-delete" class="text-sm bg-red-600 text-white px-2 py-1 rounded-md hover:bg-red-700">Evet</button>
+                                <button data-cust-action="cancel-delete" class="text-sm bg-tertiary px-2 py-1 rounded-md hover:bg-slate-500">Hayır</button>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
+            
+            async function showCustomerManagementModal() {
+                 showModal(`
+                    <div class="flex flex-col h-[70vh]">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3>
+                            <button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button>
+                        </div>
+                        <div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                        <form id="modal-add-customer-form" class="flex gap-2 mb-4">
+                            <input type="text" id="modal-new-customer-name" placeholder="Yeni Müşteri Ekle" class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
+                            <button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button>
+                        </form>
+                        <input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                        <div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
+                    </div>
+                `);
+
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
+                const listContainer = document.getElementById('modal-customers-list');
+                const searchInput = document.getElementById('modal-customer-search');
+                const addForm = document.getElementById('modal-add-customer-form');
+                const addInput = document.getElementById('modal-new-customer-name');
+                const errorDiv = document.getElementById('modal-customer-error');
+
+                function showModalError(message) {
+                    errorDiv.textContent = message;
+                    errorDiv.classList.remove('hidden');
+                    setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+                }
+
+                searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
+                
+                listContainer.addEventListener('click', async e => {
+                    const button = e.target.closest('button[data-cust-action]');
+                    if (!button) return;
+
+                    const action = button.dataset.custAction;
+                    const customerDiv = button.closest('div[data-customer-id]');
+                    const customerId = customerDiv.dataset.customerId;
+
+                    const displayView = customerDiv.querySelector('.customer-display');
+                    const editView = customerDiv.querySelector('.customer-edit');
+                    const deleteConfirmView = customerDiv.querySelector('.customer-delete-confirm');
+
+                    switch (action) {
+                        case 'delete':
+                            displayView.classList.add('hidden');
+                            deleteConfirmView.classList.remove('hidden');
+                            break;
+                        case 'cancel-delete':
+                            deleteConfirmView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'confirm-delete':
+                            await deleteCustomer(customerId);
+                            break;
+                        case 'edit':
+                            displayView.classList.add('hidden');
+                            editView.classList.remove('hidden');
+                            editView.querySelector('input').focus();
+                            break;
+                        case 'cancel-edit':
+                            editView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'save-edit':
+                            const input = editView.querySelector('.customer-name-input');
+                            const newName = input.value.trim();
+                            const oldName = customerDiv.dataset.customerName;
+
+                            if (!newName) {
+                                showModalError("Müşteri adı boş olamaz.");
+                                return;
+                            }
+                            if (toTrUpperCase(newName) === toTrUpperCase(oldName)) {
+                                editView.classList.add('hidden');
+                                displayView.classList.remove('hidden');
+                                return;
+                            }
+                            const isDuplicate = allCustomers.some(c => toTrUpperCase(c.name) === toTrUpperCase(newName) && c.id !== customerId);
+                            if (isDuplicate) {
+                                showModalError("Bu isimde başka bir müşteri zaten var.");
+                                return;
+                            }
+                            
+                            await updateCustomerNameAndItems(customerId, oldName, newName);
+                            break;
+                    }
+                });
+                
+                addForm.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = toTrUpperCase(addInput.value.trim());
+                    if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) {
+                       await addDoc(collection(db, 'customers'), { name });
+                       addInput.value = '';
+                    } else if (name) {
+                       showModalError('Bu müşteri zaten mevcut.');
+                    }
+                });
+                
+                renderCustomerModalList();
+            }
+            
+            function exportDataToJSON() {
+                const data = { allItems, allCustomers, settings };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `poset-takip-yedek-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function exportToCSV() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+                
+                const headers = "Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi";
+                const rows = activeItems.map(item =>
+                    `"${item.customerName.replace(/"/g, '""')}",${item.bagCount},"${(item.note || '').replace(/"/g, '""')}",${formatDate(item.lastModified)}`
+                );
+
+                const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "poset_listesi.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function exportToPDF() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+
+                const pdf = new jsPDF();
+                
+                // Türkçe karakterler için font ekleme (bu kısım test edilmeli)
+                // pdf.addFont('Verdana.ttf', 'Verdana', 'normal');
+                // pdf.setFont('Verdana');
+
+                pdf.text("Bekleyen Poşet Listesi", 14, 16);
+                
+                const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
+                const tableRows = [];
+
+                activeItems.forEach((item, index) => {
+                    tableRows.push([
+                        index + 1,
+                        item.customerName,
+                        item.bagCount,
+                        formatDate(item.lastModified).split(' ')[0]
+                    ]);
+                });
+
+                pdf.autoTable({
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 20,
+                    // styles: { font: 'Verdana' } // Fontu tabloya uygulama
+                });
+
+                pdf.save('poset_listesi.pdf');
+            }
+
+            // --- UYGULAMAYI BAŞLAT ---
+            initialize();
         });
-    }
+    </script>
+    
+    <!-- PWA Service Worker Kaydı -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
     </script>
 </body>
 </html>
