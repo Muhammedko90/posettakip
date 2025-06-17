@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emre Bebe Toptan Müşteri Poşet Takibi (Bulut Tabanlı)</title>
+    <meta name="description" content="Emre Bebe Toptan Müşteri Poşet Takip Uygulaması">
 
     <!-- PWA için Gerekli Etiketler -->
     <meta name="theme-color" content="#1e293b"/>
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=ET">
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -254,7 +256,7 @@
                          </div>
                     </div>
                 </div>
-                <div class="text-center mt-4 mb-4">
+                 <div class="text-center mt-4 mb-4">
                     <p class="text-xs text-secondary">Program yapımcısı Muhammed Ali KOÇ</p>
                 </div>
             </div>
@@ -1392,13 +1394,15 @@
             }
 
             function exportToPDF() {
-                // Bu fonksiyon şimdilik Türkçe karakterleri desteklemeyebilir.
-                // Güvenilir bir font çözümü bulunduğunda tekrar aktif edilebilir.
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
 
                 const pdf = new jsPDF();
                 
+                // Türkçe karakterler için font ekleme (bu kısım test edilmeli)
+                // pdf.addFont('Verdana.ttf', 'Verdana', 'normal');
+                // pdf.setFont('Verdana');
+
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
                 
                 const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
@@ -1417,6 +1421,7 @@
                     head: [tableColumn], 
                     body: tableRows, 
                     startY: 20,
+                    // styles: { font: 'Verdana' } // Fontu tabloya uygulama
                 });
 
                 pdf.save('poset_listesi.pdf');
@@ -1431,7 +1436,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 }, err => {
                     console.log('ServiceWorker registration failed: ', err);
