@@ -272,8 +272,6 @@
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
             onSnapshot, query, where, serverTimestamp, writeBatch 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // PDF için Türkçe karakterleri destekleyen font dosyası
-        import { robotoFont } from "https://gist.githubusercontent.com/sargunv/52258752095f03932a39e0a039a046c6/raw/9454de7e3a246d8498d3637152014605963f2b60/Roboto-Regular-normal.js";
         
         // --- FIREBASE YAPILANDIRMASI ---
         const firebaseConfig = {
@@ -338,6 +336,7 @@
             let itemsUnsubscribe = null;
             let customersUnsubscribe = null;
             let connectionTimeout = null;
+            let isAppInitialized = false;
 
             // --- İKONLAR ---
             const icons = {
@@ -355,7 +354,10 @@
             };
 
             // --- YARDIMCI FONKSİYONLAR ---
-            const toTrUpperCase = (str) => str.toLocaleUpperCase('tr-TR');
+            const toTrUpperCase = (str) => {
+                if (typeof str !== 'string') return '';
+                return str.toLocaleUpperCase('tr-TR');
+            }
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem('emanet-settings-v2')) || { theme: 'dark', fontSize: 16 };
             const saveSettingsToStorage = (settings) => localStorage.setItem('emanet-settings-v2', JSON.stringify(settings));
             const formatDate = (iso) => {
@@ -375,6 +377,8 @@
             };
 
             function showApp() {
+                if (isAppInitialized) return;
+                isAppInitialized = true;
                 clearTimeout(connectionTimeout);
                 allElements.loadingOverlay.style.opacity = '0';
                 allElements.appContainer.style.opacity = '1';
@@ -382,6 +386,7 @@
             }
 
             function showConnectionError(message) {
+                clearTimeout(connectionTimeout);
                 allElements.loadingSpinner.style.display = 'none';
                 allElements.retryContainer.classList.remove('hidden');
                 allElements.loadingText.innerHTML = `<span class="text-red-400 font-semibold">${message}</span>`;
@@ -788,10 +793,10 @@
                     allElements.loadingText.textContent = 'Veritabanına bağlanılıyor...';
                     allElements.loadingSpinner.style.display = 'block';
                     allElements.retryContainer.classList.add('hidden');
+                    isAppInitialized = false; // Allow re-initialization
                     startFirebaseConnection();
                 });
                 
-                // Event listener for uppercase conversion
                 document.body.addEventListener('input', e => {
                     if (e.target.matches('input[type="text"], input[type="search"], textarea')) {
                         const start = e.target.selectionStart;
@@ -826,7 +831,10 @@
                         const searchInput = document.getElementById('modal-customer-search');
                         renderCustomerModalList(searchInput?.value || '');
                     }
-                }, error => console.error("Error listening to customers: ", error));
+                }, error => {
+                    console.error("Error listening to customers: ", error)
+                    showConnectionError('Müşteri verileri alınamadı.');
+                });
             }
             
             // --- EVENT LISTENERS ---
@@ -1375,16 +1383,13 @@
             }
 
             function exportToPDF() {
+                // Bu fonksiyon şimdilik Türkçe karakterleri desteklemeyebilir.
+                // Güvenilir bir font çözümü bulunduğunda tekrar aktif edilebilir.
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
 
                 const pdf = new jsPDF();
                 
-                // Fontu ekle ve ayarla
-                pdf.addFileToVFS('Roboto-Regular-normal.ttf', robotoFont);
-                pdf.addFont('Roboto-Regular-normal.ttf', 'Roboto-Regular', 'normal');
-                pdf.setFont('Roboto-Regular');
-
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
                 
                 const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
@@ -1403,10 +1408,6 @@
                     head: [tableColumn], 
                     body: tableRows, 
                     startY: 20,
-                    styles: { 
-                        font: "Roboto-Regular",
-                        fontStyle: 'normal'
-                    }
                 });
 
                 pdf.save('poset_listesi.pdf');
