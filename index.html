@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emre Bebe Toptan Müşteri Poşet Takibi (Bulut Tabanlı)</title>
-    <meta name="description" content="Emre Bebe Toptan Müşteri Poşet Takip Uygulaması">
 
     <!-- PWA için Gerekli Etiketler -->
     <meta name="theme-color" content="#1e293b"/>
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=ET">
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,103 +14,113 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Genel Stil ve Geçişler */
         :root {
-            --bg-primary: #1e293b; --bg-secondary: #0f172a; --bg-tertiary: #334155;
-            --text-primary: #cbd5e1; --text-secondary: #94a3b8; --border-color: #475569;
-            --accent-color: #a78bfa; --accent-color-dark: #8b5cf6; --font-size-base: 16px;
+            --bg-primary: #1e293b; /* bg-slate-800 */
+            --bg-secondary: #0f172a; /* bg-slate-900 */
+            --bg-tertiary: #334155; /* bg-slate-700 */
+            --text-primary: #cbd5e1; /* text-slate-300 */
+            --text-secondary: #94a3b8; /* text-slate-400 */
+            --border-color: #475569; /* border-slate-600 */
+            --accent-color: #a78bfa; /* purple-400 */
+            --accent-color-dark: #8b5cf6; /* purple-600 */
+            --font-size-base: 16px;
         }
+
         .theme-light {
-            --bg-primary: #ffffff; --bg-secondary: #f1f5f9; --bg-tertiary: #e2e8f0;
-            --text-primary: #1e293b; --text-secondary: #475569; --border-color: #cbd5e1;
-            --accent-color: #8b5cf6; --accent-color-dark: #7c3aed;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f1f5f9;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border-color: #cbd5e1;
+            --accent-color: #8b5cf6;
+            --accent-color-dark: #7c3aed;
         }
+
         .theme-night-blue {
-            --bg-primary: #1c2a4a; --bg-secondary: #0d1a33; --bg-tertiary: #2a3a5a;
-            --text-primary: #e0e7ff; --text-secondary: #a0b3d4; --border-color: #3a4a6a;
-            --accent-color: #7aa2f7; --accent-color-dark: #5a82e7;
+            --bg-primary: #1c2a4a;
+            --bg-secondary: #0d1a33;
+            --bg-tertiary: #2a3a5a;
+            --text-primary: #e0e7ff;
+            --text-secondary: #a0b3d4;
+            --border-color: #3a4a6a;
+            --accent-color: #7aa2f7;
+            --accent-color-dark: #5a82e7;
         }
+
         body {
-            font-family: 'Inter', sans-serif; background-color: var(--bg-secondary);
-            color: var(--text-primary); font-size: var(--font-size-base);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
             transition: background-color 0.3s, color 0.3s;
         }
-        input[type="text"], input[type="search"], textarea { text-transform: uppercase; }
+
+        /* Otomatik büyük harf için stil */
+        input[type="text"], input[type="search"], textarea {
+            text-transform: uppercase;
+        }
+
         .bg-primary { background-color: var(--bg-primary); }
         .bg-secondary { background-color: var(--bg-secondary); }
+        .bg-tertiary { background-color: var(--bg-tertiary); }
         .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
         .border-dynamic { border-color: var(--border-color); }
         .accent-text { color: var(--accent-color); }
         .accent-bg { background-color: var(--accent-color-dark); }
         .accent-bg-hover:hover { background-color: var(--accent-color); }
+        .ring-accent:focus { --tw-ring-color: var(--accent-color); }
+        
+        .tab-active { border-color: var(--accent-color) !important; color: var(--text-primary) !important; }
+        .sort-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
+
+        .panel { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; will-change: opacity, transform; }
         .panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
+        
+        #modal-container.hidden { pointer-events: none; opacity: 0; }
+        #modal-content-wrapper.hidden { transform: scale(0.95); opacity: 0; }
+        .pagination-btn { min-width: 2.5rem; }
+        .pagination-btn.active { background-color: var(--accent-color-dark); color: white; font-weight: bold; }
+
         #loading-overlay {
-            position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9);
-            z-index: 100; display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 1rem; color: var(--text-primary);
-            transition: opacity 0.3s ease-in-out; text-align: center; padding: 2rem;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.9);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            color: var(--text-primary);
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+            padding: 2rem;
         }
-        .auth-container { transition: opacity 0.5s, visibility 0.5s; }
-        .hidden-auth { opacity: 0; visibility: hidden; pointer-events: none; }
     </style>
 </head>
 <body class="bg-secondary text-primary">
 
-    <div id="loading-overlay" class="hidden">
+    <div id="loading-overlay">
         <div id="loading-spinner">
             <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
         </div>
-        <p id="loading-text">İşlem yapılıyor...</p>
-    </div>
-
-    <!-- GİRİŞ/KAYIT EKRANI -->
-    <div id="auth-container" class="auth-container min-h-screen flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl sm:text-4xl font-bold text-primary">Poşet Takip Sistemine Hoş Geldiniz</h1>
-                <p class="mt-2 text-secondary">Lütfen devam etmek için giriş yapın veya kaydolun.</p>
-            </div>
-            <div class="bg-primary p-6 sm:p-8 rounded-xl shadow-lg border border-dynamic">
-                <div id="auth-error-message" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
-                
-                <form id="login-form">
-                    <div class="space-y-4">
-                        <input type="email" id="login-email" placeholder="E-posta Adresi" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required style="text-transform: none;">
-                        <input type="password" id="login-password" placeholder="Şifre" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
-                        <button type="submit" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Giriş Yap</button>
-                    </div>
-                </form>
-
-                <p class="text-center text-secondary text-sm my-4">VEYA</p>
-
-                <form id="register-form" class="hidden">
-                    <div class="space-y-4">
-                        <input type="email" id="register-email" placeholder="E-posta Adresi" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required style="text-transform: none;">
-                        <input type="password" id="register-password" placeholder="Şifre (en az 6 karakter)" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
-                        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Kayıt Ol</button>
-                    </div>
-                </form>
-                
-                <div class="text-center mt-4">
-                     <button id="toggle-auth-mode" class="text-sm accent-text hover:underline">Hesabınız yok mu? Kayıt Olun.</button>
-                </div>
-            </div>
-             <p class="text-center text-xs text-secondary mt-4">Program yapımcısı Muhammed Ali KOÇ</p>
+        <p id="loading-text">Veritabanına bağlanılıyor...</p>
+        <div id="retry-container" class="hidden mt-4">
+            <button id="retry-button" class="accent-bg text-white font-semibold py-2 px-4 rounded-lg accent-bg-hover transition">Yeniden Dene</button>
         </div>
     </div>
 
-
-    <!-- ANA UYGULAMA EKRANI -->
-    <div id="app-container" class="hidden container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen">
-        <header class="flex justify-between items-center text-center mb-6">
-            <div></div> <!-- Spacer -->
-            <div class="flex-grow">
-                 <h1 class="text-3xl sm:text-4xl font-bold text-primary">Emre Bebe Toptan Müşteri Poşet Takibi</h1>
-                 <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
-            </div>
-            <div id="user-info" class="text-right text-xs text-secondary"></div>
+    <div id="app-container" class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen opacity-0 transition-opacity duration-500">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-primary">Emre Bebe Toptan Müşteri Poşet Takibi</h1>
+            <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
         </header>
 
         <!-- Sekme Navigasyonu -->
@@ -125,8 +133,8 @@
                 <button id="tab-settings" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Ayarlar</button>
             </nav>
         </div>
-        
-        <!-- Sekme İçerikleri (İçerik değişmedi, sadece bir panele çıkış butonu eklendi) -->
+
+        <!-- Sekme İçerikleri -->
         <main id="main-content" class="relative">
             <!-- Liste Sekmesi -->
             <div id="panel-list" class="panel space-y-8">
@@ -203,11 +211,6 @@
             <!-- Ayarlar Sekmesi -->
             <div id="panel-settings" class="panel hidden space-y-8">
                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                     <h2 class="text-2xl font-semibold text-primary">Hesap</h2>
-                     <button id="logout-btn" class="w-full bg-red-600 text-white font-bold p-3 rounded-lg hover:bg-red-700 transition">Çıkış Yap</button>
-                </div>
-
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
                     <h2 class="text-2xl font-semibold text-primary">Görünüm Ayarları</h2>
                     <div>
                         <h3 class="text-lg font-medium text-primary mb-2">Tema</h3>
@@ -251,6 +254,9 @@
                          </div>
                     </div>
                 </div>
+                <div class="text-center mt-4 mb-4">
+                    <p class="text-xs text-secondary">Program yapımcısı Muhammed Ali KOÇ</p>
+                </div>
             </div>
         </main>
     </div>
@@ -265,13 +271,7 @@
     <script type="module">
         // Firebase Modüllerini İçe Aktar
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            onAuthStateChanged,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
             onSnapshot, query, where, serverTimestamp, writeBatch 
@@ -287,24 +287,20 @@
             appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
         };
         
+        // Gerekli kütüphaneleri yükle
         const { jsPDF } = window.jspdf;
 
         // --- UYGULAMA MANTIĞI ---
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM ELEMENTLERİ ---
-            const dom = {
+            const allElements = {
                 loadingOverlay: document.getElementById('loading-overlay'),
+                loadingSpinner: document.getElementById('loading-spinner'),
                 loadingText: document.getElementById('loading-text'),
-                // Auth
-                authContainer: document.getElementById('auth-container'),
+                retryContainer: document.getElementById('retry-container'),
+                retryButton: document.getElementById('retry-button'),
                 appContainer: document.getElementById('app-container'),
-                loginForm: document.getElementById('login-form'),
-                registerForm: document.getElementById('register-form'),
-                authErrorMessage: document.getElementById('auth-error-message'),
-                toggleAuthModeBtn: document.getElementById('toggle-auth-mode'),
-                userInfo: document.getElementById('user-info'),
-                logoutBtn: document.getElementById('logout-btn'),
-                // Main App
+                mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
                 searchItemsInput: document.getElementById('search-items-input'),
@@ -332,11 +328,10 @@
                 modalContainer: document.getElementById('modal-container'),
                 modalContentWrapper: document.getElementById('modal-content-wrapper'),
                 modalContent: document.getElementById('modal-content'),
-                mainContent: document.getElementById('main-content'),
             };
 
             // --- STATE (DURUM) YÖNETİMİ ---
-            let app, auth, db, userId;
+            let app, auth, db;
             let allItems = [];
             let allCustomers = [];
             let settings = {};
@@ -345,7 +340,9 @@
             const itemsPerPage = 10;
             let itemsUnsubscribe = null;
             let customersUnsubscribe = null;
-            
+            let connectionTimeout = null;
+            let isAppInitialized = false;
+
             // --- İKONLAR ---
             const icons = {
                 alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
@@ -362,14 +359,12 @@
             };
 
             // --- YARDIMCI FONKSİYONLAR ---
-            const showLoading = (text) => {
-                dom.loadingText.textContent = text;
-                dom.loadingOverlay.classList.remove('hidden');
-            };
-            const hideLoading = () => dom.loadingOverlay.classList.add('hidden');
-            const toTrUpperCase = (str) => typeof str === 'string' ? str.toLocaleUpperCase('tr-TR') : '';
+            const toTrUpperCase = (str) => {
+                if (typeof str !== 'string') return '';
+                return str.toLocaleUpperCase('tr-TR');
+            }
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem('emanet-settings-v2')) || { theme: 'dark', fontSize: 16 };
-            const saveSettingsToStorage = (s) => localStorage.setItem('emanet-settings-v2', JSON.stringify(s));
+            const saveSettingsToStorage = (settings) => localStorage.setItem('emanet-settings-v2', JSON.stringify(settings));
             const formatDate = (iso) => {
                 if(!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
@@ -379,64 +374,27 @@
                 if (!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
                 const now = new Date();
-                const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / (1000 * 60 * 60 * 24));
+                const diffDays = Math.floor((now.setHours(0,0,0,0) - date.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
                 if (diffDays < 0) return '';
                 if (diffDays === 0) return 'bugün';
                 if (diffDays === 1) return 'dün';
                 return `${diffDays} gün önce`;
             };
 
-             // --- AUTH İŞLEMLERİ ---
-            function handleAuthError(error) {
-                console.error("Authentication Error:", error);
-                let message = "Bilinmeyen bir hata oluştu.";
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        message = "E-posta veya şifre hatalı."; break;
-                    case 'auth/email-already-in-use':
-                        message = "Bu e-posta adresi zaten kullanımda."; break;
-                    case 'auth/weak-password':
-                        message = "Şifreniz en az 6 karakter olmalıdır."; break;
-                    case 'auth/invalid-email':
-                         message = "Lütfen geçerli bir e-posta adresi girin."; break;
-                }
-                dom.authErrorMessage.textContent = message;
-                dom.authErrorMessage.classList.remove('hidden');
+            function showApp() {
+                if (isAppInitialized) return;
+                isAppInitialized = true;
+                clearTimeout(connectionTimeout);
+                allElements.loadingOverlay.style.opacity = '0';
+                allElements.appContainer.style.opacity = '1';
+                setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
             }
 
-            async function handleLogin(e) {
-                e.preventDefault();
-                dom.authErrorMessage.classList.add('hidden');
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                showLoading('Giriş yapılıyor...');
-                try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } catch (error) {
-                    handleAuthError(error);
-                } finally {
-                    hideLoading();
-                }
-            }
-
-            async function handleRegister(e) {
-                e.preventDefault();
-                dom.authErrorMessage.classList.add('hidden');
-                const email = document.getElementById('register-email').value;
-                const password = document.getElementById('register-password').value;
-                showLoading('Hesap oluşturuluyor...');
-                try {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                } catch (error) {
-                    handleAuthError(error);
-                } finally {
-                    hideLoading();
-                }
-            }
-            
-            async function handleLogout() {
-                await signOut(auth);
+            function showConnectionError(message) {
+                clearTimeout(connectionTimeout);
+                allElements.loadingSpinner.style.display = 'none';
+                allElements.retryContainer.classList.remove('hidden');
+                allElements.loadingText.innerHTML = `<span class="text-red-400 font-semibold">${message}</span>`;
             }
 
             // --- AYARLAR ---
@@ -446,6 +404,7 @@
                     btn.classList.toggle('ring-2', btn.dataset.theme === settings.theme);
                     btn.classList.toggle('ring-accent', btn.dataset.theme === settings.theme);
                 });
+
                 document.body.style.fontSize = `${settings.fontSize}px`;
                 const fontSizeSlider = document.getElementById('font-size-slider');
                 const fontSizePreview = document.getElementById('font-size-preview');
@@ -455,9 +414,9 @@
 
             // --- RENDER FONKSİYONLARI ---
             function renderAll() {
-                if(!userId) return; // Kullanıcı giriş yapmadıysa render etme
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 const archivedItems = allItems.filter(item => item.status === 'delivered');
+                
                 renderItems(activeItems);
                 renderArchive(archivedItems);
                 renderNotes();
@@ -465,32 +424,41 @@
             }
             
             function renderItems(items) {
-                const searchQuery = toTrUpperCase(dom.searchItemsInput.value);
+                const searchQuery = toTrUpperCase(allElements.searchItemsInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
-                dom.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
-                dom.totalCustomersCounter.textContent = new Set(filteredItems.map(item => item.customerName)).size;
+                // Müşteri ve poşet sayaçlarını güncelle
+                allElements.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
+                const customerNames = new Set(filteredItems.map(item => item.customerName));
+                allElements.totalCustomersCounter.textContent = customerNames.size;
+
 
                 const direction = sortState.direction === 'asc' ? 1 : -1;
                 filteredItems.sort((a, b) => {
                     if (sortState.type === 'alpha') return a.customerName.localeCompare(b.customerName, 'tr') * direction;
                     if (sortState.type === 'bags') return (a.bagCount - b.bagCount) * direction;
-                    const dateA = a.lastModified?.seconds || new Date(a.lastModified).getTime() / 1000;
-                    const dateB = b.lastModified?.seconds || new Date(b.lastModified).getTime() / 1000;
+                    
+                    const dateA = a.lastModified?.seconds ? a.lastModified.seconds : new Date(a.lastModified).getTime() / 1000;
+                    const dateB = b.lastModified?.seconds ? b.lastModified.seconds : new Date(b.lastModified).getTime() / 1000;
                     return (dateB - dateA) * direction;
                 });
                 
-                dom.itemList.innerHTML = '';
-                dom.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
-                dom.emptyItemListMessage.textContent = searchQuery ? `ARAMANIZLA EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
-                filteredItems.forEach(item => dom.itemList.appendChild(createItemElement(item)));
+                allElements.itemList.innerHTML = '';
+                allElements.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+                allElements.emptyItemListMessage.textContent = searchQuery ? `ARAMANIZLA EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
+                filteredItems.forEach(item => allElements.itemList.appendChild(createItemElement(item)));
             }
-
+            
             function createItemElement(item) {
                 const div = document.createElement('div');
-                const date = item.lastModified?.seconds ? new Date(item.lastModified.seconds * 1000) : new Date(item.lastModified);
+                const date = item.lastModified?.seconds ? new Date(item.lastModified.seconds * 1000) : new Date();
                 const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
-                const overdueClass = diffDays >= 15 ? 'border-red-500/60 bg-red-500/10' : diffDays >= 7 ? 'border-yellow-500/60 bg-yellow-500/10' : 'border-dynamic';
+
+                const overdueClass = (() => {
+                    if (diffDays >= 15) return 'border-red-500/60 bg-red-500/10';
+                    if (diffDays >= 7) return 'border-yellow-500/60 bg-yellow-500/10';
+                    return 'border-dynamic';
+                })();
                 const noteIndicatorHTML = item.note ? `<span class="accent-text text-xs" title="Not Mevcut">●</span>` : '';
                 
                 div.className = `bg-primary p-4 rounded-lg shadow-md flex items-center justify-between border ${overdueClass} transition-colors duration-300`;
@@ -512,26 +480,31 @@
                     </div>`;
                 return div;
             }
-             
+            
             function renderArchive(items) {
-                const searchQuery = toTrUpperCase(dom.searchArchiveInput.value);
+                const searchQuery = toTrUpperCase(allElements.searchArchiveInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
-                filteredItems.sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                filteredItems.sort((a,b) => {
+                    const dateA = a.deliveredAt?.seconds || 0;
+                    const dateB = b.deliveredAt?.seconds || 0;
+                    return dateB - dateA;
+                });
                 
-                dom.emptyArchiveListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+                allElements.emptyArchiveListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
 
                 const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
                 if(archiveCurrentPage > totalPages && totalPages > 0) archiveCurrentPage = totalPages;
 
-                const paginatedItems = filteredItems.slice((archiveCurrentPage - 1) * itemsPerPage, archiveCurrentPage * itemsPerPage);
+                const startIndex = (archiveCurrentPage - 1) * itemsPerPage;
+                const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-                dom.archiveList.innerHTML = '';
-                paginatedItems.forEach(item => dom.archiveList.appendChild(createArchiveItemElement(item)));
+                allElements.archiveList.innerHTML = '';
+                paginatedItems.forEach(item => allElements.archiveList.appendChild(createArchiveItemElement(item)));
 
                 renderArchivePagination(totalPages);
             }
-
+            
             function createArchiveItemElement(item) {
                 const div = document.createElement('div');
                 div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
@@ -550,12 +523,16 @@
                     </div>`;
                 return div;
             }
-
+            
             function renderNotes() {
-                const itemsWithNotes = allItems.filter(item => item.note && item.note.trim() !== '').sort((a,b) => (b.lastModified?.seconds || 0) - (a.lastModified?.seconds || 0));
-                dom.notesList.innerHTML = '';
-                dom.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
-                itemsWithNotes.forEach(item => dom.notesList.appendChild(createNoteElement(item)));
+                const itemsWithNotes = allItems.filter(item => item.note && item.note.trim() !== '').sort((a,b) => {
+                    const dateA = a.lastModified?.seconds || 0;
+                    const dateB = b.lastModified?.seconds || 0;
+                    return dateB - dateA;
+                });
+                allElements.notesList.innerHTML = '';
+                allElements.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
+                itemsWithNotes.forEach(item => allElements.notesList.appendChild(createNoteElement(item)));
             }
 
             function createNoteElement(item) {
@@ -573,8 +550,8 @@
                 `;
                 return div;
             }
-
-             function renderReports() {
+            
+            function renderReports() {
                 renderPeriodicReport(); 
                 renderOverdueReport();
             }
@@ -591,7 +568,11 @@
                 }
                 
                 overdueMessage.classList.add('hidden');
-                activeItems.sort((a, b) => (a.lastModified?.seconds || 0) - (b.lastModified?.seconds || 0));
+                activeItems.sort((a, b) => {
+                     const dateA = a.lastModified?.seconds || 0;
+                     const dateB = b.lastModified?.seconds || 0;
+                     return dateA - dateB;
+                });
                 const top10 = activeItems.slice(0, 10);
 
                 overdueList.innerHTML = top10.map((item, index) => {
@@ -601,7 +582,7 @@
                             </div>`;
                 }).join('');
             }
-
+            
             function renderPeriodicReport(range = null) {
                 const contentDiv = document.getElementById('periodic-report-content');
                 if(range === null) {
@@ -613,39 +594,62 @@
                     }
                 }
                 
-                const now = new Date();
-                const rangeNum = parseInt(range, 10);
-                const startDate = range === 'all' ? new Date(0) : new Date(now.setDate(now.getDate() - rangeNum));
+                let added, delivered;
                 
-                const added = allItems.filter(i => (i.createdAt?.seconds ? new Date(i.createdAt.seconds * 1000) : new Date(i.createdAt)) >= startDate).length;
-                const delivered = allItems.filter(i => i.status === 'delivered' && (i.deliveredAt?.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt)) >= startDate).length;
+                if (range === 'all') {
+                    added = allItems.length;
+                    delivered = allItems.filter(i => i.status === 'delivered').length;
+                } else {
+                    const rangeNum = parseInt(range, 10);
+                    const endDate = new Date();
+                    const startDate = new Date();
+                    startDate.setDate(endDate.getDate() - rangeNum);
+
+                    added = allItems.filter(i => (i.createdAt?.seconds ? new Date(i.createdAt.seconds * 1000) : new Date(i.createdAt)) >= startDate).length;
+                    delivered = allItems.filter(i => i.status === 'delivered' && (i.deliveredAt?.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt)) >= startDate).length;
+                }
 
                 contentDiv.innerHTML = `
                     <div class="grid grid-cols-2 gap-4 text-center">
-                        <div><p class="text-3xl font-bold text-green-400">${added}</p><p class="text-sm text-secondary">Yeni Poşet Eklendi</p></div>
-                        <div><p class="text-3xl font-bold text-blue-400">${delivered}</p><p class="text-sm text-secondary">Poşet Teslim Edildi</p></div>
-                    </div>`;
+                        <div>
+                            <p class="text-3xl font-bold text-green-400">${added}</p>
+                            <p class="text-sm text-secondary">Yeni Poşet Eklendi</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-blue-400">${delivered}</p>
+                            <p class="text-sm text-secondary">Poşet Teslim Edildi</p>
+                        </div>
+                    </div>
+                `;
             }
 
-            // --- FIRESTORE İŞLEMLERİ (KULLANICIYA ÖZEL) ---
+            // --- FIRESTORE İŞLEMLERİ ---
             async function handleAddItem(e) {
                 e.preventDefault();
-                const customerName = toTrUpperCase(dom.customerNameInput.value.trim());
-                const bagCount = parseInt(dom.bagCountInput.value, 10);
-                if (!customerName || isNaN(bagCount) || bagCount < 1 || !userId) return;
+                const customerName = toTrUpperCase(allElements.customerNameInput.value.trim());
+                const bagCount = parseInt(allElements.bagCountInput.value, 10);
+                if (!customerName || isNaN(bagCount) || bagCount < 1) return;
 
                 try {
                     const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
                     if (!customerExists) {
-                        await addDoc(collection(db, 'users', userId, 'customers'), { name: customerName });
+                        await addDoc(collection(db, 'customers'), { name: customerName });
                     }
-                    await addDoc(collection(db, 'users', userId, 'items'), {
-                        customerName, bagCount, note: '', status: 'active', 
-                        createdAt: serverTimestamp(), lastModified: serverTimestamp(), deliveredAt: null
+
+                    await addDoc(collection(db, 'items'), {
+                        customerName,
+                        bagCount,
+                        note: '',
+                        status: 'active',
+                        createdAt: serverTimestamp(),
+                        lastModified: serverTimestamp(),
+                        deliveredAt: null
                     });
-                    dom.addItemForm.reset();
-                    dom.bagCountInput.value = 1;
-                    dom.customerNameInput.focus();
+
+                    allElements.addItemForm.reset();
+                    allElements.bagCountInput.value = 1;
+                    allElements.customerNameInput.focus();
+
                 } catch (error) {
                     console.error("Error adding document: ", error);
                     showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
@@ -653,288 +657,405 @@
             }
 
             async function updateItem(id, data) {
-                if (!userId) return;
-                if (data.note) data.note = toTrUpperCase(data.note);
-                const itemRef = doc(db, 'users', userId, 'items', id);
+                if (data.note) {
+                    data.note = toTrUpperCase(data.note);
+                }
+                const itemRef = doc(db, 'items', id);
                 await updateDoc(itemRef, { ...data, lastModified: serverTimestamp() });
             }
 
             async function deleteItem(id) {
-                if (!userId) return;
-                await deleteDoc(doc(db, 'users', userId, 'items', id));
+                await deleteDoc(doc(db, 'items', id));
             }
-
+            
             async function deleteCustomer(id) {
-                if (!userId) return;
-                await deleteDoc(doc(db, 'users', userId, 'customers', id));
+                await deleteDoc(doc(db, 'customers', id));
             }
-
+            
             async function updateCustomerNameAndItems(customerId, oldName, newName) {
-                if(!userId) return;
                 const upperNewName = toTrUpperCase(newName);
-                showLoading('Müşteri adı güncelleniyor...');
+                allElements.loadingText.textContent = 'Müşteri adı ve ilgili poşetler güncelleniyor...';
+                allElements.loadingOverlay.style.display = 'flex';
+                allElements.loadingOverlay.style.opacity = '1';
                 try {
                     const batch = writeBatch(db);
-                    batch.update(doc(db, 'users', userId, 'customers', customerId), { name: upperNewName });
-                    const itemsSnapshot = await getDocs(query(collection(db, 'users', userId, 'items'), where("customerName", "==", oldName)));
-                    itemsSnapshot.forEach(itemDoc => batch.update(itemDoc.ref, { customerName: upperNewName }));
+
+                    const customerRef = doc(db, 'customers', customerId);
+                    batch.update(customerRef, { name: upperNewName });
+                    
+                    const itemsQuery = query(collection(db, 'items'), where("customerName", "==", oldName));
+                    const itemsSnapshot = await getDocs(itemsQuery);
+                    itemsSnapshot.forEach(itemDoc => {
+                        batch.update(itemDoc.ref, { customerName: upperNewName });
+                    });
+                    
                     await batch.commit();
                 } catch(error) {
                      console.error("Müşteri adı güncellenirken hata:", error);
                      showSimpleMessageModal("Hata", "Müşteri adı güncellenirken bir sorun oluştu.");
                 } finally {
-                    hideLoading();
+                    allElements.loadingOverlay.style.opacity = '0';
+                    setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
                 }
             }
 
             async function importDataFromJSON(data) {
-                if (!data.allItems || !data.allCustomers || !userId) {
-                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı veya kullanıcı girişi yapılmamış.');
+                if (!data.allItems || !data.allCustomers) {
+                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.');
                     return;
                 }
-                showLoading('Mevcut veriler siliniyor...');
-                const batchDelete = writeBatch(db);
-                allItems.forEach(item => batchDelete.delete(doc(db, 'users', userId, 'items', item.id)));
-                allCustomers.forEach(customer => batchDelete.delete(doc(db, 'users', userId, 'customers', customer.id)));
-                await batchDelete.commit();
 
-                showLoading('Veriler içe aktarılıyor...');
-                const batchAdd = writeBatch(db);
+                allElements.loadingText.textContent = 'Veriler siliniyor...';
+                
+                const itemsBatch = writeBatch(db);
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
+                await itemsBatch.commit();
+                
+                const customersBatch = writeBatch(db);
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
+                await customersBatch.commit();
+
+                allElements.loadingText.textContent = 'Veriler içe aktarılıyor...';
+                
+                const newItemsBatch = writeBatch(db);
                 data.allItems.forEach(item => {
-                    const { id, ...cleanItem } = item;
+                    const newItemRef = doc(collection(db, 'items'));
+                    const cleanItem = { ...item };
+                    delete cleanItem.id;
                     if (cleanItem.customerName) cleanItem.customerName = toTrUpperCase(cleanItem.customerName);
                     if (cleanItem.note) cleanItem.note = toTrUpperCase(cleanItem.note);
-                    const dateFields = ['createdAt', 'lastModified', 'deliveredAt'];
-                    dateFields.forEach(field => {
-                        if (cleanItem[field]) cleanItem[field] = new Date(cleanItem[field].seconds ? cleanItem[field].seconds * 1000 : cleanItem[field]);
-                    });
-                    batchAdd.set(doc(collection(db, 'users', userId, 'items')), cleanItem);
+                    if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
+                    if (cleanItem.lastModified) cleanItem.lastModified = new Date(cleanItem.lastModified.seconds ? cleanItem.lastModified.seconds * 1000 : cleanItem.lastModified);
+                    if (cleanItem.deliveredAt) cleanItem.deliveredAt = new Date(cleanItem.deliveredAt.seconds ? cleanItem.deliveredAt.seconds * 1000 : cleanItem.deliveredAt);
+                    newItemsBatch.set(newItemRef, cleanItem);
                 });
+                await newItemsBatch.commit();
+
+                const newCustomersBatch = writeBatch(db);
                 data.allCustomers.forEach(customer => {
-                    const { id, ...cleanCustomer } = customer;
+                    const newCustomerRef = doc(collection(db, 'customers'));
+                    const cleanCustomer = { ...customer };
                     if (cleanCustomer.name) cleanCustomer.name = toTrUpperCase(cleanCustomer.name);
-                    batchAdd.set(doc(collection(db, 'users', userId, 'customers')), cleanCustomer);
+                    delete cleanCustomer.id;
+                    newCustomersBatch.set(newCustomerRef, cleanCustomer);
                 });
-                await batchAdd.commit();
+                await newCustomersBatch.commit();
+
                 showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
             }
-
+            
             async function resetAllData() {
-                if (!userId) return;
-                showLoading('Tüm veriler siliniyor...');
-                const batch = writeBatch(db);
-                allItems.forEach(item => batch.delete(doc(db, 'users', userId, 'items', item.id)));
-                allCustomers.forEach(customer => batch.delete(doc(db, 'users', userId, 'customers', customer.id)));
-                await batch.commit();
-                hideLoading();
+                 allElements.loadingText.textContent = 'Tüm veriler siliniyor...';
+                 allElements.loadingOverlay.style.display = 'flex';
+                 allElements.loadingOverlay.style.opacity = '1';
+
+                const itemsBatch = writeBatch(db);
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
+                await itemsBatch.commit();
+                
+                const customersBatch = writeBatch(db);
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
+                await customersBatch.commit();
+                
+                allElements.loadingOverlay.style.opacity = '0';
+                setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
             }
 
             // --- UYGULAMA BAŞLATMA VE VERİ DİNLEME ---
-            function initializeAppLogic() {
+            function startFirebaseConnection() {
+                clearTimeout(connectionTimeout);
+                connectionTimeout = setTimeout(() => {
+                    showConnectionError('Bağlantı zaman aşımına uğradı. İnternetinizi kontrol edin.');
+                }, 10000); 
+
+                try {
+                    if (!app) {
+                        app = initializeApp(firebaseConfig);
+                        auth = getAuth(app);
+                        db = getFirestore(app);
+                    }
+                    
+                    onAuthStateChanged(auth, user => {
+                        clearTimeout(connectionTimeout);
+                        if (user) {
+                            listenToData();
+                        } else {
+                            signInAnonymously(auth).catch(error => {
+                                console.error("Anonymous sign-in failed: ", error);
+                                showConnectionError('Veritabanı ile kimlik doğrulaması yapılamadı.');
+                            });
+                        }
+                    });
+                } catch(e) {
+                    clearTimeout(connectionTimeout);
+                    console.error("Firebase initialization error:", e);
+                    showConnectionError('Uygulama başlatılamadı. Yapılandırmayı kontrol edin.');
+                }
+            }
+
+            function initialize() {
                 settings = getSettingsFromStorage();
                 applySettings();
                 updateSortButtons();
                 switchTab('list', true);
-
-                // --- EVENT LISTENERS ---
-                dom.loginForm.addEventListener('submit', handleLogin);
-                dom.registerForm.addEventListener('submit', handleRegister);
-                dom.logoutBtn.addEventListener('click', handleLogout);
-                dom.toggleAuthModeBtn.addEventListener('click', () => {
-                    const isLoginVisible = !dom.loginForm.classList.contains('hidden');
-                    dom.loginForm.classList.toggle('hidden', isLoginVisible);
-                    dom.registerForm.classList.toggle('hidden', !isLoginVisible);
-                    dom.toggleAuthModeBtn.textContent = isLoginVisible ? 'Zaten bir hesabınız var mı? Giriş Yapın.' : 'Hesabınız yok mu? Kayıt Olun.';
-                    dom.authErrorMessage.classList.add('hidden');
+                allElements.retryButton.addEventListener('click', () => {
+                    allElements.loadingText.textContent = 'Veritabanına bağlanılıyor...';
+                    allElements.loadingSpinner.style.display = 'block';
+                    allElements.retryContainer.classList.add('hidden');
+                    isAppInitialized = false; // Allow re-initialization
+                    startFirebaseConnection();
                 });
                 
-                dom.addItemForm.addEventListener('submit', handleAddItem);
-                dom.searchItemsInput.addEventListener('input', () => renderItems(allItems.filter(item => item.status !== 'delivered')));
-                dom.searchArchiveInput.addEventListener('input', () => {
-                    archiveCurrentPage = 1;
-                    renderArchive(allItems.filter(item => item.status === 'delivered'));
-                });
-                dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
-                dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
-                dom.sortDateBtn.addEventListener('click', () => handleSort('date'));
-
-                dom.mainContent.addEventListener('click', async (e) => {
-                    const button = e.target.closest('button[data-action]');
-                    if (!button) return;
-                    const itemDiv = button.closest('div[data-id]');
-                    if (!itemDiv) return;
-                    const id = itemDiv.dataset.id;
-                    const action = button.dataset.action;
-                    const item = allItems.find(i => i.id === id);
-                    if (!item) return;
-
-                    switch(action) {
-                        case 'deliver':
-                            showConfirmationModal(`'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`, () => updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() }));
-                            break;
-                        case 'restore':
-                            showConfirmationModal(`'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`, () => updateItem(id, { status: 'active', deliveredAt: null }), "Geri Yükle");
-                            break;
-                        case 'delete-permanent':
-                            showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, () => deleteItem(id), "Kalıcı Olarak Sil", true);
-                            break;
-                        case 'delete-item':
-                            showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, () => deleteItem(id), "İptal Et ve Sil", true);
-                            break;
-                        case 'edit-count':
-                            const { confirmed: countConfirmed, value: countValue } = await showInputModal("Poşet Sayısını Düzenle", `'${item.customerName}' için yeni poşet sayısını girin:`, 'number', item.bagCount);
-                            if (countConfirmed && countValue && !isNaN(countValue) && countValue > 0) updateItem(id, { bagCount: parseInt(countValue, 10) });
-                            break;
-                        case 'edit-note':
-                            const { confirmed: noteConfirmed, value: noteValue } = await showInputModal("Notu Düzenle", `'${item.customerName}' için not:`, 'textarea', item.note || '');
-                            if (noteConfirmed) updateItem(id, { note: noteValue.trim() });
-                            break;
-                        case 'delete-note-from-tab':
-                            showConfirmationModal(`'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`, () => updateItem(id, { note: '' }), "Notu Sil", true);
-                            break;
-                    }
-                });
-                
-                 document.querySelector('#panel-settings').addEventListener('click', (e) => {
-                     const themeBtn = e.target.closest('.theme-btn');
-                     if(themeBtn) {
-                         settings.theme = themeBtn.dataset.theme;
-                         saveSettingsToStorage(settings);
-                         applySettings();
-                         return;
-                     }
-                     
-                     switch(e.target.id) {
-                        case 'manage-customers-btn': showCustomerManagementModal(); break;
-                        case 'export-json-btn': exportDataToJSON(); break;
-                        case 'import-json-btn': dom.importFileInput.click(); break;
-                        case 'export-pdf-btn': exportToPDF(); break;
-                        case 'export-csv-btn': exportToCSV(); break;
-                        case 'reset-items-btn':
-                            showConfirmationModal("Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz?", async () => {
-                                showLoading('Poşetler siliniyor...');
-                                const batch = writeBatch(db);
-                                allItems.forEach(item => batch.delete(doc(db, 'users', userId, 'items', item.id)));
-                                await batch.commit();
-                                hideLoading();
-                            }, "Evet, Sil", true);
-                            break;
-                        case 'reset-all-btn':
-                            showConfirmationModal("Hesabınızdaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz?", resetAllData, "EVET, TÜMÜNÜ SİL", true);
-                            break;
-                     }
-                });
-
-                dom.importFileInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = async (event) => {
-                        try {
-                            const data = JSON.parse(event.target.result);
-                            await showConfirmationModal("Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Emin misiniz?", async () => {
-                                showLoading('Veriler aktarılıyor...');
-                                await importDataFromJSON(data);
-                                hideLoading();
-                            }, "Onayla ve Yükle");
-                        } catch (error) { showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.'); }
-                    };
-                    reader.readAsText(file);
-                    e.target.value = null;
-                });
-                
-                document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
-                    settings.fontSize = e.target.value;
-                    document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
-                    document.body.style.fontSize = `${settings.fontSize}px`;
-                 });
-                document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
-                    settings.fontSize = e.target.value;
-                     saveSettingsToStorage(settings);
-                 });
-                
-                document.querySelectorAll('.report-range-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
-                        btn.classList.add('accent-bg');
-                        renderPeriodicReport(btn.dataset.range);
-                    });
-                });
-
-                document.querySelector('nav').addEventListener('click', (e) => {
-                    if (e.target.id && e.target.id.startsWith('tab-')) {
-                        switchTab(e.target.id.replace('tab-', ''));
+                document.body.addEventListener('input', e => {
+                    if (e.target.matches('input[type="text"], input[type="search"], textarea')) {
+                        const start = e.target.selectionStart;
+                        const end = e.target.selectionEnd;
+                        e.target.value = toTrUpperCase(e.target.value);
+                        e.target.setSelectionRange(start, end);
                     }
                 });
 
-                dom.customerNameInput.addEventListener("input", () => {
-                    const searchTerm = toTrUpperCase(dom.customerNameInput.value.trim());
-                    dom.suggestionsBox.innerHTML = "";
-                    if (searchTerm.length === 0) {
-                        dom.suggestionsBox.classList.add("hidden");
-                        return;
-                    }
-                    const filtered = allCustomers.filter(c => toTrUpperCase(c.name).includes(searchTerm)).map(c => c.name);
-                    if (filtered.length > 0) {
-                        filtered.forEach(name => {
-                            const div = document.createElement("div");
-                            div.textContent = name;
-                            div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
-                            div.addEventListener("click", () => {
-                                dom.customerNameInput.value = name;
-                                dom.suggestionsBox.classList.add("hidden");
-                                dom.bagCountInput.focus();
-                            });
-                            dom.suggestionsBox.appendChild(div);
-                        });
-                        dom.suggestionsBox.classList.remove("hidden");
-                    } else {
-                        dom.suggestionsBox.classList.add("hidden");
-                    }
-                });
-
-                document.addEventListener("click", (e) => {
-                    if (!e.target.closest('.relative')) {
-                        dom.suggestionsBox.classList.add("hidden");
-                    }
-                });
-
-                // Diğer event listener'lar...
+                startFirebaseConnection();
             }
-            
-            function listenToData(currentUserId) {
-                if (!currentUserId) return;
-                // Önceki dinleyicileri kaldır
+
+            function listenToData() {
                 if (itemsUnsubscribe) itemsUnsubscribe();
                 if (customersUnsubscribe) customersUnsubscribe();
 
-                const itemsQuery = query(collection(db, "users", currentUserId, "items"));
+                const itemsQuery = query(collection(db, "items"));
                 itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
                     allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderAll();
-                }, error => console.error("Error listening to items: ", error));
+                    showApp(); 
+                }, error => {
+                    console.error("Error listening to items: ", error);
+                    showConnectionError('Veri alınırken bir hata oluştu.');
+                });
 
-                const customersQuery = query(collection(db, "users", currentUserId, "customers"));
+                const customersQuery = query(collection(db, "customers"));
                 customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
                     allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     const modalList = document.getElementById('modal-customers-list');
-                    if (modalList && !dom.modalContainer.classList.contains('hidden')) {
-                        renderCustomerModalList(document.getElementById('modal-customer-search')?.value || '');
+                    if (modalList && !allElements.modalContainer.classList.contains('hidden')) {
+                        const searchInput = document.getElementById('modal-customer-search');
+                        renderCustomerModalList(searchInput?.value || '');
                     }
-                }, error => console.error("Error listening to customers: ", error));
-            }
-
-            function resetUI() {
-                allItems = [];
-                allCustomers = [];
-                renderAll();
-                dom.addItemForm.reset();
-                dom.searchItemsInput.value = '';
-                dom.searchArchiveInput.value = '';
+                }, error => {
+                    console.error("Error listening to customers: ", error)
+                    showConnectionError('Müşteri verileri alınamadı.');
+                });
             }
             
-            // --- MODAL, SIRALAMA VB. ---
-             function switchTab(target, instant = false) {
+            // --- EVENT LISTENERS ---
+            allElements.addItemForm.addEventListener('submit', handleAddItem);
+            
+            allElements.searchItemsInput.addEventListener('input', () => renderItems(allItems.filter(item => item.status !== 'delivered')));
+            allElements.searchArchiveInput.addEventListener('input', () => {
+                archiveCurrentPage = 1;
+                renderArchive(allItems.filter(item => item.status === 'delivered'));
+            });
+            allElements.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
+            allElements.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
+            allElements.sortDateBtn.addEventListener('click', () => handleSort('date'));
+
+            allElements.mainContent.addEventListener('click', async (e) => {
+                const button = e.target.closest('button[data-action]');
+                if (!button) return;
+
+                const itemDiv = button.closest('div[data-id]');
+                if (!itemDiv) return;
+                
+                const id = itemDiv.dataset.id;
+                const action = button.dataset.action;
+                const item = allItems.find(i => i.id === id);
+                if (!item) return;
+
+                switch(action) {
+                    case 'deliver':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`,
+                            () => updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() })
+                        );
+                        break;
+                    case 'restore':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`,
+                            () => updateItem(id, { status: 'active', deliveredAt: null }),
+                            "Geri Yükle"
+                        );
+                        break;
+                    case 'delete-permanent':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
+                            () => deleteItem(id),
+                            "Kalıcı Olarak Sil", true
+                        );
+                        break;
+                    case 'delete-item':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
+                            () => deleteItem(id),
+                            "İptal Et ve Sil", true
+                        );
+                        break;
+                    case 'edit-count': {
+                        const result = await showInputModal("Poşet Sayısını Düzenle", `'${item.customerName}' için yeni poşet sayısını girin:`, 'number', item.bagCount);
+                        if (result.confirmed && result.value && !isNaN(result.value) && result.value > 0) {
+                            updateItem(id, { bagCount: parseInt(result.value, 10) });
+                        }
+                        break;
+                    }
+                    case 'edit-note': {
+                        const result = await showInputModal("Notu Düzenle", `'${item.customerName}' için not:`, 'textarea', item.note || '');
+                        if (result.confirmed) {
+                           updateItem(id, { note: result.value.trim() });
+                        }
+                        break;
+                    }
+                     case 'delete-note-from-tab':
+                        showConfirmationModal(
+                            `'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`,
+                            () => updateItem(id, { note: '' }),
+                            "Notu Sil", true
+                        );
+                        break;
+                }
+            });
+            
+            document.querySelector('#panel-settings').addEventListener('click', async (e) => {
+                 const themeBtn = e.target.closest('.theme-btn');
+                 if(themeBtn) {
+                     settings.theme = themeBtn.dataset.theme;
+                     saveSettingsToStorage(settings);
+                     applySettings();
+                     return;
+                 }
+                 
+                 const targetId = e.target.id;
+                 switch(targetId) {
+                    case 'manage-customers-btn':
+                        showCustomerManagementModal();
+                        break;
+                    case 'export-json-btn':
+                        exportDataToJSON();
+                        break;
+                    case 'import-json-btn':
+                        allElements.importFileInput.click();
+                        break;
+                    case 'export-pdf-btn':
+                        exportToPDF();
+                        break;
+                    case 'export-csv-btn':
+                        exportToCSV();
+                        break;
+                    case 'reset-items-btn':
+                        showConfirmationModal(
+                            "Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.",
+                            async () => {
+                                allElements.loadingText.textContent = 'Poşetler siliniyor...';
+                                allElements.loadingOverlay.style.display = 'flex';
+                                const batch = writeBatch(db);
+                                allItems.forEach(item => batch.delete(doc(db, 'items', item.id)));
+                                await batch.commit();
+                                allElements.loadingOverlay.style.display = 'none';
+                            }, "Evet, Sil", true
+                        );
+                        break;
+                    case 'reset-all-btn':
+                        showConfirmationModal(
+                            "Uygulamadaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+                            resetAllData, "EVET, TÜMÜNÜ SİL", true
+                        );
+                        break;
+                 }
+            });
+            
+            allElements.importFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        await showConfirmationModal(
+                            "Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Bu işlem geri alınamaz. Emin misiniz?",
+                            async () => {
+                                allElements.loadingOverlay.style.display = 'flex';
+                                await importDataFromJSON(data);
+                                allElements.loadingOverlay.style.display = 'none';
+                            }, "Onayla ve Yükle"
+                        );
+                    } catch (error) {
+                        console.error("Import error:", error);
+                        showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = null;
+            });
+            
+            document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
+                settings.fontSize = e.target.value;
+                document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
+                document.body.style.fontSize = `${settings.fontSize}px`;
+             });
+            document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
+                settings.fontSize = e.target.value;
+                 saveSettingsToStorage(settings);
+             });
+            
+            document.querySelectorAll('.report-range-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
+                    btn.classList.add('accent-bg');
+                    renderPeriodicReport(btn.dataset.range);
+                });
+            });
+
+            document.querySelector('nav').addEventListener('click', (e) => {
+                if (e.target.id && e.target.id.startsWith('tab-')) {
+                    switchTab(e.target.id.replace('tab-', ''));
+                }
+            });
+
+            allElements.customerNameInput.addEventListener("input", () => {
+                const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
+                allElements.suggestionsBox.innerHTML = "";
+                if (searchTerm.length === 0) {
+                    allElements.suggestionsBox.classList.add("hidden");
+                    return;
+                }
+
+                const filtered = allCustomers
+                    .filter(c => toTrUpperCase(c.name).includes(searchTerm))
+                    .map(c => c.name);
+
+                if (filtered.length > 0) {
+                    filtered.forEach(name => {
+                        const div = document.createElement("div");
+                        div.textContent = name;
+                        div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
+                        div.addEventListener("click", () => {
+                            allElements.customerNameInput.value = name;
+                            allElements.suggestionsBox.classList.add("hidden");
+                            allElements.bagCountInput.focus();
+                        });
+                        allElements.suggestionsBox.appendChild(div);
+                    });
+                    allElements.suggestionsBox.classList.remove("hidden");
+                } else {
+                    allElements.suggestionsBox.classList.add("hidden");
+                }
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest('.relative')) {
+                    allElements.suggestionsBox.classList.add("hidden");
+                }
+            });
+            
+            // --- MODAL, SIRALAMA VE DİĞER YARDIMCI FONKSİYONLAR ---
+            function switchTab(target, instant = false) {
                 const tabs = document.querySelectorAll('nav button[id^="tab-"]');
                 const panels = document.querySelectorAll('.panel[id^="panel-"]');
                 
@@ -965,17 +1086,19 @@
             }
 
             function updateSortButtons() {
-                [dom.sortAlphaBtn, dom.sortBagsBtn, dom.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
+                [allElements.sortAlphaBtn, allElements.sortBagsBtn, allElements.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
                 const activeBtn = document.getElementById(`sort-${sortState.type}`);
                 if (activeBtn) activeBtn.classList.add('sort-active');
-                dom.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
-                dom.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
-                dom.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
+
+                allElements.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
+                allElements.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
+                allElements.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
             }
             
             function renderArchivePagination(totalPages) {
-                dom.archivePagination.innerHTML = '';
+                allElements.archivePagination.innerHTML = '';
                 if(totalPages <= 1) return;
+
                 const createBtn = (text, onClick, disabled = false) => {
                     const btn = document.createElement('button');
                     btn.innerHTML = text;
@@ -984,59 +1107,84 @@
                     btn.onclick = onClick;
                     return btn;
                 }
-                dom.archivePagination.appendChild(createBtn('&laquo;', () => { archiveCurrentPage--; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === 1));
+
+                allElements.archivePagination.appendChild(createBtn('&laquo;', () => { archiveCurrentPage--; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === 1));
+
                 for(let i = 1; i <= totalPages; i++) {
                     const pageBtn = createBtn(i, () => { archiveCurrentPage = i; renderArchive(allItems.filter(i => i.status === 'delivered')) });
                     if (i === archiveCurrentPage) pageBtn.classList.add('active');
-                    dom.archivePagination.appendChild(pageBtn);
+                    allElements.archivePagination.appendChild(pageBtn);
                 }
-                dom.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
+
+                allElements.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
             }
             
             function showModal(htmlContent) {
                 return new Promise(resolve => {
-                    dom.modalContent.innerHTML = htmlContent;
+                    allElements.modalContent.innerHTML = htmlContent;
+                    
                     const modalClickListener = (e) => {
                         const button = e.target.closest('button');
                         if (!button) return;
-                        const input = dom.modalContent.querySelector('input, textarea');
+
+                        const input = allElements.modalContent.querySelector('input, textarea');
                         const value = input ? input.value : true;
+                        
                         const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
+
                         if (isClosingButton) {
-                            dom.modalContent.removeEventListener('click', modalClickListener);
+                            allElements.modalContent.removeEventListener('click', modalClickListener);
                             hideModalUI();
                             resolve({ confirmed: false });
                         } else if (button.id === 'modal-confirm') {
                             resolve({ confirmed: true, value });
                         }
                     };
-                    dom.modalContent.addEventListener('click', modalClickListener);
-                    dom.modalContainer.classList.remove('hidden');
+
+                    allElements.modalContent.addEventListener('click', modalClickListener);
+
+                    allElements.modalContainer.classList.remove('hidden');
                     requestAnimationFrame(() => {
-                        dom.modalContainer.style.opacity = '1';
-                        dom.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
+                        allElements.modalContainer.style.opacity = '1';
+                        allElements.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
                     });
                 });
             }
 
             function hideModalUI() {
-                dom.modalContainer.style.opacity = '0';
-                dom.modalContentWrapper.classList.add('scale-95', 'opacity-0');
+                allElements.modalContainer.style.opacity = '0';
+                allElements.modalContentWrapper.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => {
-                    dom.modalContainer.classList.add('hidden');
-                    dom.modalContent.innerHTML = '';
+                    allElements.modalContainer.classList.add('hidden');
+                    allElements.modalContent.innerHTML = '';
                 }, 300);
             }
             
             async function showSimpleMessageModal(title, message) {
-                const result = await showModal(`<h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button></div>`);
-                if(result.confirmed) hideModalUI();
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                    <p class="text-secondary mb-4">${message}</p>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
+                    </div>`);
+                if(result.confirmed) {
+                    hideModalUI();
+                }
             }
 
             async function showConfirmationModal(message, onConfirm, confirmText = "Onayla", isDestructive = false) {
                 const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
-                const result = await showModal(`<h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button></div>`);
-                if (result.confirmed) await onConfirm();
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3>
+                    <p class="text-secondary mb-4">${message}</p>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                        <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
+                    </div>`);
+                
+                if (result.confirmed) {
+                    await onConfirm();
+                }
                 hideModalUI();
             }
 
@@ -1044,70 +1192,175 @@
                 const inputHtml = type === 'textarea'
                     ? `<textarea class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-28 mb-4">${value}</textarea>`
                     : `<input type="${type}" value="${value}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition mb-4">`;
-                const result = await showModal(`<h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3><p class="text-secondary mb-2">${message}</p>${inputHtml}<div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button></div>`);
-                if (result.confirmed || result.confirmed === false) hideModalUI();
+
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                    <p class="text-secondary mb-2">${message}</p>
+                    ${inputHtml}
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
+                    </div>`);
+                
+                if (result.confirmed || result.confirmed === false) {
+                     hideModalUI();
+                }
                 return result;
             }
 
             function renderCustomerModalList(filter = '') {
-                 const listContainer = document.getElementById('modal-customers-list');
-                 if (!listContainer) return;
-                 listContainer.innerHTML = '';
-                 const ucFilter = toTrUpperCase(filter);
-                 const filtered = allCustomers.filter(c => toTrUpperCase(c.name).includes(ucFilter)).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-                 if(filtered.length === 0) {
-                     listContainer.innerHTML = '<p class="text-center text-secondary">Müşteri bulunamadı.</p>';
-                     return;
-                 }
-                 filtered.forEach(customer => {
-                     const div = document.createElement('div');
-                     div.className = 'p-2 bg-tertiary/50 rounded-md';
-                     div.dataset.customerId = customer.id;
-                     div.dataset.customerName = customer.name;
-                     div.innerHTML = `<div class="customer-display flex justify-between items-center"><span class="customer-name-text text-primary text-sm">${customer.name}</span><div class="flex items-center gap-2"><button data-cust-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button><button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button></div></div><div class="customer-edit hidden flex items-center gap-2"><input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button data-cust-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button><button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button></div></div><div class="customer-delete-confirm hidden flex justify-between items-center"><span class="text-red-300 text-sm">Silinsin mi?</span><div class="flex items-center gap-2"><button data-cust-action="confirm-delete" class="text-sm bg-red-600 text-white px-2 py-1 rounded-md hover:bg-red-700">Evet</button><button data-cust-action="cancel-delete" class="text-sm bg-tertiary px-2 py-1 rounded-md hover:bg-slate-500">Hayır</button></div></div>`;
-                     listContainer.appendChild(div);
-                 });
-            }
+                const listContainer = document.getElementById('modal-customers-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '';
+                const ucFilter = toTrUpperCase(filter);
+                const filtered = allCustomers
+                    .filter(c => toTrUpperCase(c.name).includes(ucFilter))
+                    .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
+                if(filtered.length === 0) {
+                    listContainer.innerHTML = '<p class="text-center text-secondary">Müşteri bulunamadı.</p>';
+                    return;
+                }
+
+                filtered.forEach(customer => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.customerId = customer.id;
+                    div.dataset.customerName = customer.name; // Orijinal ismi sakla
+                    div.innerHTML = `
+                        <div class="customer-display flex justify-between items-center">
+                            <span class="customer-name-text text-primary text-sm">${customer.name}</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button>
+                                <button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button>
+                            </div>
+                        </div>
+                        <div class="customer-edit hidden flex items-center gap-2">
+                            <input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                             <div class="flex items-center gap-1">
+                                <button data-cust-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                                <button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button>
+                            </div>
+                        </div>
+                        <div class="customer-delete-confirm hidden flex justify-between items-center">
+                            <span class="text-red-300 text-sm">Silinsin mi?</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="confirm-delete" class="text-sm bg-red-600 text-white px-2 py-1 rounded-md hover:bg-red-700">Evet</button>
+                                <button data-cust-action="cancel-delete" class="text-sm bg-tertiary px-2 py-1 rounded-md hover:bg-slate-500">Hayır</button>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
+            
             async function showCustomerManagementModal() {
-                 showModal(`<div class="flex flex-col h-[70vh]"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div><form id="modal-add-customer-form" class="flex gap-2 mb-4"><input type="text" id="modal-new-customer-name" placeholder="Yeni Müşteri Ekle" class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required><button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button></form><input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition"><div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div></div>`);
-                 await new Promise(resolve => setTimeout(resolve, 0));
-                 const listContainer = document.getElementById('modal-customers-list'), searchInput = document.getElementById('modal-customer-search'), addForm = document.getElementById('modal-add-customer-form'), addInput = document.getElementById('modal-new-customer-name'), errorDiv = document.getElementById('modal-customer-error');
-                 const showModalError = (message) => { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); setTimeout(() => errorDiv.classList.add('hidden'), 3000); };
-                 searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
-                 listContainer.addEventListener('click', async e => {
-                     const button = e.target.closest('button[data-cust-action]');
-                     if (!button) return;
-                     const action = button.dataset.custAction;
-                     const customerDiv = button.closest('div[data-customer-id]');
-                     const customerId = customerDiv.dataset.customerId;
-                     const displayView = customerDiv.querySelector('.customer-display'), editView = customerDiv.querySelector('.customer-edit'), deleteConfirmView = customerDiv.querySelector('.customer-delete-confirm');
-                     switch (action) {
-                         case 'delete': displayView.classList.add('hidden'); deleteConfirmView.classList.remove('hidden'); break;
-                         case 'cancel-delete': deleteConfirmView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
-                         case 'confirm-delete': await deleteCustomer(customerId); break;
-                         case 'edit': displayView.classList.add('hidden'); editView.classList.remove('hidden'); editView.querySelector('input').focus(); break;
-                         case 'cancel-edit': editView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
-                         case 'save-edit':
-                             const input = editView.querySelector('.customer-name-input'), newName = input.value.trim(), oldName = customerDiv.dataset.customerName;
-                             if (!newName) { showModalError("Müşteri adı boş olamaz."); return; }
-                             if (toTrUpperCase(newName) === toTrUpperCase(oldName)) { editView.classList.add('hidden'); displayView.classList.remove('hidden'); return; }
-                             if (allCustomers.some(c => toTrUpperCase(c.name) === toTrUpperCase(newName) && c.id !== customerId)) { showModalError("Bu isimde başka bir müşteri zaten var."); return; }
-                             await updateCustomerNameAndItems(customerId, oldName, newName);
-                             break;
-                     }
-                 });
-                 addForm.addEventListener('submit', async e => {
-                     e.preventDefault();
-                     const name = toTrUpperCase(addInput.value.trim());
-                     if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) { await addDoc(collection(db, 'users', userId, 'customers'), { name }); addInput.value = ''; }
-                     else if (name) { showModalError('Bu müşteri zaten mevcut.'); }
-                 });
-                 renderCustomerModalList();
-            }
+                 showModal(`
+                    <div class="flex flex-col h-[70vh]">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3>
+                            <button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button>
+                        </div>
+                        <div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                        <form id="modal-add-customer-form" class="flex gap-2 mb-4">
+                            <input type="text" id="modal-new-customer-name" placeholder="Yeni Müşteri Ekle" class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
+                            <button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button>
+                        </form>
+                        <input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                        <div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
+                    </div>
+                `);
 
+                await new Promise(resolve => setTimeout(resolve, 0));
+                
+                const listContainer = document.getElementById('modal-customers-list');
+                const searchInput = document.getElementById('modal-customer-search');
+                const addForm = document.getElementById('modal-add-customer-form');
+                const addInput = document.getElementById('modal-new-customer-name');
+                const errorDiv = document.getElementById('modal-customer-error');
+
+                function showModalError(message) {
+                    errorDiv.textContent = message;
+                    errorDiv.classList.remove('hidden');
+                    setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+                }
+
+                searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
+                
+                listContainer.addEventListener('click', async e => {
+                    const button = e.target.closest('button[data-cust-action]');
+                    if (!button) return;
+
+                    const action = button.dataset.custAction;
+                    const customerDiv = button.closest('div[data-customer-id]');
+                    const customerId = customerDiv.dataset.customerId;
+
+                    const displayView = customerDiv.querySelector('.customer-display');
+                    const editView = customerDiv.querySelector('.customer-edit');
+                    const deleteConfirmView = customerDiv.querySelector('.customer-delete-confirm');
+
+                    switch (action) {
+                        case 'delete':
+                            displayView.classList.add('hidden');
+                            deleteConfirmView.classList.remove('hidden');
+                            break;
+                        case 'cancel-delete':
+                            deleteConfirmView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'confirm-delete':
+                            await deleteCustomer(customerId);
+                            break;
+                        case 'edit':
+                            displayView.classList.add('hidden');
+                            editView.classList.remove('hidden');
+                            editView.querySelector('input').focus();
+                            break;
+                        case 'cancel-edit':
+                            editView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'save-edit':
+                            const input = editView.querySelector('.customer-name-input');
+                            const newName = input.value.trim();
+                            const oldName = customerDiv.dataset.customerName;
+
+                            if (!newName) {
+                                showModalError("Müşteri adı boş olamaz.");
+                                return;
+                            }
+                            if (toTrUpperCase(newName) === toTrUpperCase(oldName)) {
+                                editView.classList.add('hidden');
+                                displayView.classList.remove('hidden');
+                                return;
+                            }
+                            const isDuplicate = allCustomers.some(c => toTrUpperCase(c.name) === toTrUpperCase(newName) && c.id !== customerId);
+                            if (isDuplicate) {
+                                showModalError("Bu isimde başka bir müşteri zaten var.");
+                                return;
+                            }
+                            
+                            await updateCustomerNameAndItems(customerId, oldName, newName);
+                            break;
+                    }
+                });
+                
+                addForm.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = toTrUpperCase(addInput.value.trim());
+                    if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) {
+                       await addDoc(collection(db, 'customers'), { name });
+                       addInput.value = '';
+                    } else if (name) {
+                       showModalError('Bu müşteri zaten mevcut.');
+                    }
+                });
+                
+                renderCustomerModalList();
+            }
+            
             function exportDataToJSON() {
-                const data = { allItems, allCustomers };
+                const data = { allItems, allCustomers, settings };
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -1117,22 +1370,15 @@
                 URL.revokeObjectURL(url);
             }
 
-            function exportToPDF() {
+            function exportToCSV() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
-                const pdf = new jsPDF();
-                pdf.text("Bekleyen Poşet Listesi", 14, 16);
-                const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
-                const tableRows = activeItems.map((item, index) => [index + 1, item.customerName, item.bagCount, formatDate(item.lastModified).split(' ')[0]]);
-                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-                pdf.save('poset_listesi.pdf');
-            }
-
-            function exportToCSV() {
-                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+                
                 const headers = "Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi";
-                const rows = activeItems.map(item => `"${item.customerName.replace(/"/g, '""')}",${item.bagCount},"${(item.note || '').replace(/"/g, '""')}",${formatDate(item.lastModified)}`);
+                const rows = activeItems.map(item =>
+                    `"${item.customerName.replace(/"/g, '""')}",${item.bagCount},"${(item.note || '').replace(/"/g, '""')}",${formatDate(item.lastModified)}`
+                );
+
                 const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
@@ -1144,39 +1390,48 @@
                 link.click();
                 document.body.removeChild(link);
             }
-            
-            // --- ANA BAŞLATMA ---
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
 
-            onAuthStateChanged(auth, user => {
-                if (user) {
-                    // Kullanıcı giriş yaptı
-                    userId = user.uid;
-                    dom.userInfo.textContent = user.email;
-                    dom.authContainer.classList.add('hidden-auth');
-                    dom.appContainer.classList.remove('hidden');
-                    listenToData(userId);
-                } else {
-                    // Kullanıcı çıkış yaptı
-                    userId = null;
-                    if (itemsUnsubscribe) itemsUnsubscribe();
-                    if (customersUnsubscribe) customersUnsubscribe();
-                    resetUI();
-                    dom.authContainer.classList.remove('hidden-auth');
-                    dom.appContainer.classList.add('hidden');
-                }
-            });
+            function exportToPDF() {
+                // Bu fonksiyon şimdilik Türkçe karakterleri desteklemeyebilir.
+                // Güvenilir bir font çözümü bulunduğunda tekrar aktif edilebilir.
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
 
-            initializeAppLogic();
+                const pdf = new jsPDF();
+                
+                pdf.text("Bekleyen Poşet Listesi", 14, 16);
+                
+                const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
+                const tableRows = [];
+
+                activeItems.forEach((item, index) => {
+                    tableRows.push([
+                        index + 1,
+                        item.customerName,
+                        item.bagCount,
+                        formatDate(item.lastModified).split(' ')[0]
+                    ]);
+                });
+
+                pdf.autoTable({
+                    head: [tableColumn], 
+                    body: tableRows, 
+                    startY: 20,
+                });
+
+                pdf.save('poset_listesi.pdf');
+            }
+
+            // --- UYGULAMAYI BAŞLAT ---
+            initialize();
         });
     </script>
     
+    <!-- PWA Service Worker Kaydı -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(registration => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 }, err => {
                     console.log('ServiceWorker registration failed: ', err);
