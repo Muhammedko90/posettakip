@@ -120,7 +120,7 @@
         
         <header class="text-center mb-6">
             <h1 class="text-3xl sm:text-4xl font-bold text-primary">Emre Bebe Toptan Müşteri Poşet Takibi</h1>
-            <p class="mt-2 text-secondary">Tüm müşteri emanetlerinizi tek yerden yönetin.</p>
+            <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
         </header>
 
         <!-- Sekme Navigasyonu -->
@@ -151,7 +151,11 @@
                 </div>
                 <div>
                     <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                        <h2 class="text-2xl font-semibold text-primary flex items-center gap-3">Bekleyen Poşetler <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span></h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-semibold text-primary">Bekleyen Poşetler</h2>
+                            <span id="total-customers-counter" class="text-base font-medium bg-sky-500/20 text-sky-300 py-1 px-3 rounded-full" title="Bekleyen Müşteri Sayısı"></span>
+                            <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
+                        </div>
                         <div class="flex items-center gap-2">
                              <input type="search" id="search-items-input" placeholder="Listede ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
                              <div class="flex border border-dynamic rounded-lg">
@@ -301,6 +305,7 @@
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
                 searchItemsInput: document.getElementById('search-items-input'),
                 totalBagsCounter: document.getElementById('total-bags-counter'),
+                totalCustomersCounter: document.getElementById('total-customers-counter'),
                 sortAlphaBtn: document.getElementById('sort-alpha'),
                 sortBagsBtn: document.getElementById('sort-bags'),
                 sortDateBtn: document.getElementById('sort-date'),
@@ -422,7 +427,11 @@
                 const searchQuery = toTrUpperCase(allElements.searchItemsInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
+                // Müşteri ve poşet sayaçlarını güncelle
                 allElements.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
+                const customerNames = new Set(filteredItems.map(item => item.customerName));
+                allElements.totalCustomersCounter.textContent = customerNames.size;
+
 
                 const direction = sortState.direction === 'asc' ? 1 : -1;
                 filteredItems.sort((a, b) => {
