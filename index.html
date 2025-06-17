@@ -365,10 +365,14 @@
             }
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem('emanet-settings-v2')) || { theme: 'dark', fontSize: 16 };
             const saveSettingsToStorage = (settings) => localStorage.setItem('emanet-settings-v2', JSON.stringify(settings));
-            const formatDate = (iso) => {
+            const formatDate = (iso, time = true) => {
                 if(!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
-                return date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short'});
+                const options = { dateStyle: 'short' };
+                if (time) {
+                    options.timeStyle = 'short';
+                }
+                return date.toLocaleString('tr-TR', options);
             };
             const formatRelativeTime = (iso) => {
                 if (!iso) return '';
@@ -1386,7 +1390,7 @@
                     `"${(item.customerName || '').replace(/"/g, '""')}"`,
                     item.bagCount,
                     `"${(item.note || '').replace(/"/g, '""')}"`,
-                    formatDate(item.lastModified)
+                    `"${formatDate(item.lastModified, false)}"` // Sadece tarih
                 ].join(';')); 
 
                 const csvContent = [
@@ -1415,7 +1419,7 @@
                 }
                 
                 // Base64 encoded Liberation Sans font with Turkish character support
-                const font = 'AAEAAAARAQAABAAQRFNJRwAAAAAAA... (font data is very long and not shown for brevity) ...AAAA=='; 
+                const font = 'AAEAAAARAQAABAAQRFNJRwAAAAAAA... (very long Base64 string was here)';
 
                 try {
                     const pdf = new jsPDF();
@@ -1434,7 +1438,7 @@
                             index + 1,
                             item.customerName,
                             item.bagCount,
-                            formatDate(item.lastModified).split(' ')[0]
+                            formatDate(item.lastModified, false) // Sadece tarih
                         ]);
                     });
 
