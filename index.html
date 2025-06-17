@@ -262,14 +262,21 @@
     <script type="module">
         // Firebase Modüllerini İçe Aktar
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
             onSnapshot, query, serverTimestamp, writeBatch 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- FIREBASE YAPILANDIRMASI ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : {};
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
+            authDomain: "emre-bebe-takip.firebaseapp.com",
+            projectId: "emre-bebe-takip",
+            storageBucket: "emre-bebe-takip.firebasestorage.app",
+            messagingSenderId: "174642780473",
+            appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
+        };
         
         // Gerekli kütüphaneleri yükle
         const { jsPDF } = window.jspdf;
@@ -324,9 +331,6 @@
             let itemsUnsubscribe = null;
             let customersUnsubscribe = null;
             let connectionTimeout = null;
-            // The current app ID provided in the canvas environment.
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
 
             // --- İKONLAR ---
             const icons = {
@@ -487,8 +491,7 @@
                     </div>
                     <div class="item-actions flex items-center gap-2 ml-2">
                         <button data-action="restore" class="p-2 text-secondary hover:text-yellow-400 rounded-full transition" title="Geri Yükle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg></button>
-                        <button data-action="delete-permanent" class="p-2 text-secondary hover:text-red-500 rounded-full transition" title="Kalıcı Olarak Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0
- 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
+                        <button data-action="delete-permanent" class="p-2 text-secondary hover:text-red-500 rounded-full transition" title="Kalıcı Olarak Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
                     </div>`;
                 return div;
             }
@@ -602,14 +605,10 @@
                 try {
                     const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
                     if (!customerExists) {
-                        // Public data collection reference
-                        const customerColRef = collection(db, 'artifacts', appId, 'public', 'data', 'customers');
-                        await addDoc(customerColRef, { name: customerName });
+                        await addDoc(collection(db, 'customers'), { name: customerName });
                     }
 
-                    // Public data collection reference
-                    const itemsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'items');
-                    await addDoc(itemsColRef, {
+                    await addDoc(collection(db, 'items'), {
                         customerName,
                         bagCount,
                         note: '',
@@ -625,76 +624,44 @@
 
                 } catch (error) {
                     console.error("Error adding document: ", error);
-                    // Using custom modal instead of alert
-                    showConfirmationModal("Kayıt eklenirken bir hata oluştu.", () => {}, "Tamam", true);
+                    alert("Kayıt eklenirken bir hata oluştu.");
                 }
             }
 
             async function updateItem(id, data) {
-                // Public data document reference
-                const itemRef = doc(db, 'artifacts', appId, 'public', 'data', 'items', id);
+                const itemRef = doc(db, 'items', id);
                 await updateDoc(itemRef, { ...data, lastModified: serverTimestamp() });
-            }
-            
-            async function updateCustomer(id, data) {
-                // Public data document reference
-                const customerRef = doc(db, 'artifacts', appId, 'public', 'data', 'customers', id);
-                await updateDoc(customerRef, { ...data });
             }
 
             async function deleteItem(id) {
-                // Public data document reference
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'items', id));
+                await deleteDoc(doc(db, 'items', id));
             }
             
             async function deleteCustomer(id) {
-                const customerItems = allItems.filter(item => item.customerName.toLowerCase() === allCustomers.find(c => c.id === id).name.toLowerCase());
-                if (customerItems.length > 0) {
-                    await showConfirmationModal(
-                        `Bu müşteriye ait ${customerItems.length} adet poşet kaydı bulunmaktadır. Müşteriyi silerseniz bu kayıtlar müşteri isimsiz kalacaktır. Yine de silmek istiyor musunuz?`,
-                        async () => {
-                            // Public data document reference
-                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-                            // Optionally, update items to have a placeholder customer name or similar if desired.
-                            // For simplicity, we are just deleting the customer, items remain with their existing name.
-                        },
-                        "Evet, Sil", true
-                    );
-                } else {
-                    await showConfirmationModal(
-                        "Bu müşteriyi kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
-                        async () => {
-                            // Public data document reference
-                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'customers', id));
-                        },
-                        "Evet, Sil", true
-                    );
-                }
+                await deleteDoc(doc(db, 'customers', id));
             }
             
             async function importDataFromJSON(data) {
                 if (!data.allItems || !data.allCustomers) {
-                    // Using custom modal instead of alert
-                    showConfirmationModal('Geçersiz yedek dosyası formatı.', () => {}, "Tamam", true);
+                    alert('Geçersiz yedek dosyası formatı.');
                     return;
                 }
 
                 allElements.loadingText.textContent = 'Veriler siliniyor...';
                 
                 const itemsBatch = writeBatch(db);
-                allItems.forEach(item => itemsBatch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'items', item.id)));
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
                 await itemsBatch.commit();
                 
                 const customersBatch = writeBatch(db);
-                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'customers', customer.id)));
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
                 await customersBatch.commit();
 
                 allElements.loadingText.textContent = 'Veriler içe aktarılıyor...';
                 
                 const newItemsBatch = writeBatch(db);
                 data.allItems.forEach(item => {
-                    // Public data collection reference
-                    const newItemRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'items'));
+                    const newItemRef = doc(collection(db, 'items'));
                     const cleanItem = { ...item };
                     delete cleanItem.id; 
                     if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
@@ -706,16 +673,14 @@
 
                 const newCustomersBatch = writeBatch(db);
                 data.allCustomers.forEach(customer => {
-                    // Public data collection reference
-                    const newCustomerRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'));
+                    const newCustomerRef = doc(collection(db, 'customers'));
                     const cleanCustomer = { ...customer };
                     delete cleanCustomer.id;
                     newCustomersBatch.set(newCustomerRef, cleanCustomer);
                 });
                 await newCustomersBatch.commit();
 
-                // Using custom modal instead of alert
-                showConfirmationModal('Veriler başarıyla geri yüklendi.', () => {}, "Tamam");
+                alert('Veriler başarıyla geri yüklendi.');
             }
             
             async function resetAllData() {
@@ -724,11 +689,11 @@
                  allElements.loadingOverlay.style.opacity = '1';
 
                 const itemsBatch = writeBatch(db);
-                allItems.forEach(item => itemsBatch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'items', item.id)));
+                allItems.forEach(item => itemsBatch.delete(doc(db, 'items', item.id)));
                 await itemsBatch.commit();
                 
                 const customersBatch = writeBatch(db);
-                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'customers', customer.id)));
+                allCustomers.forEach(customer => customersBatch.delete(doc(db, 'customers', customer.id)));
                 await customersBatch.commit();
                 
                 allElements.loadingOverlay.style.opacity = '0';
@@ -747,25 +712,6 @@
                         app = initializeApp(firebaseConfig);
                         auth = getAuth(app);
                         db = getFirestore(app);
-                        // The Firebase custom auth token string automatically provided within the Canvas environment.
-                        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                        if (initialAuthToken) {
-                            signInWithCustomToken(auth, initialAuthToken).then(() => {
-                                console.log("Signed in with custom token.");
-                            }).catch((error) => {
-                                console.error("Error signing in with custom token:", error);
-                                // Fallback to anonymous sign-in if custom token fails
-                                signInAnonymously(auth).catch(error => {
-                                    console.error("Anonymous sign-in failed: ", error);
-                                    showConnectionError('Veritabanı ile kimlik doğrulaması yapılamadı.');
-                                });
-                            });
-                        } else {
-                            signInAnonymously(auth).catch(error => {
-                                console.error("Anonymous sign-in failed: ", error);
-                                showConnectionError('Veritabanı ile kimlik doğrulaması yapılamadı.');
-                            });
-                        }
                     }
                     
                     onAuthStateChanged(auth, user => {
@@ -773,7 +719,6 @@
                         if (user) {
                             listenToData();
                         } else {
-                             // If no user (or sign-in failed), try anonymous sign-in again
                             signInAnonymously(auth).catch(error => {
                                 console.error("Anonymous sign-in failed: ", error);
                                 showConnectionError('Veritabanı ile kimlik doğrulaması yapılamadı.');
@@ -787,12 +732,25 @@
                 }
             }
 
+            function initialize() {
+                settings = getSettingsFromStorage();
+                applySettings();
+                updateSortButtons();
+                switchTab('list', true);
+                allElements.retryButton.addEventListener('click', () => {
+                    allElements.loadingText.textContent = 'Veritabanına bağlanılıyor...';
+                    allElements.loadingSpinner.style.display = 'block';
+                    allElements.retryContainer.classList.add('hidden');
+                    startFirebaseConnection();
+                });
+                startFirebaseConnection();
+            }
+
             function listenToData() {
                 if (itemsUnsubscribe) itemsUnsubscribe();
                 if (customersUnsubscribe) customersUnsubscribe();
 
-                // Public data collection reference
-                const itemsQuery = query(collection(db, "artifacts", appId, "public", "data", "items"));
+                const itemsQuery = query(collection(db, "items"));
                 itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
                     allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderAll();
@@ -802,8 +760,7 @@
                     showConnectionError('Veri alınırken bir hata oluştu.');
                 });
 
-                // Public data collection reference
-                const customersQuery = query(collection(db, "artifacts", appId, "public", "data", "customers"));
+                const customersQuery = query(collection(db, "customers"));
                 customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
                     allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     const modalList = document.getElementById('modal-customers-list');
@@ -840,43 +797,43 @@
 
                 switch(action) {
                     case 'deliver':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             `'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`,
-                            async () => await updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() })
+                            () => updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() })
                         );
                         break;
                     case 'restore':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             `'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`,
-                            async () => await updateItem(id, { status: 'active', deliveredAt: null }),
+                            () => updateItem(id, { status: 'active', deliveredAt: null }),
                             "Geri Yükle"
                         );
                         break;
                     case 'delete-permanent':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
-                            async () => await deleteItem(id),
+                            () => deleteItem(id),
                             "Kalıcı Olarak Sil", true
                         );
                         break;
                     case 'edit-count': {
                         const result = await showInputModal("Poşet Sayısını Düzenle", `'${item.customerName}' için yeni poşet sayısını girin:`, 'number', item.bagCount);
                         if (result.confirmed && result.value && !isNaN(result.value) && result.value > 0) {
-                            await updateItem(id, { bagCount: parseInt(result.value, 10) });
+                            updateItem(id, { bagCount: parseInt(result.value, 10) });
                         }
                         break;
                     }
                     case 'edit-note': {
                         const result = await showInputModal("Notu Düzenle", `'${item.customerName}' için not:`, 'textarea', item.note || '');
                         if (result.confirmed) {
-                           await updateItem(id, { note: result.value.trim() });
+                           updateItem(id, { note: result.value.trim() });
                         }
                         break;
                     }
                      case 'delete-note-from-tab':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             `'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`,
-                            async () => await updateItem(id, { note: '' }),
+                            () => updateItem(id, { note: '' }),
                             "Notu Sil", true
                         );
                         break;
@@ -895,7 +852,7 @@
                  const targetId = e.target.id;
                  switch(targetId) {
                     case 'manage-customers-btn':
-                        await showCustomerManagementModal();
+                        showCustomerManagementModal();
                         break;
                     case 'export-json-btn':
                         exportDataToJSON();
@@ -910,20 +867,20 @@
                         exportToCSV();
                         break;
                     case 'reset-items-btn':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             "Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.",
                             async () => {
                                 allElements.loadingText.textContent = 'Poşetler siliniyor...';
                                 allElements.loadingOverlay.style.display = 'flex';
                                 const batch = writeBatch(db);
-                                allItems.forEach(item => batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'items', item.id)));
+                                allItems.forEach(item => batch.delete(doc(db, 'items', item.id)));
                                 await batch.commit();
                                 allElements.loadingOverlay.style.display = 'none';
                             }, "Evet, Sil", true
                         );
                         break;
                     case 'reset-all-btn':
-                        await showConfirmationModal(
+                        showConfirmationModal(
                             "Uygulamadaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
                             resetAllData, "EVET, TÜMÜNÜ SİL", true
                         );
@@ -931,7 +888,7 @@
                  }
             });
             
-            allElements.importFileInput.addEventListener('change', async (e) => {
+            allElements.importFileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -948,8 +905,7 @@
                         );
                     } catch (error) {
                         console.error("Import error:", error);
-                        // Using custom modal instead of alert
-                        showConfirmationModal('Yedek dosyası okunurken hata oluştu.', () => {}, "Tamam", true);
+                        alert('Yedek dosyası okunurken hata oluştu.');
                     }
                 };
                 reader.readAsText(file);
@@ -1085,22 +1041,25 @@
                 return new Promise(resolve => {
                     allElements.modalContent.innerHTML = htmlContent;
                     
-                    // Attach event listener only once for buttons within the modal
-                    const modalClickListener = async (e) => {
+                    const modalClickListener = (e) => {
                         const button = e.target.closest('button');
                         if (!button) return;
 
-                        // This part handles the form submission inside the modal for inputs/textareas
-                        if (button.id === 'modal-confirm') {
-                            const input = allElements.modalContent.querySelector('input, textarea');
-                            const value = input ? input.value : true; // Get value if input exists
-                            allElements.modalContent.removeEventListener('click', modalClickListener);
-                            hideModalUI();
-                            resolve({ confirmed: true, value });
-                        } else if (button.id === 'modal-cancel' || button.id === 'modal-close') {
-                            allElements.modalContent.removeEventListener('click', modalClickListener);
-                            hideModalUI();
-                            resolve({ confirmed: false });
+                        const input = allElements.modalContent.querySelector('input, textarea');
+                        const value = input ? input.value : true;
+
+                        allElements.modalContent.removeEventListener('click', modalClickListener);
+                        
+                        hideModalUI();
+
+                        switch (button.id) {
+                            case 'modal-confirm':
+                                resolve({ confirmed: true, value });
+                                break;
+                            case 'modal-cancel':
+                            case 'modal-close':
+                                resolve({ confirmed: false });
+                                break;
                         }
                     };
 
@@ -1171,20 +1130,13 @@
                     div.className = 'flex justify-between items-center p-2 bg-tertiary/50 rounded-md';
                     div.innerHTML = `
                         <span class="text-primary text-sm">${customer.name}</span>
-                        <div class="flex gap-2">
-                            <button data-action="edit-customer" data-cust-id="${customer.id}" class="p-1 text-secondary hover:accent-text rounded-full transition" title="Müşteriyi Düzenle">
-                                <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>
-                            </button>
-                            <button data-action="delete-customer" data-cust-id="${customer.id}" class="p-1 text-secondary hover:text-red-500 rounded-full transition" title="Müşteriyi Sil">
-                                <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>
-                            </button>
-                        </div>`;
+                        <button data-cust-id="${customer.id}" class="p-1 text-secondary hover:text-red-500 rounded-full transition" title="Müşteriyi Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>`;
                     listContainer.appendChild(div);
                 });
             }
             
             async function showCustomerManagementModal() {
-                 await showModal(`
+                 showModal(`
                     <div class="flex flex-col h-[70vh]">
                         <h3 class="text-xl font-semibold mb-4 text-primary">Müşteri Listesi</h3>
                         <form id="modal-add-customer-form" class="flex gap-2 mb-4">
@@ -1199,11 +1151,8 @@
                     </div>
                 `);
 
-                // Since showModal is async and resolves when a button is clicked,
-                // the listeners for the modal's internal elements need to be re-attached
-                // or managed carefully. Let's make sure they are attached after the modal HTML is rendered.
+                await new Promise(resolve => setTimeout(resolve, 0));
                 
-                // Re-fetch elements as they might be new after modal content is rendered
                 const listContainer = document.getElementById('modal-customers-list');
                 const searchInput = document.getElementById('modal-customer-search');
                 const addForm = document.getElementById('modal-add-customer-form');
@@ -1212,59 +1161,31 @@
                 searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
                 
                 listContainer.addEventListener('click', async e => {
-                    const button = e.target.closest('button[data-action][data-cust-id]');
-                    if (!button) return;
-                    
-                    const customerId = button.dataset.custId;
-                    const action = button.dataset.action;
-                    const customer = allCustomers.find(c => c.id === customerId);
-
-                    if (!customer) return;
-
-                    switch (action) {
-                        case 'edit-customer':
-                            const result = await showInputModal("Müşteri Adını Düzenle", `'${customer.name}' için yeni müşteri adını girin:`, 'text', customer.name);
-                            if (result.confirmed && result.value && result.value.trim() !== '') {
-                                const newName = result.value.trim();
-                                // Check for duplicate customer name before updating
-                                const isDuplicate = allCustomers.some(c => c.id !== customerId && c.name.toLowerCase() === newName.toLowerCase());
-                                if (isDuplicate) {
-                                    await showConfirmationModal('Bu isimde bir müşteri zaten mevcut.', () => {}, 'Tamam', true);
-                                    return;
-                                }
-                                await updateCustomer(customerId, { name: newName });
-
-                                // Also update customer names in all related items
-                                const batch = writeBatch(db);
-                                allItems.filter(item => item.customerName === customer.name).forEach(item => {
-                                    const itemRef = doc(db, 'artifacts', appId, 'public', 'data', 'items', item.id);
-                                    batch.update(itemRef, { customerName: newName });
-                                });
-                                await batch.commit();
-                            }
-                            break;
-                        case 'delete-customer':
-                            await deleteCustomer(customerId);
-                            break;
+                    const deleteBtn = e.target.closest('button[data-cust-id]');
+                    if (deleteBtn) {
+                        const customerId = deleteBtn.dataset.custId;
+                        const customer = allCustomers.find(c => c.id === customerId);
+                        if (customer) {
+                            showConfirmationModal(
+                                `'${customer.name}' adlı müşteriyi silmek istediğinizden emin misiniz? Bu işlem, müşteriye ait poşet kayıtlarını etkilemez.`,
+                                () => deleteCustomer(customerId), "Evet, Sil", true
+                            );
+                        }
                     }
                 });
                 
                 addForm.addEventListener('submit', async e => {
                     e.preventDefault();
                     const name = addInput.value.trim();
-                    if(name) {
-                        if(!allCustomers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-                           // Public data collection reference
-                           await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'customers'), { name });
-                           addInput.value = '';
-                        } else {
-                           // Using custom modal instead of alert
-                           await showConfirmationModal('Bu müşteri zaten mevcut.', () => {}, "Tamam", true);
-                        }
+                    if(name && !allCustomers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                       await addDoc(collection(db, 'customers'), { name });
+                       addInput.value = '';
+                    } else if (name) {
+                       alert('Bu müşteri zaten mevcut.');
                     }
                 });
                 
-                renderCustomerModalList(); // Initial render of the customer list
+                renderCustomerModalList();
             }
             
             function exportDataToJSON() {
@@ -1280,7 +1201,7 @@
 
             function exportToCSV() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                if (activeItems.length === 0) { showConfirmationModal("Dışa aktarılacak veri yok.", () => {}, "Tamam", true); return; } // Using custom modal
+                if (activeItems.length === 0) { alert("Dışa aktarılacak veri yok."); return; }
                 
                 const headers = "Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi";
                 const rows = activeItems.map(item =>
@@ -1301,7 +1222,7 @@
 
             function exportToPDF() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                 if (activeItems.length === 0) { showConfirmationModal("Dışa aktarılacak veri yok.", () => {}, "Tamam", true); return; } // Using custom modal
+                 if (activeItems.length === 0) { alert("Dışa aktarılacak veri yok."); return; }
 
                 const pdf = new jsPDF();
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
