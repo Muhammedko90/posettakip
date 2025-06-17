@@ -265,7 +265,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
-            onSnapshot, query, serverTimestamp, writeBatch 
+            onSnapshot, query, where, serverTimestamp, writeBatch 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- FIREBASE YAPILANDIRMASI ---
@@ -339,7 +339,11 @@
                 bags_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11.5 2.707V14.5a.5.5 0 0 0 .5.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
                 bags_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L11.5 13.293V1.5a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
                 date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
-                date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>'
+                date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
+                cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
             };
 
             // --- YARDIMCI FONKSİYONLAR ---
@@ -624,7 +628,7 @@
 
                 } catch (error) {
                     console.error("Error adding document: ", error);
-                    alert("Kayıt eklenirken bir hata oluştu.");
+                    showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
                 }
             }
 
@@ -638,12 +642,41 @@
             }
             
             async function deleteCustomer(id) {
+                // Sadece müşteri silinir, müşteriye ait poşet kayıtları etkilenmez.
                 await deleteDoc(doc(db, 'customers', id));
             }
             
+            async function updateCustomerNameAndItems(customerId, oldName, newName) {
+                allElements.loadingText.textContent = 'Müşteri adı ve ilgili poşetler güncelleniyor...';
+                allElements.loadingOverlay.style.display = 'flex';
+                allElements.loadingOverlay.style.opacity = '1';
+                try {
+                    const batch = writeBatch(db);
+
+                    // 1. Müşteri belgesini güncelle
+                    const customerRef = doc(db, 'customers', customerId);
+                    batch.update(customerRef, { name: newName });
+                    
+                    // 2. Eski isme sahip tüm poşetleri bul ve güncelle
+                    const itemsQuery = query(collection(db, 'items'), where("customerName", "==", oldName));
+                    const itemsSnapshot = await getDocs(itemsQuery);
+                    itemsSnapshot.forEach(itemDoc => {
+                        batch.update(itemDoc.ref, { customerName: newName });
+                    });
+                    
+                    await batch.commit();
+                } catch(error) {
+                     console.error("Müşteri adı güncellenirken hata:", error);
+                     showSimpleMessageModal("Hata", "Müşteri adı güncellenirken bir sorun oluştu.");
+                } finally {
+                    allElements.loadingOverlay.style.opacity = '0';
+                    setTimeout(() => { allElements.loadingOverlay.style.display = 'none'; }, 300);
+                }
+            }
+
             async function importDataFromJSON(data) {
                 if (!data.allItems || !data.allCustomers) {
-                    alert('Geçersiz yedek dosyası formatı.');
+                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.');
                     return;
                 }
 
@@ -680,7 +713,7 @@
                 });
                 await newCustomersBatch.commit();
 
-                alert('Veriler başarıyla geri yüklendi.');
+                showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
             }
             
             async function resetAllData() {
@@ -905,7 +938,7 @@
                         );
                     } catch (error) {
                         console.error("Import error:", error);
-                        alert('Yedek dosyası okunurken hata oluştu.');
+                        showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.');
                     }
                 };
                 reader.readAsText(file);
@@ -1048,18 +1081,20 @@
                         const input = allElements.modalContent.querySelector('input, textarea');
                         const value = input ? input.value : true;
 
-                        allElements.modalContent.removeEventListener('click', modalClickListener);
-                        
-                        hideModalUI();
+                        // Sadece `modal-close` veya `modal-cancel` butonlarına basıldığında listener'ı kaldır ve pencereyi kapat.
+                        // Diğer butonlar (`modal-confirm` gibi) pencereyi açık bırakabilir.
+                        const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
 
-                        switch (button.id) {
-                            case 'modal-confirm':
-                                resolve({ confirmed: true, value });
-                                break;
-                            case 'modal-cancel':
-                            case 'modal-close':
-                                resolve({ confirmed: false });
-                                break;
+                        if (isClosingButton) {
+                            allElements.modalContent.removeEventListener('click', modalClickListener);
+                            hideModalUI();
+                            resolve({ confirmed: false });
+                        } else if (button.id === 'modal-confirm') {
+                             // "Onayla" butonu için `confirmed: true` ile resolve et, ama pencereyi kapatma.
+                             // Kapatma işlemi, çağıran fonksiyonun sorumluluğundadır.
+                             // Not: Bazı durumlarda yine de kapatmak isteyebiliriz, bu yüzden bu mantık özelleştirilebilir.
+                             // Şimdilik, `showConfirmationModal` gibi fonksiyonlar kapatmayı kendileri yönetecek.
+                            resolve({ confirmed: true, value });
                         }
                     };
 
@@ -1081,6 +1116,18 @@
                     allElements.modalContent.innerHTML = '';
                 }, 300);
             }
+            
+            async function showSimpleMessageModal(title, message) {
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                    <p class="text-secondary mb-4">${message}</p>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
+                    </div>`);
+                if(result.confirmed) {
+                    hideModalUI();
+                }
+            }
 
             async function showConfirmationModal(message, onConfirm, confirmText = "Onayla", isDestructive = false) {
                 const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
@@ -1095,6 +1142,8 @@
                 if (result.confirmed) {
                     await onConfirm();
                 }
+                // Her durumda modal'ı kapat
+                hideModalUI();
             }
 
             async function showInputModal(title, message, type = 'text', value = '') {
@@ -1102,7 +1151,7 @@
                     ? `<textarea class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-28 mb-4">${value}</textarea>`
                     : `<input type="${type}" value="${value}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition mb-4">`;
 
-                return showModal(`
+                const result = await showModal(`
                     <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
                     <p class="text-secondary mb-2">${message}</p>
                     ${inputHtml}
@@ -1110,6 +1159,11 @@
                         <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
                         <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
                     </div>`);
+                
+                if (result.confirmed || result.confirmed === false) {
+                     hideModalUI();
+                }
+                return result;
             }
 
             function renderCustomerModalList(filter = '') {
@@ -1127,10 +1181,35 @@
 
                 filtered.forEach(customer => {
                     const div = document.createElement('div');
-                    div.className = 'flex justify-between items-center p-2 bg-tertiary/50 rounded-md';
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.customerId = customer.id;
+                    div.dataset.customerName = customer.name; // Orijinal ismi sakla
                     div.innerHTML = `
-                        <span class="text-primary text-sm">${customer.name}</span>
-                        <button data-cust-id="${customer.id}" class="p-1 text-secondary hover:text-red-500 rounded-full transition" title="Müşteriyi Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>`;
+                        <!-- Varsayılan Görünüm -->
+                        <div class="customer-display flex justify-between items-center">
+                            <span class="customer-name-text text-primary text-sm">${customer.name}</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button>
+                                <button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button>
+                            </div>
+                        </div>
+                        <!-- Düzenleme Görünümü -->
+                        <div class="customer-edit hidden flex items-center gap-2">
+                            <input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                             <div class="flex items-center gap-1">
+                                <button data-cust-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                                <button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button>
+                            </div>
+                        </div>
+                        <!-- Silme Onayı Görünümü -->
+                        <div class="customer-delete-confirm hidden flex justify-between items-center">
+                            <span class="text-red-300 text-sm">Silinsin mi?</span>
+                            <div class="flex items-center gap-2">
+                                <button data-cust-action="confirm-delete" class="text-sm bg-red-600 text-white px-2 py-1 rounded-md hover:bg-red-700">Evet</button>
+                                <button data-cust-action="cancel-delete" class="text-sm bg-tertiary px-2 py-1 rounded-md hover:bg-slate-500">Hayır</button>
+                            </div>
+                        </div>
+                    `;
                     listContainer.appendChild(div);
                 });
             }
@@ -1138,16 +1217,17 @@
             async function showCustomerManagementModal() {
                  showModal(`
                     <div class="flex flex-col h-[70vh]">
-                        <h3 class="text-xl font-semibold mb-4 text-primary">Müşteri Listesi</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3>
+                            <button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button>
+                        </div>
+                        <div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
                         <form id="modal-add-customer-form" class="flex gap-2 mb-4">
                             <input type="text" id="modal-new-customer-name" placeholder="Yeni Müşteri Ekle" class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                             <button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button>
                         </form>
                         <input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
                         <div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
-                        <div class="flex justify-end gap-3 mt-4">
-                            <button id="modal-close" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">Kapat</button>
-                        </div>
                     </div>
                 `);
 
@@ -1157,31 +1237,85 @@
                 const searchInput = document.getElementById('modal-customer-search');
                 const addForm = document.getElementById('modal-add-customer-form');
                 const addInput = document.getElementById('modal-new-customer-name');
+                const errorDiv = document.getElementById('modal-customer-error');
+
+                function showModalError(message) {
+                    errorDiv.textContent = message;
+                    errorDiv.classList.remove('hidden');
+                    setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+                }
 
                 searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
                 
                 listContainer.addEventListener('click', async e => {
-                    const deleteBtn = e.target.closest('button[data-cust-id]');
-                    if (deleteBtn) {
-                        const customerId = deleteBtn.dataset.custId;
-                        const customer = allCustomers.find(c => c.id === customerId);
-                        if (customer) {
-                            showConfirmationModal(
-                                `'${customer.name}' adlı müşteriyi silmek istediğinizden emin misiniz? Bu işlem, müşteriye ait poşet kayıtlarını etkilemez.`,
-                                () => deleteCustomer(customerId), "Evet, Sil", true
-                            );
-                        }
+                    const button = e.target.closest('button[data-cust-action]');
+                    if (!button) return;
+
+                    const action = button.dataset.custAction;
+                    const customerDiv = button.closest('div[data-customer-id]');
+                    const customerId = customerDiv.dataset.customerId;
+
+                    const displayView = customerDiv.querySelector('.customer-display');
+                    const editView = customerDiv.querySelector('.customer-edit');
+                    const deleteConfirmView = customerDiv.querySelector('.customer-delete-confirm');
+
+                    switch (action) {
+                        case 'delete':
+                            displayView.classList.add('hidden');
+                            deleteConfirmView.classList.remove('hidden');
+                            break;
+                        case 'cancel-delete':
+                            deleteConfirmView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'confirm-delete':
+                            await deleteCustomer(customerId);
+                            // onSnapshot will auto-refresh the list
+                            break;
+                        case 'edit':
+                            displayView.classList.add('hidden');
+                            editView.classList.remove('hidden');
+                            editView.querySelector('input').focus();
+                            break;
+                        case 'cancel-edit':
+                            editView.classList.add('hidden');
+                            displayView.classList.remove('hidden');
+                            break;
+                        case 'save-edit':
+                            const input = editView.querySelector('.customer-name-input');
+                            const newName = input.value.trim();
+                            const oldName = customerDiv.dataset.customerName;
+
+                            if (!newName) {
+                                showModalError("Müşteri adı boş olamaz.");
+                                return;
+                            }
+                            if (newName.toLowerCase() === oldName.toLowerCase()) {
+                                // No change, just revert the view
+                                editView.classList.add('hidden');
+                                displayView.classList.remove('hidden');
+                                return;
+                            }
+                            const isDuplicate = allCustomers.some(c => c.name.toLowerCase() === newName.toLowerCase() && c.id !== customerId);
+                            if (isDuplicate) {
+                                showModalError("Bu isimde başka bir müşteri zaten var.");
+                                return;
+                            }
+                            
+                            await updateCustomerNameAndItems(customerId, oldName, newName);
+                            // onSnapshot will handle the UI update.
+                            break;
                     }
                 });
                 
                 addForm.addEventListener('submit', async e => {
                     e.preventDefault();
                     const name = addInput.value.trim();
-                    if(name && !allCustomers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                    if (name && !allCustomers.some(c => c.name.toLowerCase() === name.toLowerCase())) {
                        await addDoc(collection(db, 'customers'), { name });
                        addInput.value = '';
                     } else if (name) {
-                       alert('Bu müşteri zaten mevcut.');
+                       showModalError('Bu müşteri zaten mevcut.');
                     }
                 });
                 
@@ -1201,7 +1335,7 @@
 
             function exportToCSV() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                if (activeItems.length === 0) { alert("Dışa aktarılacak veri yok."); return; }
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
                 
                 const headers = "Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi";
                 const rows = activeItems.map(item =>
@@ -1222,7 +1356,7 @@
 
             function exportToPDF() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                 if (activeItems.length === 0) { alert("Dışa aktarılacak veri yok."); return; }
+                 if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
 
                 const pdf = new jsPDF();
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
