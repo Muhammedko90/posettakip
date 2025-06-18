@@ -511,12 +511,18 @@
                 const div = document.createElement('div');
                 div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
                 div.dataset.id = item.id;
+
+                const deliveredByHtml = item.deliveredBy 
+                    ? `<p class="item-subtext text-xs text-secondary/80 mt-1">Teslim Eden: ${item.deliveredBy}</p>` 
+                    : '';
+
                 div.innerHTML = `
                     <div class="item-details flex-1 flex items-center gap-4">
                         <div class="item-bag-count bg-slate-600/50 text-slate-400 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
                         <div class="flex-1">
                             <p class="item-customer-name font-semibold text-lg text-primary/80">${item.customerName}</p>
                             <p class="item-subtext text-sm text-secondary">Teslim Edildi: ${formatDate(item.deliveredAt)}</p>
+                            ${deliveredByHtml}
                         </div>
                     </div>
                     <div class="item-actions flex items-center gap-2 ml-2">
@@ -645,7 +651,8 @@
                         status: 'active',
                         createdAt: serverTimestamp(),
                         lastModified: serverTimestamp(),
-                        deliveredAt: null
+                        deliveredAt: null,
+                        deliveredBy: null
                     });
 
                     allElements.addItemForm.reset();
@@ -873,16 +880,21 @@
                 if (!item) return;
 
                 switch(action) {
-                    case 'deliver':
-                        showConfirmationModal(
-                            `'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`,
-                            () => updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp() })
-                        );
+                    case 'deliver': {
+                        const result = await showDeliverModal(item.customerName);
+                        if (result.confirmed && result.value) {
+                             updateItem(id, { 
+                                status: 'delivered', 
+                                deliveredAt: serverTimestamp(),
+                                deliveredBy: result.value
+                            });
+                        }
                         break;
+                    }
                     case 'restore':
                         showConfirmationModal(
                             `'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`,
-                            () => updateItem(id, { status: 'active', deliveredAt: null }),
+                            () => updateItem(id, { status: 'active', deliveredAt: null, deliveredBy: null }),
                             "Geri Yükle"
                         );
                         break;
@@ -1129,7 +1141,7 @@
                         const button = e.target.closest('button');
                         if (!button) return;
 
-                        const input = allElements.modalContent.querySelector('input, textarea');
+                        const input = allElements.modalContent.querySelector('input, textarea, select');
                         const value = input ? input.value : true;
                         
                         const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
@@ -1188,6 +1200,41 @@
                     await onConfirm();
                 }
                 hideModalUI();
+            }
+
+            async function showDeliverModal(customerName) {
+                const deliveryPersonnel = [
+                    'Cengiz Tuna',
+                    'Süleyman Özgür',
+                    'Muhammed Ali Koç',
+                    'Fatih Köse',
+                    'Abdullah Alalalı',
+                    'Ömer Alioğlu',
+                    'Mahir Avaid',
+                    'Murat Avaid'
+                ];
+                const optionsHtml = deliveryPersonnel.map(name =>
+                    `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`
+                ).join('');
+
+                const result = await showModal(`
+                    <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
+                    <p class="text-secondary mb-4">'${customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
+                    <div class="mb-4">
+                        <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
+                        <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button>
+                    </div>`);
+                
+                if (result.confirmed || result.confirmed === false) {
+                     hideModalUI();
+                }
+                return result;
             }
 
             async function showInputModal(title, message, type = 'text', value = '') {
@@ -1446,3 +1493,4 @@
     </script>
 </body>
 </html>
+
