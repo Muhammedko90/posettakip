@@ -141,10 +141,11 @@
             <!-- Liste Sekmesi -->
             <div id="panel-list" class="panel space-y-8">
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
-                    <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle / Listede Ara</h2>
                     <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
                         <div class="relative sm:col-span-3">
-                            <input type="text" id="customer-name" placeholder="Müşteri Adı Soyadı" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
+                            <!-- DEĞİŞİKLİK: Placeholder güncellendi -->
+                            <input type="text" id="customer-name" placeholder="Müşteri Adı / Listede Ara..." class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
                             <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
                         </div>
                         <input type="number" id="bag-count" placeholder="Poşet Sayısı" value="1" min="1" class="sm:col-span-1 w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
@@ -159,7 +160,7 @@
                             <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
                         </div>
                         <div class="flex items-center gap-2">
-                             <input type="search" id="search-items-input" placeholder="Listede ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
+                             <!-- DEĞİŞİKLİK: Arama input'u kaldırıldı -->
                              <div class="flex border border-dynamic rounded-lg">
                                 <button id="sort-alpha" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Alfabetik Sırala"></button>
                                 <button id="sort-bags" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic" title="Poşet Sayısına Göre Sırala"></button>
@@ -305,7 +306,7 @@
                 mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
-                searchItemsInput: document.getElementById('search-items-input'),
+                // DEĞİŞİKLİK: searchItemsInput kaldırıldı
                 totalBagsCounter: document.getElementById('total-bags-counter'),
                 totalCustomersCounter: document.getElementById('total-customers-counter'),
                 sortAlphaBtn: document.getElementById('sort-alpha'),
@@ -426,7 +427,8 @@
             }
             
             function renderItems(items) {
-                const searchQuery = toTrUpperCase(allElements.searchItemsInput.value);
+                // DEĞİŞİKLİK: Arama sorgusu ana input alanından alınır
+                const searchQuery = toTrUpperCase(allElements.customerNameInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
                 // Müşteri ve poşet sayaçlarını güncelle
@@ -447,7 +449,7 @@
                 
                 allElements.itemList.innerHTML = '';
                 allElements.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
-                allElements.emptyItemListMessage.textContent = searchQuery ? `ARAMANIZLA EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
+                allElements.emptyItemListMessage.textContent = searchQuery ? `"${searchQuery}" İLE EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
                 filteredItems.forEach(item => allElements.itemList.appendChild(createItemElement(item)));
             }
             
@@ -858,7 +860,7 @@
             // --- EVENT LISTENERS ---
             allElements.addItemForm.addEventListener('submit', handleAddItem);
             
-            allElements.searchItemsInput.addEventListener('input', () => renderItems(allItems.filter(item => item.status !== 'delivered')));
+            // DEĞİŞİKLİK: Eski arama dinleyicisi kaldırıldı
             allElements.searchArchiveInput.addEventListener('input', () => {
                 archiveCurrentPage = 1;
                 renderArchive(allItems.filter(item => item.status === 'delivered'));
@@ -1032,26 +1034,35 @@
                 }
             });
 
+            // DEĞİŞİKLİK: Müşteri adı input'u hem arama hem öneri için kullanılır
             allElements.customerNameInput.addEventListener("input", () => {
                 const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
+                
+                // Ana listeyi anında filtrele
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                renderItems(activeItems);
+
+                // Müşteri öneri kutusunu yönet
                 allElements.suggestionsBox.innerHTML = "";
                 if (searchTerm.length === 0) {
                     allElements.suggestionsBox.classList.add("hidden");
                     return;
                 }
 
-                const filtered = allCustomers
+                const filteredCustomers = allCustomers
                     .filter(c => toTrUpperCase(c.name).includes(searchTerm))
                     .map(c => c.name);
 
-                if (filtered.length > 0) {
-                    filtered.forEach(name => {
+                if (filteredCustomers.length > 0) {
+                    filteredCustomers.forEach(name => {
                         const div = document.createElement("div");
                         div.textContent = name;
                         div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
                         div.addEventListener("click", () => {
                             allElements.customerNameInput.value = name;
                             allElements.suggestionsBox.classList.add("hidden");
+                            // Öneriye tıklanınca da listeyi tekrar filtrele
+                            renderItems(activeItems); 
                             allElements.bagCountInput.focus();
                         });
                         allElements.suggestionsBox.appendChild(div);
@@ -1493,4 +1504,3 @@
     </script>
 </body>
 </html>
-
