@@ -144,7 +144,6 @@
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle / Listede Ara</h2>
                     <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
                         <div class="relative sm:col-span-3">
-                            <!-- DEĞİŞİKLİK: Placeholder güncellendi -->
                             <input type="text" id="customer-name" placeholder="Müşteri Adı / Listede Ara..." class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
                             <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
                         </div>
@@ -160,7 +159,6 @@
                             <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
                         </div>
                         <div class="flex items-center gap-2">
-                             <!-- DEĞİŞİKLİK: Arama input'u kaldırıldı -->
                              <div class="flex border border-dynamic rounded-lg">
                                 <button id="sort-alpha" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Alfabetik Sırala"></button>
                                 <button id="sort-bags" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic" title="Poşet Sayısına Göre Sırala"></button>
@@ -277,7 +275,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
-            onSnapshot, query, where, serverTimestamp, writeBatch 
+            onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- FIREBASE YAPILANDIRMASI ---
@@ -306,7 +304,6 @@
                 mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
-                // DEĞİŞİKLİK: searchItemsInput kaldırıldı
                 totalBagsCounter: document.getElementById('total-bags-counter'),
                 totalCustomersCounter: document.getElementById('total-customers-counter'),
                 sortAlphaBtn: document.getElementById('sort-alpha'),
@@ -338,7 +335,7 @@
             let allItems = [];
             let allCustomers = [];
             let settings = {};
-            let sortState = { type: 'alpha', direction: 'asc' };
+            let sortState = { type: 'date', direction: 'desc' }; // Varsayılan sıralama tarihi
             let archiveCurrentPage = 1;
             const itemsPerPage = 10;
             let itemsUnsubscribe = null;
@@ -355,7 +352,8 @@
                 date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
                 date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
                 cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
-                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                cancel_one_bag: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
                 delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
                 save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
                 cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
@@ -427,15 +425,12 @@
             }
             
             function renderItems(items) {
-                // DEĞİŞİKLİK: Arama sorgusu ana input alanından alınır
                 const searchQuery = toTrUpperCase(allElements.customerNameInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
-                // Müşteri ve poşet sayaçlarını güncelle
                 allElements.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
                 const customerNames = new Set(filteredItems.map(item => item.customerName));
                 allElements.totalCustomersCounter.textContent = customerNames.size;
-
 
                 const direction = sortState.direction === 'asc' ? 1 : -1;
                 filteredItems.sort((a, b) => {
@@ -465,6 +460,22 @@
                 })();
                 const noteIndicatorHTML = item.note ? `<span class="accent-text text-xs" title="Not Mevcut">●</span>` : '';
                 
+                let historyHtml = '';
+                // Ana oluşturma tarihi satırı
+                if (item.createdAt) {
+                    historyHtml += `<p class="item-subtext text-sm text-secondary">Eklendi: ${formatDate(item.createdAt).split(' ')[0]} (${formatRelativeTime(item.createdAt)})</p>`;
+                } else {
+                    historyHtml += '<p class="item-subtext text-sm text-secondary">Eklenme tarihi yok</p>';
+                }
+
+                // Sonraki ekleme satırları
+                if (item.additionalDates && Array.isArray(item.additionalDates) && item.additionalDates.length > 0) {
+                    const otherAdditions = item.additionalDates.map(date => {
+                        return `<p class="item-subtext text-xs text-secondary/80 pl-2">+ Poşet Eklendi: ${formatDate(date).split(' ')[0]} (${formatRelativeTime(date)})</p>`;
+                    }).join('');
+                    historyHtml += otherAdditions;
+                }
+                
                 div.className = `bg-primary p-4 rounded-lg shadow-md flex items-center justify-between border ${overdueClass} transition-colors duration-300`;
                 div.dataset.id = item.id;
                 div.innerHTML = `
@@ -472,15 +483,23 @@
                         <div class="item-bag-count bg-purple-500/20 text-purple-300 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
                         <div class="flex-1">
                             <p class="item-customer-name font-semibold text-lg text-primary flex items-center gap-2">${item.customerName} ${noteIndicatorHTML}</p>
-                            <p class="item-subtext text-sm text-secondary">Poşet Sayısı</p>
-                            <p class="item-subtext text-xs text-secondary/70 mt-1">Son Değişiklik: ${formatRelativeTime(item.lastModified)}</p>
+                            ${historyHtml}
                         </div>
                     </div>
                     <div class="item-actions flex items-center gap-1 sm:gap-2 ml-2">
-                        <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg></button>
-                        <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note ? 'accent-text' : ''}" title="Notu Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
-                        <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
-                        <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="İptal Et">${icons.cancel_item}</button>
+                        <!-- DEĞİŞİKLİK: Yeni Buton Yapısı -->
+                        <div class="default-actions flex items-center gap-1 sm:gap-2">
+                            <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle">${icons.edit}</button>
+                            <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note ? 'accent-text' : ''}" title="Notu Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
+                            <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
+                            <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="Kaydı Sil">${icons.cancel_item}</button>
+                        </div>
+                        <div class="edit-count-actions hidden flex items-center gap-2">
+                             <input type="number" value="${item.bagCount}" min="1" class="w-16 p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                             <button data-action="save-count" class="p-2 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                             <button data-action="cancel-one-bag" class="p-2 text-yellow-500 hover:text-yellow-400 rounded-full transition" title="Son Eklemeyi İptal Et">${icons.cancel_one_bag}</button>
+                             <button data-action="cancel-edit-count" class="p-2 text-red-500 hover:text-red-400 transition" title="Vazgeç">${icons.cancel}</button>
+                        </div>
                     </div>`;
                 return div;
             }
@@ -641,29 +660,44 @@
                 if (!customerName || isNaN(bagCount) || bagCount < 1) return;
 
                 try {
-                    const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
-                    if (!customerExists) {
-                        await addDoc(collection(db, 'customers'), { name: customerName });
+                    const activeItems = allItems.filter(item => item.status === 'active');
+                    const existingItem = activeItems.find(item => toTrUpperCase(item.customerName) === customerName);
+
+                    if (existingItem) {
+                        // Mevcut kaydı güncelle
+                        const itemRef = doc(db, 'items', existingItem.id);
+                        await updateDoc(itemRef, {
+                            bagCount: existingItem.bagCount + bagCount,
+                            lastModified: serverTimestamp(),
+                            additionalDates: arrayUnion(new Date())
+                        });
+                    } else {
+                        // Yeni kayıt oluştur
+                        const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
+                        if (!customerExists) {
+                            await addDoc(collection(db, 'customers'), { name: customerName });
+                        }
+
+                        await addDoc(collection(db, 'items'), {
+                            customerName,
+                            bagCount,
+                            note: '',
+                            status: 'active',
+                            createdAt: serverTimestamp(),
+                            lastModified: serverTimestamp(),
+                            deliveredAt: null,
+                            deliveredBy: null,
+                            additionalDates: [] // Boş dizi olarak başlat
+                        });
                     }
-
-                    await addDoc(collection(db, 'items'), {
-                        customerName,
-                        bagCount,
-                        note: '',
-                        status: 'active',
-                        createdAt: serverTimestamp(),
-                        lastModified: serverTimestamp(),
-                        deliveredAt: null,
-                        deliveredBy: null
-                    });
-
+                    
                     allElements.addItemForm.reset();
                     allElements.bagCountInput.value = 1;
                     allElements.customerNameInput.focus();
 
                 } catch (error) {
-                    console.error("Error adding document: ", error);
-                    showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
+                    console.error("Error in handleAddItem: ", error);
+                    showSimpleMessageModal("Hata", "Kayıt eklenirken veya güncellenirken bir hata oluştu.");
                 }
             }
 
@@ -860,7 +894,6 @@
             // --- EVENT LISTENERS ---
             allElements.addItemForm.addEventListener('submit', handleAddItem);
             
-            // DEĞİŞİKLİK: Eski arama dinleyicisi kaldırıldı
             allElements.searchArchiveInput.addEventListener('input', () => {
                 archiveCurrentPage = 1;
                 renderArchive(allItems.filter(item => item.status === 'delivered'));
@@ -880,44 +913,54 @@
                 const action = button.dataset.action;
                 const item = allItems.find(i => i.id === id);
                 if (!item) return;
+                
+                const defaultActions = itemDiv.querySelector('.default-actions');
+                const editCountActions = itemDiv.querySelector('.edit-count-actions');
 
                 switch(action) {
                     case 'deliver': {
-                        const result = await showDeliverModal(item.customerName);
-                        if (result.confirmed && result.value) {
-                             updateItem(id, { 
-                                status: 'delivered', 
-                                deliveredAt: serverTimestamp(),
-                                deliveredBy: result.value
-                            });
+                        if (await showConfirmationModal(`'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`, "Teslim Et")) {
+                             const result = await showDeliverModal();
+                             if(result.confirmed) {
+                                updateItem(id, { 
+                                    status: 'delivered', 
+                                    deliveredAt: serverTimestamp(),
+                                    deliveredBy: result.value
+                                });
+                             }
                         }
                         break;
                     }
-                    case 'restore':
-                        showConfirmationModal(
-                            `'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`,
-                            () => updateItem(id, { status: 'active', deliveredAt: null, deliveredBy: null }),
-                            "Geri Yükle"
-                        );
+                    case 'restore': {
+                         if (await showConfirmationModal(`'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`, "Geri Yükle")) {
+                            updateItem(id, { status: 'active', deliveredAt: null, deliveredBy: null });
+                         }
                         break;
-                    case 'delete-permanent':
-                        showConfirmationModal(
-                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
-                            () => deleteItem(id),
-                            "Kalıcı Olarak Sil", true
-                        );
+                    }
+                    case 'delete-permanent': {
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "Kalıcı Olarak Sil", true)) {
+                            deleteItem(id);
+                        }
                         break;
-                    case 'delete-item':
-                        showConfirmationModal(
-                            `'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`,
-                            () => deleteItem(id),
-                            "İptal Et ve Sil", true
-                        );
+                    }
+                    case 'delete-item': {
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "İptal Et ve Sil", true)) {
+                           deleteItem(id);
+                        }
                         break;
-                    case 'edit-count': {
-                        const result = await showInputModal("Poşet Sayısını Düzenle", `'${item.customerName}' için yeni poşet sayısını girin:`, 'number', item.bagCount);
-                        if (result.confirmed && result.value && !isNaN(result.value) && result.value > 0) {
-                            updateItem(id, { bagCount: parseInt(result.value, 10) });
+                    }
+                    case 'cancel-one-bag': {
+                        if (item.bagCount <= 1) {
+                            showSimpleMessageModal("Hata", "Son poşeti iptal edemezsiniz. Kaydı tamamen silmeniz gerekir.");
+                            return;
+                        }
+                        if (await showConfirmationModal(`'${item.customerName}' için son eklenen poşeti iptal etmek istiyor musunuz? Poşet sayısı 1 azaltılacak.`, "Evet, İptal Et", true)) {
+                             const newDates = [...(item.additionalDates || [])];
+                             newDates.pop();
+                             updateItem(id, { 
+                                 bagCount: item.bagCount - 1,
+                                 additionalDates: newDates
+                             });
                         }
                         break;
                     }
@@ -928,13 +971,38 @@
                         }
                         break;
                     }
-                     case 'delete-note-from-tab':
-                        showConfirmationModal(
-                            `'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`,
-                            () => updateItem(id, { note: '' }),
-                            "Notu Sil", true
-                        );
+                    case 'delete-note-from-tab': {
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kaydın notunu silmek istediğinizden emin misiniz?`, "Notu Sil", true)) {
+                            updateItem(id, { note: '' });
+                        }
                         break;
+                    }
+                    // DEĞİŞİKLİK: Poşet sayısı düzenleme mantığı
+                    case 'edit-count': {
+                        defaultActions.classList.add('hidden');
+                        editCountActions.classList.remove('hidden');
+                        const input = editCountActions.querySelector('input');
+                        input.focus();
+                        input.select();
+                        break;
+                    }
+                    case 'cancel-edit-count': {
+                        editCountActions.classList.add('hidden');
+                        defaultActions.classList.remove('hidden');
+                        break;
+                    }
+                    case 'save-count': {
+                        const input = editCountActions.querySelector('input');
+                        const newBagCount = parseInt(input.value, 10);
+                        if(isNaN(newBagCount) || newBagCount < 1) {
+                            showSimpleMessageModal("Geçersiz Sayı", "Poşet sayısı en az 1 olmalıdır.");
+                            return;
+                        }
+                        // Poşet sayısı azaltılırsa tarihleri de silme mantığı eklenebilir. Şimdilik sadece sayıyı güncelliyoruz.
+                        await updateItem(id, { bagCount: newBagCount });
+                        // Re-render sonrası görünüm normale dönecektir.
+                        break;
+                    }
                 }
             });
             
@@ -964,43 +1032,44 @@
                     case 'export-csv-btn':
                         exportToCSV();
                         break;
-                    case 'reset-items-btn':
-                        showConfirmationModal(
-                            "Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.",
-                            async () => {
+                    case 'reset-items-btn': {
+                        const passwordCorrect = await showPasswordPrompt();
+                        if (passwordCorrect) {
+                             if(await showConfirmationModal("Tüm bekleyen ve teslim edilen poşet kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.", "Evet, Sil", true)) {
                                 allElements.loadingText.textContent = 'Poşetler siliniyor...';
                                 allElements.loadingOverlay.style.display = 'flex';
                                 const batch = writeBatch(db);
                                 allItems.forEach(item => batch.delete(doc(db, 'items', item.id)));
                                 await batch.commit();
                                 allElements.loadingOverlay.style.display = 'none';
-                            }, "Evet, Sil", true
-                        );
+                             }
+                        }
                         break;
-                    case 'reset-all-btn':
-                        showConfirmationModal(
-                            "Uygulamadaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
-                            resetAllData, "EVET, TÜMÜNÜ SİL", true
-                        );
+                    }
+                    case 'reset-all-btn': {
+                        const passwordCorrect = await showPasswordPrompt();
+                        if (passwordCorrect) {
+                            if (await showConfirmationModal("Uygulamadaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", "EVET, TÜMÜNÜ SİL", true)) {
+                                resetAllData();
+                            }
+                        }
                         break;
+                    }
                  }
             });
             
-            allElements.importFileInput.addEventListener('change', (e) => {
+            allElements.importFileInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = async (event) => {
                     try {
                         const data = JSON.parse(event.target.result);
-                        await showConfirmationModal(
-                            "Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Bu işlem geri alınamaz. Emin misiniz?",
-                            async () => {
-                                allElements.loadingOverlay.style.display = 'flex';
-                                await importDataFromJSON(data);
-                                allElements.loadingOverlay.style.display = 'none';
-                            }, "Onayla ve Yükle"
-                        );
+                        if (await showConfirmationModal("Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Bu işlem geri alınamaz. Emin misiniz?", "Onayla ve Yükle", true)) {
+                            allElements.loadingOverlay.style.display = 'flex';
+                            await importDataFromJSON(data);
+                            allElements.loadingOverlay.style.display = 'none';
+                        }
                     } catch (error) {
                         console.error("Import error:", error);
                         showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.');
@@ -1033,16 +1102,13 @@
                     switchTab(e.target.id.replace('tab-', ''));
                 }
             });
-
-            // DEĞİŞİKLİK: Müşteri adı input'u hem arama hem öneri için kullanılır
+            
             allElements.customerNameInput.addEventListener("input", () => {
                 const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
                 
-                // Ana listeyi anında filtrele
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 renderItems(activeItems);
 
-                // Müşteri öneri kutusunu yönet
                 allElements.suggestionsBox.innerHTML = "";
                 if (searchTerm.length === 0) {
                     allElements.suggestionsBox.classList.add("hidden");
@@ -1061,7 +1127,6 @@
                         div.addEventListener("click", () => {
                             allElements.customerNameInput.value = name;
                             allElements.suggestionsBox.classList.add("hidden");
-                            // Öneriye tıklanınca da listeyi tekrar filtrele
                             renderItems(activeItems); 
                             allElements.bagCountInput.focus();
                         });
@@ -1143,36 +1208,12 @@
 
                 allElements.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
             }
-            
-            function showModal(htmlContent) {
-                return new Promise(resolve => {
-                    allElements.modalContent.innerHTML = htmlContent;
-                    
-                    const modalClickListener = (e) => {
-                        const button = e.target.closest('button');
-                        if (!button) return;
 
-                        const input = allElements.modalContent.querySelector('input, textarea, select');
-                        const value = input ? input.value : true;
-                        
-                        const isClosingButton = button.id === 'modal-cancel' || button.id === 'modal-close';
-
-                        if (isClosingButton) {
-                            allElements.modalContent.removeEventListener('click', modalClickListener);
-                            hideModalUI();
-                            resolve({ confirmed: false });
-                        } else if (button.id === 'modal-confirm') {
-                            resolve({ confirmed: true, value });
-                        }
-                    };
-
-                    allElements.modalContent.addEventListener('click', modalClickListener);
-
-                    allElements.modalContainer.classList.remove('hidden');
-                    requestAnimationFrame(() => {
-                        allElements.modalContainer.style.opacity = '1';
-                        allElements.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
-                    });
+            function showModalUI() {
+                allElements.modalContainer.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    allElements.modalContainer.style.opacity = '1';
+                    allElements.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
                 });
             }
 
@@ -1185,88 +1226,183 @@
                 }, 300);
             }
             
-            async function showSimpleMessageModal(title, message) {
-                const result = await showModal(`
-                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
-                    <p class="text-secondary mb-4">${message}</p>
-                    <div class="flex justify-end gap-3">
-                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
-                    </div>`);
-                if(result.confirmed) {
-                    hideModalUI();
-                }
+            function showSimpleMessageModal(title, message) {
+                return new Promise(resolve => {
+                     const modalHtml =`
+                        <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                        <p class="text-secondary mb-4">${message}</p>
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
+                        </div>`;
+                    allElements.modalContent.innerHTML = modalHtml;
+                    const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
+                    const close = () => {
+                        hideModalUI();
+                        resolve(true);
+                    }
+                    confirmBtn.addEventListener('click', close, {once: true});
+                    showModalUI();
+                });
             }
 
-            async function showConfirmationModal(message, onConfirm, confirmText = "Onayla", isDestructive = false) {
-                const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
-                const result = await showModal(`
-                    <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3>
-                    <p class="text-secondary mb-4">${message}</p>
-                    <div class="flex justify-end gap-3">
-                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                        <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
-                    </div>`);
-                
-                if (result.confirmed) {
-                    await onConfirm();
-                }
-                hideModalUI();
+            function showConfirmationModal(message, confirmText = "Onayla", isDestructive = false) {
+                 return new Promise(resolve => {
+                    const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3>
+                        <p class="text-secondary mb-6">${message}</p>
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
+                        </div>`;
+                    allElements.modalContent.innerHTML = modalHtml;
+                    
+                    const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = allElements.modalContent.querySelector('#modal-cancel');
+                    
+                    const close = (confirmed) => {
+                        confirmBtn.removeEventListener('click', () => close(true));
+                        cancelBtn.removeEventListener('click', () => close(false));
+                        hideModalUI();
+                        resolve(confirmed);
+                    }
+                    
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+
+                    showModalUI();
+                });
             }
 
-            async function showDeliverModal(customerName) {
-                const deliveryPersonnel = [
-                    'Cengiz Tuna',
-                    'Süleyman Özgür',
-                    'Muhammed Ali Koç',
-                    'Fatih Köse',
-                    'Abdullah Alalalı',
-                    'Ömer Alioğlu',
-                    'Mahir Avaid',
-                    'Murat Avaid'
-                ];
-                const optionsHtml = deliveryPersonnel.map(name =>
-                    `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`
-                ).join('');
+            async function showDeliverModal() {
+                 return new Promise(resolve => {
+                    const deliveryPersonnel = [ 'Cengiz Tuna', 'Süleyman Özgür', 'Muhammed Ali Koç', 'Fatih Köse', 'Abdullah Alalalı', 'Ömer Alioğlu', 'Mahir Avaid', 'Murat Avaid' ];
+                    const optionsHtml = deliveryPersonnel.map(name => `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`).join('');
+                    const modalHtml =`
+                        <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
+                        <p class="text-secondary mb-4">Lütfen teslim eden kişiyi seçin.</p>
+                        <div class="mb-4">
+                            <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
+                            <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslimatı Tamamla</button>
+                        </div>`;
+                    allElements.modalContent.innerHTML = modalHtml;
 
-                const result = await showModal(`
-                    <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
-                    <p class="text-secondary mb-4">'${customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
-                    <div class="mb-4">
-                        <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
-                        <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
-                            ${optionsHtml}
-                        </select>
-                    </div>
-                    <div class="flex justify-end gap-3">
-                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button>
-                    </div>`);
-                
-                if (result.confirmed || result.confirmed === false) {
-                     hideModalUI();
-                }
-                return result;
+                    const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = allElements.modalContent.querySelector('#modal-cancel');
+                    const select = allElements.modalContent.querySelector('select');
+
+                    const close = (confirmed) => {
+                         hideModalUI();
+                         resolve({ confirmed, value: select.value });
+                    };
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+                    showModalUI();
+                });
             }
 
             async function showInputModal(title, message, type = 'text', value = '') {
-                const inputHtml = type === 'textarea'
-                    ? `<textarea class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-28 mb-4">${value}</textarea>`
-                    : `<input type="${type}" value="${value}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition mb-4">`;
+                return new Promise(resolve => {
+                    const inputHtml = type === 'textarea'
+                        ? `<textarea class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-28 mb-4">${value}</textarea>`
+                        : `<input type="${type}" value="${value}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition mb-4">`;
 
-                const result = await showModal(`
-                    <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
-                    <p class="text-secondary mb-2">${message}</p>
-                    ${inputHtml}
-                    <div class="flex justify-end gap-3">
-                        <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                        <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
-                    </div>`);
-                
-                if (result.confirmed || result.confirmed === false) {
-                     hideModalUI();
-                }
-                return result;
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
+                        <p class="text-secondary mb-2">${message}</p>
+                        ${inputHtml}
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
+                        </div>`;
+                    allElements.modalContent.innerHTML = modalHtml;
+                    
+                    const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = allElements.modalContent.querySelector('#modal-cancel');
+                    const input = allElements.modalContent.querySelector('input, textarea');
+
+                    const close = (confirmed) => {
+                         hideModalUI();
+                         resolve({ confirmed, value: input.value });
+                    };
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+                    showModalUI();
+                    input.focus();
+                    if(type !== 'textarea') input.select();
+                });
             }
+            
+            async function showPasswordPrompt() {
+                return new Promise(resolve => {
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-2 text-yellow-400">Güvenlik Onayı</h3>
+                        <p class="text-secondary mb-4">Bu tehlikeli bir işlemdir. Devam etmek için lütfen yönetici şifresini girin.</p>
+                        <div>
+                            <label for="password-input" class="block text-sm font-medium text-secondary mb-1">Şifre:</label>
+                            <input id="password-input" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" autofocus>
+                            <p id="password-error" class="text-red-400 text-sm mt-2 hidden">Hatalı şifre. Lütfen tekrar deneyin.</p>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Onayla</button>
+                        </div>`;
+                    
+                    allElements.modalContent.innerHTML = modalHtml;
+                    showModalUI();
+                    
+                    const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = allElements.modalContent.querySelector('#modal-cancel');
+                    const passwordInput = allElements.modalContent.querySelector('#password-input');
+                    const errorMsg = allElements.modalContent.querySelector('#password-error');
+                    
+                    let keydownListener;
+                    
+                    const removeListenersAndHide = () => {
+                        confirmBtn.removeEventListener('click', handleConfirm);
+                        cancelBtn.removeEventListener('click', handleCancel);
+                        document.removeEventListener('keydown', keydownListener);
+                        hideModalUI();
+                    };
+
+                    const handleConfirm = () => {
+                        if (passwordInput.value === '00042') {
+                            removeListenersAndHide();
+                            resolve(true);
+                        } else {
+                            errorMsg.classList.remove('hidden');
+                            passwordInput.value = '';
+                            passwordInput.focus();
+                        }
+                    };
+
+                    const handleCancel = () => {
+                        removeListenersAndHide();
+                        resolve(false);
+                    };
+
+                    keydownListener = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleConfirm();
+                        } else if (e.key === 'Escape') {
+                            handleCancel();
+                        }
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    cancelBtn.addEventListener('click', handleCancel);
+                    document.addEventListener('keydown', keydownListener);
+                    passwordInput.focus();
+                });
+            }
+
 
             function renderCustomerModalList(filter = '') {
                 const listContainer = document.getElementById('modal-customers-list');
@@ -1315,7 +1451,8 @@
             }
             
             async function showCustomerManagementModal() {
-                 showModal(`
+                 showModalUI();
+                 allElements.modalContent.innerHTML =`
                     <div class="flex flex-col h-[70vh]">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3>
@@ -1329,15 +1466,16 @@
                         <input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
                         <div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                     </div>
-                `);
-
-                await new Promise(resolve => setTimeout(resolve, 0));
+                `;
                 
                 const listContainer = document.getElementById('modal-customers-list');
                 const searchInput = document.getElementById('modal-customer-search');
                 const addForm = document.getElementById('modal-add-customer-form');
                 const addInput = document.getElementById('modal-new-customer-name');
                 const errorDiv = document.getElementById('modal-customer-error');
+                const closeBtn = document.getElementById('modal-close');
+                
+                closeBtn.addEventListener('click', hideModalUI, {once: true});
 
                 function showModalError(message) {
                     errorDiv.textContent = message;
@@ -1457,10 +1595,6 @@
 
                 const pdf = new jsPDF();
                 
-                // Türkçe karakterler için font ekleme (bu kısım test edilmeli)
-                // pdf.addFont('Verdana.ttf', 'Verdana', 'normal');
-                // pdf.setFont('Verdana');
-
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
                 
                 const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
@@ -1479,7 +1613,6 @@
                     head: [tableColumn], 
                     body: tableRows, 
                     startY: 20,
-                    // styles: { font: 'Verdana' } // Fontu tabloya uygulama
                 });
 
                 pdf.save('poset_listesi.pdf');
