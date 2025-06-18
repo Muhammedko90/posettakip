@@ -175,7 +175,12 @@
             <div id="panel-archive" class="panel hidden space-y-4">
                  <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
                     <h2 class="text-2xl font-semibold text-primary">Teslim Edilenler Arşivi</h2>
-                    <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
+                     <div class="flex items-center gap-2">
+                        <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
+                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                        </button>
+                    </div>
                 </div>
                 <div id="archive-list" class="space-y-2"></div>
                 <div id="archive-pagination" class="flex justify-center items-center mt-4 space-x-2"></div>
@@ -199,6 +204,13 @@
                     <h2 class="text-2xl font-semibold mb-4 text-primary">En Uzun Süredir Bekleyen 10 Poşet</h2>
                     <div id="overdue-report-list" class="space-y-2"></div>
                      <p id="empty-overdue-report-message" class="hidden text-center text-secondary p-4">Tüm poşetler teslim edilmiş veya yeni.</p>
+                </div>
+                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
+                    <h2 class="text-2xl font-semibold mb-4 text-primary">Raporları Aktar</h2>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button>
+                    </div>
+                    <p class="text-xs text-secondary mt-3">Teslim edilen tüm poşetlerin alınma, teslim edilme ve bekleme sürelerini içeren detaylı bir PDF raporu oluşturur.</p>
                 </div>
             </div>
 
@@ -242,7 +254,7 @@
                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <button id="export-json-btn" class="w-full bg-sky-600 text-white font-semibold p-3 rounded-lg hover:bg-sky-700 transition">Yedekle (JSON)</button>
                         <button id="import-json-btn" class="w-full bg-teal-600 text-white font-semibold p-3 rounded-lg hover:bg-teal-700 transition">Geri Yükle (JSON)</button>
-                        <button id="export-pdf-btn" class="w-full bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Listeyi PDF Aktar</button>
+                        <button id="export-active-pdf-btn" class="w-full bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Bekleyen Listeyi PDF Aktar</button>
                         <button id="export-csv-btn" class="w-full bg-emerald-600 text-white font-semibold p-3 rounded-lg hover:bg-emerald-700 transition">Listeyi CSV Aktar</button>
                          <input type="file" id="import-file-input" class="hidden" accept=".json">
                     </div>
@@ -328,6 +340,9 @@
                 modalContainer: document.getElementById('modal-container'),
                 modalContentWrapper: document.getElementById('modal-content-wrapper'),
                 modalContent: document.getElementById('modal-content'),
+                exportArchivePdfBtn: document.getElementById('export-archive-pdf-btn'),
+                exportReportsPdfBtn: document.getElementById('export-reports-pdf-btn'),
+                exportActivePdfBtn: document.getElementById('export-active-pdf-btn'),
             };
 
             // --- STATE (DURUM) YÖNETİMİ ---
@@ -381,6 +396,15 @@
                 if (diffDays === 1) return 'dün';
                 return `${diffDays} gün önce`;
             };
+            
+            function getDayDifference(date1, date2) {
+                if (!date1 || !date2) return '-';
+                const d1 = date1.seconds ? new Date(date1.seconds * 1000) : new Date(date1);
+                const d2 = date2.seconds ? new Date(date2.seconds * 1000) : new Date(date2);
+                const difference = d2.getTime() - d1.getTime();
+                const days = Math.ceil(difference / (1000 * 3600 * 24));
+                return days >= 0 ? days : '-';
+            }
 
             function showApp() {
                 if (isAppInitialized) return;
@@ -843,6 +867,7 @@
                 applySettings();
                 updateSortButtons();
                 switchTab('list', true);
+                
                 allElements.retryButton.addEventListener('click', () => {
                     allElements.loadingText.textContent = 'Veritabanına bağlanılıyor...';
                     allElements.loadingSpinner.style.display = 'block';
@@ -861,6 +886,91 @@
                 });
 
                 startFirebaseConnection();
+                setupEventListeners();
+            }
+            
+            function setupEventListeners() {
+                allElements.addItemForm.addEventListener('submit', handleAddItem);
+                allElements.searchArchiveInput.addEventListener('input', () => {
+                    archiveCurrentPage = 1;
+                    renderArchive(allItems.filter(item => item.status === 'delivered'));
+                });
+                allElements.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
+                allElements.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
+                allElements.sortDateBtn.addEventListener('click', () => handleSort('date'));
+                
+                allElements.mainContent.addEventListener('click', handleMainContentClick);
+                allElements.exportArchivePdfBtn?.addEventListener('click', exportArchiveToPDF);
+                allElements.exportReportsPdfBtn?.addEventListener('click', exportReportsToPDF);
+                
+                document.querySelector('#panel-settings').addEventListener('click', handleSettingsPanelClick);
+            
+                allElements.importFileInput.addEventListener('change', handleFileImport);
+                
+                document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
+                    settings.fontSize = e.target.value;
+                    document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
+                    document.body.style.fontSize = `${settings.fontSize}px`;
+                 });
+                document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
+                    settings.fontSize = e.target.value;
+                     saveSettingsToStorage(settings);
+                 });
+                
+                document.querySelectorAll('.report-range-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
+                        btn.classList.add('accent-bg');
+                        renderPeriodicReport(btn.dataset.range);
+                    });
+                });
+
+                document.querySelector('nav').addEventListener('click', (e) => {
+                    if (e.target.id && e.target.id.startsWith('tab-')) {
+                        switchTab(e.target.id.replace('tab-', ''));
+                    }
+                });
+                
+                allElements.customerNameInput.addEventListener("input", () => {
+                    const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
+                    
+                    const activeItems = allItems.filter(item => item.status !== 'delivered');
+                    renderItems(activeItems);
+
+                    allElements.suggestionsBox.innerHTML = "";
+                    if (searchTerm.length === 0) {
+                        allElements.suggestionsBox.classList.add("hidden");
+                        return;
+                    }
+
+                    const filteredCustomers = allCustomers
+                        .filter(c => toTrUpperCase(c.name).includes(searchTerm))
+                        .map(c => c.name);
+
+                    if (filteredCustomers.length > 0) {
+                        filteredCustomers.forEach(name => {
+                            const div = document.createElement("div");
+                            div.textContent = name;
+                            div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
+                            div.addEventListener("click", () => {
+                                allElements.customerNameInput.value = name;
+                                allElements.suggestionsBox.classList.add("hidden");
+                                renderItems(activeItems); 
+                                allElements.bagCountInput.focus();
+                            });
+                            allElements.suggestionsBox.appendChild(div);
+                        });
+                        allElements.suggestionsBox.classList.remove("hidden");
+                    } else {
+                        allElements.suggestionsBox.classList.add("hidden");
+                    }
+                });
+
+                document.addEventListener("click", (e) => {
+                    if (!e.target.closest('.relative')) {
+                        allElements.suggestionsBox.classList.add("hidden");
+                    }
+                });
             }
 
             function listenToData() {
@@ -891,18 +1001,8 @@
                 });
             }
             
-            // --- EVENT LISTENERS ---
-            allElements.addItemForm.addEventListener('submit', handleAddItem);
-            
-            allElements.searchArchiveInput.addEventListener('input', () => {
-                archiveCurrentPage = 1;
-                renderArchive(allItems.filter(item => item.status === 'delivered'));
-            });
-            allElements.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
-            allElements.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
-            allElements.sortDateBtn.addEventListener('click', () => handleSort('date'));
-
-            allElements.mainContent.addEventListener('click', async (e) => {
+            // --- EVENT HANDLERS ---
+            async function handleMainContentClick(e) {
                 const button = e.target.closest('button[data-action]');
                 if (!button) return;
 
@@ -944,7 +1044,7 @@
                         break;
                     }
                     case 'delete-item': {
-                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "İptal Et ve Sil", true)) {
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "Kaydı Sil", true)) {
                            deleteItem(id);
                         }
                         break;
@@ -977,7 +1077,6 @@
                         }
                         break;
                     }
-                    // DEĞİŞİKLİK: Poşet sayısı düzenleme mantığı
                     case 'edit-count': {
                         defaultActions.classList.add('hidden');
                         editCountActions.classList.remove('hidden');
@@ -998,15 +1097,13 @@
                             showSimpleMessageModal("Geçersiz Sayı", "Poşet sayısı en az 1 olmalıdır.");
                             return;
                         }
-                        // Poşet sayısı azaltılırsa tarihleri de silme mantığı eklenebilir. Şimdilik sadece sayıyı güncelliyoruz.
                         await updateItem(id, { bagCount: newBagCount });
-                        // Re-render sonrası görünüm normale dönecektir.
                         break;
                     }
                 }
-            });
-            
-            document.querySelector('#panel-settings').addEventListener('click', async (e) => {
+            }
+
+            async function handleSettingsPanelClick(e) {
                  const themeBtn = e.target.closest('.theme-btn');
                  if(themeBtn) {
                      settings.theme = themeBtn.dataset.theme;
@@ -1026,8 +1123,8 @@
                     case 'import-json-btn':
                         allElements.importFileInput.click();
                         break;
-                    case 'export-pdf-btn':
-                        exportToPDF();
+                    case 'export-active-pdf-btn':
+                        exportActiveItemsToPDF();
                         break;
                     case 'export-csv-btn':
                         exportToCSV();
@@ -1056,9 +1153,9 @@
                         break;
                     }
                  }
-            });
+            }
             
-            allElements.importFileInput.addEventListener('change', async (e) => {
+            async function handleFileImport(e) {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -1077,72 +1174,7 @@
                 };
                 reader.readAsText(file);
                 e.target.value = null;
-            });
-            
-            document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
-                settings.fontSize = e.target.value;
-                document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
-                document.body.style.fontSize = `${settings.fontSize}px`;
-             });
-            document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
-                settings.fontSize = e.target.value;
-                 saveSettingsToStorage(settings);
-             });
-            
-            document.querySelectorAll('.report-range-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
-                    btn.classList.add('accent-bg');
-                    renderPeriodicReport(btn.dataset.range);
-                });
-            });
-
-            document.querySelector('nav').addEventListener('click', (e) => {
-                if (e.target.id && e.target.id.startsWith('tab-')) {
-                    switchTab(e.target.id.replace('tab-', ''));
-                }
-            });
-            
-            allElements.customerNameInput.addEventListener("input", () => {
-                const searchTerm = toTrUpperCase(allElements.customerNameInput.value.trim());
-                
-                const activeItems = allItems.filter(item => item.status !== 'delivered');
-                renderItems(activeItems);
-
-                allElements.suggestionsBox.innerHTML = "";
-                if (searchTerm.length === 0) {
-                    allElements.suggestionsBox.classList.add("hidden");
-                    return;
-                }
-
-                const filteredCustomers = allCustomers
-                    .filter(c => toTrUpperCase(c.name).includes(searchTerm))
-                    .map(c => c.name);
-
-                if (filteredCustomers.length > 0) {
-                    filteredCustomers.forEach(name => {
-                        const div = document.createElement("div");
-                        div.textContent = name;
-                        div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
-                        div.addEventListener("click", () => {
-                            allElements.customerNameInput.value = name;
-                            allElements.suggestionsBox.classList.add("hidden");
-                            renderItems(activeItems); 
-                            allElements.bagCountInput.focus();
-                        });
-                        allElements.suggestionsBox.appendChild(div);
-                    });
-                    allElements.suggestionsBox.classList.remove("hidden");
-                } else {
-                    allElements.suggestionsBox.classList.add("hidden");
-                }
-            });
-
-            document.addEventListener("click", (e) => {
-                if (!e.target.closest('.relative')) {
-                    allElements.suggestionsBox.classList.add("hidden");
-                }
-            });
+            }
             
             // --- MODAL, SIRALAMA VE DİĞER YARDIMCI FONKSİYONLAR ---
             function switchTab(target, instant = false) {
@@ -1588,16 +1620,15 @@
                 link.click();
                 document.body.removeChild(link);
             }
-
-            function exportToPDF() {
+            
+            function exportActiveItemsToPDF() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak bekleyen poşet yok."); return; }
 
                 const pdf = new jsPDF();
-                
                 pdf.text("Bekleyen Poşet Listesi", 14, 16);
                 
-                const tableColumn = ["#", "Musteri Adi", "Poset Sayisi", "Tarih"];
+                const tableColumn = ["#", "Müşteri Adı", "Poşet Sayısı", "Eklenme Tarihi"];
                 const tableRows = [];
 
                 activeItems.forEach((item, index) => {
@@ -1605,17 +1636,72 @@
                         index + 1,
                         item.customerName,
                         item.bagCount,
-                        formatDate(item.lastModified).split(' ')[0]
+                        formatDate(item.createdAt).split(' ')[0]
                     ]);
                 });
 
-                pdf.autoTable({
-                    head: [tableColumn], 
-                    body: tableRows, 
-                    startY: 20,
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`bekleyen-poset-listesi-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            function exportArchiveToPDF() {
+                const searchQuery = toTrUpperCase(allElements.searchArchiveInput.value);
+                const archivedItems = allItems
+                    .filter(item => item.status === 'delivered' && toTrUpperCase(item.customerName).includes(searchQuery))
+                    .sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+
+                if (archivedItems.length === 0) {
+                    showSimpleMessageModal("Bilgi", "Arşivde dışa aktarılacak veri yok.");
+                    return;
+                }
+
+                const pdf = new jsPDF();
+                pdf.text("Teslim Edilenler Arşivi", 14, 16);
+                
+                const tableColumn = ["#", "Müşteri Adı", "Poşet", "Teslim Eden", "Teslim Tarihi"];
+                const tableRows = [];
+
+                archivedItems.forEach((item, index) => {
+                    tableRows.push([
+                        index + 1,
+                        item.customerName,
+                        item.bagCount,
+                        item.deliveredBy || '-',
+                        formatDate(item.deliveredAt).split(' ')[0]
+                    ]);
                 });
 
-                pdf.save('poset_listesi.pdf');
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`teslim-edilenler-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            function exportReportsToPDF() {
+                const deliveredItems = allItems
+                    .filter(item => item.status === 'delivered' && item.createdAt && item.deliveredAt)
+                    .sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+
+                if (deliveredItems.length === 0) {
+                    showSimpleMessageModal("Bilgi", "Rapor oluşturulacak teslim edilmiş poşet bulunmuyor.");
+                    return;
+                }
+
+                const pdf = new jsPDF();
+                pdf.text("Teslim Edilen Poşet Raporu", 14, 16);
+                
+                const tableColumn = ["Müşteri Adı", "Alınma Tarihi", "Teslim Tarihi", "Bekleme Süresi (Gün)"];
+                const tableRows = [];
+
+                deliveredItems.forEach(item => {
+                    tableRows.push([
+                        item.customerName,
+                        formatDate(item.createdAt).split(' ')[0],
+                        formatDate(item.deliveredAt).split(' ')[0],
+                        getDayDifference(item.createdAt, item.deliveredAt)
+                    ]);
+                });
+
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`teslim-raporu-${new Date().toISOString().slice(0,10)}.pdf`);
             }
 
             // --- UYGULAMAYI BAŞLAT ---
