@@ -1066,18 +1066,17 @@
                 const editCountActions = itemDiv.querySelector('.edit-count-actions');
 
                 switch (action) {
-                    case 'deliver':
-                        if (await showConfirmationModal(`'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?`, "Teslim Et")) {
-                            const result = await showDeliverModal();
-                            if (result.confirmed) {
-                                updateItem(id, {
-                                    status: 'delivered',
-                                    deliveredAt: serverTimestamp(),
-                                    deliveredBy: result.value
-                                });
-                            }
+                    case 'deliver': {
+                        const result = await showDeliverConfirmationModal(item);
+                        if (result.confirmed) {
+                            updateItem(id, {
+                                status: 'delivered',
+                                deliveredAt: serverTimestamp(),
+                                deliveredBy: result.value
+                            });
                         }
                         break;
+                    }
                     case 'restore':
                         if (await showConfirmationModal(`'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`, "Geri Yükle")) {
                             updateItem(id, { status: 'active', deliveredAt: null, deliveredBy: null });
@@ -1357,14 +1356,14 @@
                 });
             }
 
-            async function showDeliverModal() {
+            async function showDeliverConfirmationModal(item) {
                  return new Promise(resolve => {
-                    const deliveryPersonnel = [ 'Cengiz Tuna', 'Süleyman Özgür', 'Muhammed Ali Koç', 'Fatih Köse', 'Abdullah', 'Ömer Alioğlu', 'Murat Avaid', 'Mahir Avaid' ];
+                    const deliveryPersonnel = [ 'Cengiz Tuna', 'Süleyman Özgür', 'Muhammed Ali Koç', 'Fatih köse', 'Abdullah Alalalı', 'Ömer Alioğlu', 'Murat Avaid', 'Mahir Avaid' ];
                     const optionsHtml = deliveryPersonnel.map(name => `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`).join('');
                     const modalHtml =`
                         <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
-                        <p class="text-secondary mb-4">Lütfen teslim eden kişiyi seçin.</p>
-                        <div class="mb-4">
+                        <p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
+                        <div class="mb-6">
                             <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
                             <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
                                 ${optionsHtml}
@@ -1372,17 +1371,17 @@
                         </div>
                         <div class="flex justify-end gap-3">
                             <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslimatı Tamamla</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button>
                         </div>`;
                     allElements.modalContent.innerHTML = modalHtml;
 
                     const confirmBtn = allElements.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = allElements.modalContent.querySelector('#modal-cancel');
-                    const select = allElements.modalContent.querySelector('select');
+                    const select = allElements.modalContent.querySelector('#delivered-by-select');
 
                     const close = (confirmed) => {
                          hideModalUI();
-                         resolve({ confirmed, value: select.value });
+                         resolve({ confirmed, value: confirmed ? select.value : null });
                     };
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
