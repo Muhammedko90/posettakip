@@ -16,25 +16,34 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #1e293b; /* bg-slate-800 */
-            --bg-secondary: #0f172a; /* bg-slate-900 */
-            --bg-tertiary: #334155; /* bg-slate-700 */
-            --text-primary: #cbd5e1; /* text-slate-300 */
-            --text-secondary: #94a3b8; /* text-slate-400 */
-            --border-color: #475569; /* border-slate-600 */
-            --accent-color: #a78bfa; /* purple-400 */
-            --accent-color-dark: #8b5cf6; /* purple-600 */
-            --font-size-base: 16px;
+            --bg-primary: #1e293b; --bg-secondary: #0f172a; --bg-tertiary: #334155;
+            --text-primary: #cbd5e1; --text-secondary: #94a3b8; --border-color: #475569;
+            --accent-color: #a78bfa; --accent-color-dark: #8b5cf6; --font-size-base: 16px;
         }
-        .theme-light {
-            --bg-primary: #ffffff; --bg-secondary: #f1f5f9; --bg-tertiary: #e2e8f0;
-            --text-primary: #1e293b; --text-secondary: #475569; --border-color: #cbd5e1;
-            --accent-color: #8b5cf6; --accent-color-dark: #7c3aed;
+        .theme-sunset { /* Neon Gün Batımı */
+            --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
+            --text-primary: #f3e8ff; --text-secondary: #c0b1d3; --border-color: #5a3c82;
+            --accent-color: #ff79c6; --accent-color-dark: #ff4da6;
         }
-        .theme-night-blue {
-            --bg-primary: #1c2a4a; --bg-secondary: #0d1a33; --bg-tertiary: #2a3a5a;
-            --text-primary: #e0e7ff; --text-secondary: #a0b3d4; --border-color: #3a4a6a;
-            --accent-color: #7aa2f7; --accent-color-dark: #5a82e7;
+        .theme-ocean { /* Okyanus Esintisi */
+            --bg-primary: #ffffff; --bg-secondary: #e6f7ff; --bg-tertiary: #b3ecff;
+            --text-primary: #005f80; --text-secondary: #007da6; --border-color: #80dfff;
+            --accent-color: #00bfff; --accent-color-dark: #0099cc;
+        }
+        .theme-graphite { /* Grafit ve Altın */
+            --bg-primary: #282c34; --bg-secondary: #1e2228; --bg-tertiary: #3e444c;
+            --text-primary: #abb2bf; --text-secondary: #828997; --border-color: #4b5263;
+            --accent-color: #d4af37; --accent-color-dark: #c09b2d;
+        }
+        .theme-mint { /* Nane Şekeri */
+            --bg-primary: #f0fdf4; --bg-secondary: #dcfce7; --bg-tertiary: #bbf7d0;
+            --text-primary: #14532d; --text-secondary: #166534; --border-color: #86efac;
+            --accent-color: #4ade80; --accent-color-dark: #22c55e;
+        }
+        .theme-aurora { /* Kuzey Işıkları */
+            --bg-primary: #0d1117; --bg-secondary: #010409; --bg-tertiary: #161b22;
+            --text-primary: #c9d1d9; --text-secondary: #8b949e; --border-color: #30363d;
+            --accent-color: #58a6ff; --accent-color-dark: #388bfd;
         }
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-secondary);
@@ -63,8 +72,13 @@
         #loading-overlay {
             position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9);
             z-index: 100; display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 1rem; color: var(--text-primary);
+            flex-direction: column; gap: 1rem; color: #cbd5e1;
             transition: opacity 0.3s ease-in-out; text-align: center; padding: 2rem;
+        }
+        .theme-btn.active {
+            ring: 2px;
+            --tw-ring-color: var(--accent-color);
+            box-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
         }
     </style>
 </head>
@@ -123,10 +137,6 @@
         <header class="relative text-center mb-6">
             <h1 class="text-3xl sm:text-4xl font-bold text-primary">Müşteri Poşet Takibi</h1>
             <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
-             <div class="absolute top-0 left-0 text-left">
-                <p id="user-email" class="text-xs text-secondary truncate max-w-[200px]"></p>
-                <button id="logout-btn" class="text-sm text-red-400 hover:underline">Çıkış Yap</button>
-            </div>
             <div class="absolute top-0 right-0">
                 <button id="notification-bell" class="relative p-2 text-slate-400 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
@@ -146,7 +156,6 @@
         </div>
 
         <main id="main-content" class="relative">
-            <!-- Main application content panels go here, same as your original file -->
             <div id="panel-list" class="panel space-y-8">
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle / Listede Ara</h2>
@@ -230,14 +239,27 @@
             </div>
 
             <div id="panel-settings" class="panel hidden space-y-8">
+                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
+                    <h2 class="text-2xl font-semibold text-primary">Hesap Yönetimi</h2>
+                    <div>
+                        <p class="text-sm text-secondary">Giriş Yapılan Hesap:</p>
+                        <p id="settings-user-email" class="font-medium text-primary break-all"></p>
+                    </div>
+                    <button id="settings-logout-btn" class="w-full bg-red-600/20 text-red-300 font-semibold p-3 rounded-lg hover:bg-red-600/40 transition-all">
+                        Çıkış Yap
+                    </button>
+                </div>
+                
                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
                     <h2 class="text-2xl font-semibold text-primary">Görünüm Ayarları</h2>
                     <div>
                         <h3 class="text-lg font-medium text-primary mb-2">Tema</h3>
-                        <div class="flex gap-2">
-                            <button data-theme="dark" class="theme-btn flex-1 p-2 rounded-lg border-2 border-slate-700 bg-slate-800 text-slate-300">Varsayılan</button>
-                            <button data-theme="light" class="theme-btn flex-1 p-2 rounded-lg border-2 border-gray-300 bg-white text-black">Açık</button>
-                            <button data-theme="night-blue" class="theme-btn flex-1 p-2 rounded-lg border-2 border-indigo-900 bg-blue-950 text-blue-200">Gece Mavisi</button>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
+                            <button data-theme="aurora" class="theme-btn p-2 rounded-lg border-2 border-[#30363d] bg-[#0d1117] text-[#c9d1d9]">Aurora</button>
+                            <button data-theme="sunset" class="theme-btn p-2 rounded-lg border-2 border-[#5a3c82] bg-[#2c1b3e] text-[#f3e8ff]">Sunset</button>
+                            <button data-theme-graphite" class="theme-btn p-2 rounded-lg border-2 border-[#4b5263] bg-[#282c34] text-[#abb2bf]">Graphite</button>
+                            <button data-theme="ocean" class="theme-btn p-2 rounded-lg border-2 border-[#80dfff] bg-[#e6f7ff] text-[#005f80]">Ocean</button>
+                            <button data-theme="mint" class="theme-btn p-2 rounded-lg border-2 border-[#86efac] bg-[#f0fdf4] text-[#14532d]">Mint</button>
                         </div>
                     </div>
                     <div>
@@ -289,21 +311,21 @@
     </div>
     
     <script type="module">
-        // Firebase Modüllerini İçe Aktar
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
             onAuthStateChanged,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
-            signOut
+            signOut,
+            EmailAuthProvider,
+            reauthenticateWithCredential
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
             onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- FIREBASE YAPILANDIRMASI (KENDİ BİLGİLERİNİZLE DEĞİŞTİRİN) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
             authDomain: "emre-bebe-takip.firebaseapp.com",
@@ -316,7 +338,6 @@
         const { jsPDF } = window.jspdf;
         
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM ELEMENTLERİ ---
             const dom = {
                 loadingOverlay: document.getElementById('loading-overlay'),
                 loadingText: document.getElementById('loading-text'),
@@ -328,8 +349,8 @@
                 registerError: document.getElementById('register-error'),
                 showRegisterBtn: document.getElementById('show-register'),
                 showLoginBtn: document.getElementById('show-login'),
-                userEmailDisplay: document.getElementById('user-email'),
-                logoutBtn: document.getElementById('logout-btn'),
+                logoutBtn: document.getElementById('settings-logout-btn'),
+                settingsUserEmail: document.getElementById('settings-user-email'),
                 mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
@@ -365,8 +386,7 @@
                 notificationBadge: document.getElementById('notification-badge'),
             };
 
-            // --- STATE (DURUM) YÖNETİMİ ---
-            let app, auth, db, userId;
+            let app, auth, db, userId, currentUser;
             let allItems = [];
             let allCustomers = [];
             let settings = {};
@@ -379,8 +399,6 @@
             let customerDetailCurrentPage = 1;
             const customerDetailItemsPerPage = 5;
 
-            // --- ICONS ---
-            // Icons object remains the same as your original file
             const icons = {
                 alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
                 alpha_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 3.629 9.664 2H8.598l1.789 5.332h1.234L13.402 2h-1.12l-.419 1.371h-1.781zm1.57 1.055h-1.296l.648 2.042.648 2.042z"/><path d="M12.96 10.022c.16.21.283-.417.371.622h.043c.09-.205.214-.412.375-.622L15.04 8.5h-1.2l-.71 1.258h-.043l-.71-1.258h-1.21l1.83 3.05zM4.5 13.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L4.5 3.707V13.5z"/></svg>',
@@ -395,9 +413,8 @@
                 cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
             };
 
-            // --- YARDIMCI FONKSİYONLAR ---
             const toTrUpperCase = (str) => str ? str.toLocaleUpperCase('tr-TR') : '';
-            const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { theme: 'dark', fontSize: 16 };
+            const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { theme: 'aurora', fontSize: 16 };
             const saveSettingsToStorage = (settings) => localStorage.setItem(`emanet-settings-${userId}`, JSON.stringify(settings));
             const formatDate = (iso) => {
                 if(!iso) return '';
@@ -423,7 +440,6 @@
                 return days >= 0 ? days : '-';
             }
 
-            // --- UI GÖSTER/GİZLE FONKSİYONLARI ---
             function showLoading(message) {
                 dom.loadingText.textContent = message;
                 dom.loadingOverlay.style.display = 'flex';
@@ -442,22 +458,22 @@
             }
 
             function showAppUI(user) {
+                currentUser = user;
                 dom.authContainer.classList.add('hidden');
                 dom.appContainer.classList.remove('hidden');
-                dom.userEmailDisplay.textContent = user.email;
+                dom.settingsUserEmail.textContent = user.email;
                 hideLoading();
             }
 
-            // --- AUTHENTICATION ---
             function setupAuthEventListeners() {
                 dom.loginForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     showLoading('Giriş yapılıyor...');
+                    dom.loginError.classList.add('hidden');
                     const email = dom.loginForm['login-email'].value;
                     const password = dom.loginForm['login-password'].value;
                     try {
                         await signInWithEmailAndPassword(auth, email, password);
-                        // onAuthStateChanged will handle the UI switch
                     } catch (error) {
                         dom.loginError.textContent = "Giriş başarısız. E-posta veya şifre hatalı.";
                         dom.loginError.classList.remove('hidden');
@@ -468,6 +484,7 @@
                 dom.registerForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     showLoading('Hesap oluşturuluyor...');
+                    dom.registerError.classList.add('hidden');
                     const email = dom.registerForm['register-email'].value;
                     const password = dom.registerForm['register-password'].value;
                      if(password.length < 6) {
@@ -478,7 +495,6 @@
                     }
                     try {
                         await createUserWithEmailAndPassword(auth, email, password);
-                        // onAuthStateChanged will handle the UI switch
                     } catch (error) {
                         dom.registerError.textContent = "Kayıt başarısız. Bu e-posta zaten kullanılıyor olabilir.";
                         dom.registerError.classList.remove('hidden');
@@ -505,13 +521,16 @@
                 });
             }
 
-
-            // --- AYARLAR ---
             function applySettings() {
-                document.body.className = `theme-${settings.theme} text-primary`;
+                // Remove all theme classes first
+                document.body.classList.remove('theme-sunset', 'theme-ocean', 'theme-graphite', 'theme-mint', 'theme-aurora');
+                // Add the current theme class
+                if(settings.theme) {
+                    document.body.classList.add(`theme-${settings.theme}`);
+                }
+                
                 document.querySelectorAll('.theme-btn').forEach(btn => {
-                    btn.classList.toggle('ring-2', btn.dataset.theme === settings.theme);
-                    btn.classList.toggle('ring-accent', btn.dataset.theme === settings.theme);
+                    btn.classList.toggle('active', btn.dataset.theme === settings.theme);
                 });
 
                 document.body.style.fontSize = `${settings.fontSize}px`;
@@ -521,11 +540,9 @@
                 if(fontSizePreview) fontSizePreview.textContent = `${settings.fontSize}px`;
             }
 
-            // --- RENDER FUNCTIONS (These functions are mostly the same, just using `dom` object) ---
             function renderAll() {
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
                 const archivedItems = allItems.filter(item => item.status === 'delivered');
-                
                 renderItems(activeItems);
                 renderArchive(archivedItems);
                 renderNotes();
@@ -545,7 +562,6 @@
                 filteredItems.sort((a, b) => {
                     if (sortState.type === 'alpha') return a.customerName.localeCompare(b.customerName, 'tr') * direction;
                     if (sortState.type === 'bags') return (a.bagCount - b.bagCount) * direction;
-                    
                     const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt || 0).getTime();
                     const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt || 0).getTime();
                     return (dateB - dateA) * direction;
@@ -557,12 +573,10 @@
                 filteredItems.forEach(item => dom.itemList.appendChild(createItemElement(item)));
             }
 
-            // createItemElement function remains the same, just ensure it uses `icons`
              function createItemElement(item) {
                 const div = document.createElement('div');
                 const date = item.lastModified?.seconds ? new Date(item.lastModified.seconds * 1000) : new Date();
                 const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
-
                 const overdueClass = (() => {
                     if (diffDays >= 20) return 'border-red-500/60 bg-red-500/10';
                     if (diffDays >= 10) return 'border-yellow-500/60 bg-yellow-500/10';
@@ -575,7 +589,6 @@
                 if(item.reminderDate) {
                      noteIndicatorHTML += `<span class="text-cyan-400 text-xs ml-1" title="Hatırlatıcı: ${item.reminderDate}">🔔</span>`;
                 }
-
                 
                 let historyHtml = '';
                 if (item.createdAt) {
@@ -583,7 +596,6 @@
                 } else {
                     historyHtml += '<p class="item-subtext text-sm text-secondary">Eklenme tarihi yok</p>';
                 }
-
                 if (item.additionalDates && Array.isArray(item.additionalDates) && item.additionalDates.length > 0) {
                     const otherAdditions = item.additionalDates.map(date => {
                         return `<p class="item-subtext text-xs text-secondary/80 pl-2">+ Poşet Eklendi: ${formatDate(date).split(' ')[0]} (${formatRelativeTime(date)})</p>`;
@@ -618,16 +630,11 @@
                 return div;
             }
 
-            // All other render functions (renderArchive, createArchiveItemElement, renderNotes, etc.) remain the same
             function renderArchive(items) {
                 const searchQuery = toTrUpperCase(dom.searchArchiveInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
-                filteredItems.sort((a,b) => {
-                    const dateA = a.deliveredAt?.seconds || 0;
-                    const dateB = b.deliveredAt?.seconds || 0;
-                    return dateB - dateA;
-                });
+                filteredItems.sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
                 
                 dom.emptyArchiveListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
 
@@ -647,11 +654,7 @@
                 const div = document.createElement('div');
                 div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
                 div.dataset.id = item.id;
-
-                const deliveredByHtml = item.deliveredBy 
-                    ? `<p class="item-subtext text-xs text-secondary/80 mt-1">Teslim Eden: ${item.deliveredBy}</p>` 
-                    : '';
-
+                const deliveredByHtml = item.deliveredBy ? `<p class="item-subtext text-xs text-secondary/80 mt-1">Teslim Eden: ${item.deliveredBy}</p>` : '';
                 div.innerHTML = `
                     <div class="item-details flex-1 flex items-center gap-4">
                         <div class="item-bag-count bg-slate-600/50 text-slate-400 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
@@ -669,11 +672,7 @@
             }
             
             function renderNotes() {
-                const itemsWithNotes = allItems.filter(item => (item.note && item.note.trim() !== '') || item.reminderDate).sort((a,b) => {
-                    const dateA = a.lastModified?.seconds || 0;
-                    const dateB = b.lastModified?.seconds || 0;
-                    return dateB - dateA;
-                });
+                const itemsWithNotes = allItems.filter(item => (item.note && item.note.trim() !== '') || item.reminderDate).sort((a,b) => (b.lastModified?.seconds || 0) - (a.lastModified?.seconds || 0));
                 dom.notesList.innerHTML = '';
                 dom.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
                 itemsWithNotes.forEach(item => dom.notesList.appendChild(createNoteElement(item)));
@@ -690,13 +689,10 @@
                 div.innerHTML = `
                     <div class="flex justify-between items-start">
                          <p class="font-semibold accent-text">${item.customerName}</p>
-                         <button data-action="delete-note-from-tab" class="p-1 -mt-1 -mr-1 text-secondary hover:text-red-500 rounded-full transition" title="Notu ve Hatırlatıcıyı Sil">
-                             <svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>
-                        </button>
+                         <button data-action="delete-note-from-tab" class="p-1 -mt-1 -mr-1 text-secondary hover:text-red-500 rounded-full transition" title="Notu ve Hatırlatıcıyı Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
                     </div>
                     <p class="text-primary mt-2 whitespace-pre-wrap">${item.note || '<i>Not içeriği boş.</i>'}</p>
-                    ${reminderHtml}
-                `;
+                    ${reminderHtml}`;
                 return div;
             }
             
@@ -709,27 +705,15 @@
                 const overdueList = document.getElementById('overdue-report-list');
                 const overdueMessage = document.getElementById('empty-overdue-report-message');
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
-
                 if (activeItems.length === 0) {
                     overdueList.innerHTML = '';
                     overdueMessage.classList.remove('hidden');
                     return;
                 }
-                
                 overdueMessage.classList.add('hidden');
-                activeItems.sort((a, b) => {
-                       const dateA = a.lastModified?.seconds || 0;
-                       const dateB = b.lastModified?.seconds || 0;
-                       return dateA - dateB;
-                });
+                activeItems.sort((a, b) => (a.lastModified?.seconds || 0) - (b.lastModified?.seconds || 0));
                 const top10 = activeItems.slice(0, 10);
-
-                overdueList.innerHTML = top10.map((item, index) => {
-                    return `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center">
-                                 <span class="text-primary">${index + 1}. ${item.customerName}</span>
-                                 <span class="text-sm text-secondary">${formatRelativeTime(item.lastModified)}</span>
-                             </div>`;
-                }).join('');
+                overdueList.innerHTML = top10.map((item, index) => `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center"><span class="text-primary">${index + 1}. ${item.customerName}</span><span class="text-sm text-secondary">${formatRelativeTime(item.lastModified)}</span></div>`).join('');
             }
             
             function renderPeriodicReport(range = null) {
@@ -737,14 +721,9 @@
                 if(range === null) {
                     const activeBtn = document.querySelector('.report-range-btn.accent-bg');
                     if (activeBtn) range = activeBtn.dataset.range;
-                    else {
-                         contentDiv.innerHTML = 'Raporu görmek için bir zaman aralığı seçin.';
-                         return; 
-                    }
+                    else { contentDiv.innerHTML = 'Raporu görmek için bir zaman aralığı seçin.'; return; }
                 }
-                
                 let added, delivered;
-                
                 if (range === 'all') {
                     added = allItems.length;
                     delivered = allItems.filter(i => i.status === 'delivered').length;
@@ -753,43 +732,25 @@
                     const endDate = new Date();
                     const startDate = new Date();
                     startDate.setDate(endDate.getDate() - rangeNum);
-
                     added = allItems.filter(i => (i.createdAt?.seconds ? new Date(i.createdAt.seconds * 1000) : new Date(i.createdAt)) >= startDate).length;
                     delivered = allItems.filter(i => i.status === 'delivered' && (i.deliveredAt?.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt)) >= startDate).length;
                 }
-
-                contentDiv.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4 text-center">
-                        <div>
-                            <p class="text-3xl font-bold text-green-400">${added}</p>
-                            <p class="text-sm text-secondary">Yeni Poşet Eklendi</p>
-                        </div>
-                        <div>
-                            <p class="text-3xl font-bold text-blue-400">${delivered}</p>
-                            <p class="text-sm text-secondary">Poşet Teslim Edildi</p>
-                        </div>
-                    </div>
-                `;
+                contentDiv.innerHTML = `<div class="grid grid-cols-2 gap-4 text-center"><div><p class="text-3xl font-bold text-green-400">${added}</p><p class="text-sm text-secondary">Yeni Poşet Eklendi</p></div><div><p class="text-3xl font-bold text-blue-400">${delivered}</p><p class="text-sm text-secondary">Poşet Teslim Edildi</p></div></div>`;
             }
 
-            // --- FIRESTORE İŞLEMLERİ (USER-ID ILE GÜNCELLENDİ) ---
             async function handleAddItem(e) {
                 e.preventDefault();
                 const customerName = toTrUpperCase(dom.customerNameInput.value.trim());
                 const bagCount = parseInt(dom.bagCountInput.value, 10);
                 if (!customerName || isNaN(bagCount) || bagCount < 1) return;
-
                 try {
                     const activeItems = allItems.filter(item => item.status === 'active');
                     const existingItem = activeItems.find(item => toTrUpperCase(item.customerName) === customerName);
-                    
                     const itemsCollectionRef = collection(db, 'users', userId, 'items');
                     const customersCollectionRef = collection(db, 'users', userId, 'customers');
-
                     if (existingItem) {
                         const itemRef = doc(itemsCollectionRef, existingItem.id);
                         const datesToAdd = Array(bagCount).fill(null).map(() => new Date());
-
                         await updateDoc(itemRef, {
                             bagCount: existingItem.bagCount + bagCount,
                             lastModified: serverTimestamp(),
@@ -800,7 +761,6 @@
                         if (!customerExists) {
                             await addDoc(customersCollectionRef, { name: customerName });
                         }
-
                         await addDoc(itemsCollectionRef, {
                             customerName, bagCount, note: '', status: 'active',
                             createdAt: serverTimestamp(), lastModified: serverTimestamp(),
@@ -808,11 +768,9 @@
                             additionalDates: [], reminderDate: null
                         });
                     }
-                    
                     dom.addItemForm.reset();
                     dom.bagCountInput.value = 1;
                     dom.customerNameInput.focus();
-
                 } catch (error) {
                     console.error("Error in handleAddItem: ", error);
                     showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
@@ -840,16 +798,13 @@
                     const batch = writeBatch(db);
                     const itemsCollectionRef = collection(db, 'users', userId, 'items');
                     const customersCollectionRef = collection(db, 'users', userId, 'customers');
-
                     const customerRef = doc(customersCollectionRef, customerId);
                     batch.update(customerRef, { name: upperNewName });
-                    
                     const itemsQuery = query(itemsCollectionRef, where("customerName", "==", oldName));
                     const itemsSnapshot = await getDocs(itemsQuery);
                     itemsSnapshot.forEach(itemDoc => {
                         batch.update(itemDoc.ref, { customerName: upperNewName });
                     });
-                    
                     await batch.commit();
                 } catch(error) {
                    console.error("Müşteri adı güncellenirken hata:", error);
@@ -861,30 +816,21 @@
 
             async function importDataFromJSON(data) {
                 if (!data.allItems || !data.allCustomers) {
-                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.');
-                    return;
+                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.'); return;
                 }
-                
                 showLoading('Mevcut veriler siliniyor...');
-                
                 const itemsCollectionRef = collection(db, 'users', userId, 'items');
                 const customersCollectionRef = collection(db, 'users', userId, 'customers');
-
-                // Delete existing data
                 const itemsBatch = writeBatch(db);
                 allItems.forEach(item => itemsBatch.delete(doc(itemsCollectionRef, item.id)));
                 await itemsBatch.commit();
-                
                 const customersBatch = writeBatch(db);
                 allCustomers.forEach(customer => customersBatch.delete(doc(customersCollectionRef, customer.id)));
                 await customersBatch.commit();
-                
                 showLoading('Yeni veriler içe aktarılıyor...');
-
-                // Add new data
                 const newItemsBatch = writeBatch(db);
                 data.allItems.forEach(item => {
-                    const newItemRef = doc(itemsCollectionRef); // Create new doc with new ID
+                    const newItemRef = doc(itemsCollectionRef);
                     const cleanItem = { ...item };
                     delete cleanItem.id;
                     if (cleanItem.customerName) cleanItem.customerName = toTrUpperCase(cleanItem.customerName);
@@ -895,7 +841,6 @@
                     newItemsBatch.set(newItemRef, cleanItem);
                 });
                 await newItemsBatch.commit();
-
                 const newCustomersBatch = writeBatch(db);
                 data.allCustomers.forEach(customer => {
                     const newCustomerRef = doc(customersCollectionRef);
@@ -905,28 +850,24 @@
                     newCustomersBatch.set(newCustomerRef, cleanCustomer);
                 });
                 await newCustomersBatch.commit();
-
                 hideLoading();
                 showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
             }
             
-            async function resetAllData() {
+            async function resetAllDataForUser() {
                 showLoading('Tüm verileriniz siliniyor...');
                 const itemsCollectionRef = collection(db, 'users', userId, 'items');
                 const customersCollectionRef = collection(db, 'users', userId, 'customers');
-
                 const itemsBatch = writeBatch(db);
                 allItems.forEach(item => itemsBatch.delete(doc(itemsCollectionRef, item.id)));
                 await itemsBatch.commit();
-                
                 const customersBatch = writeBatch(db);
                 allCustomers.forEach(customer => customersBatch.delete(doc(customersCollectionRef, customer.id)));
                 await customersBatch.commit();
-                
                 hideLoading();
+                 showSimpleMessageModal('Başarılı', 'Bu hesaptaki tüm verileriniz başarıyla silindi.');
             }
 
-            // --- UYGULAMA BAŞLATMA VE VERİ DİNLEME ---
             function initializeAppLogic() {
                 settings = getSettingsFromStorage();
                 seenNotifications = JSON.parse(localStorage.getItem(`seenNotifications-${userId}`)) || [];
@@ -946,16 +887,10 @@
                 dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
                 dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
                 dom.sortDateBtn.addEventListener('click', () => handleSort('date'));
-                
                 dom.mainContent.addEventListener('click', handleMainContentClick);
-                dom.exportArchivePdfBtn?.addEventListener('click', exportArchiveToPDF);
-                dom.exportReportsPdfBtn?.addEventListener('click', exportReportsToPDF);
                 dom.notificationBell?.addEventListener('click', showNotificationsModal);
-                
                 document.querySelector('#panel-settings').addEventListener('click', handleSettingsPanelClick);
-            
                 dom.importFileInput.addEventListener('change', handleFileImport);
-                
                 document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
                     settings.fontSize = e.target.value;
                     document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
@@ -963,9 +898,8 @@
                 });
                 document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
                     settings.fontSize = e.target.value;
-                     saveSettingsToStorage(settings);
+                    saveSettingsToStorage(settings);
                 });
-                
                 document.querySelectorAll('.report-range-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
@@ -973,29 +907,21 @@
                         renderPeriodicReport(btn.dataset.range);
                     });
                 });
-
                 document.querySelector('nav').addEventListener('click', (e) => {
                     if (e.target.id && e.target.id.startsWith('tab-')) {
                         switchTab(e.target.id.replace('tab-', ''));
                     }
                 });
-                
                 dom.customerNameInput.addEventListener("input", () => {
                     const searchTerm = toTrUpperCase(dom.customerNameInput.value.trim());
                     dom.clearCustomerNameBtn.classList.toggle('hidden', searchTerm.length === 0);
-                    
                     const activeItems = allItems.filter(item => item.status !== 'delivered');
                     renderItems(activeItems);
-
                     dom.suggestionsBox.innerHTML = "";
                     if (searchTerm.length === 0) {
                         dom.suggestionsBox.classList.add("hidden"); return;
                     }
-
-                    const filteredCustomers = allCustomers
-                        .filter(c => toTrUpperCase(c.name).includes(searchTerm))
-                        .map(c => c.name);
-
+                    const filteredCustomers = allCustomers.filter(c => toTrUpperCase(c.name).includes(searchTerm)).map(c => c.name);
                     if (filteredCustomers.length > 0) {
                         filteredCustomers.forEach(name => {
                             const div = document.createElement("div");
@@ -1014,14 +940,12 @@
                         dom.suggestionsBox.classList.add("hidden");
                     }
                 });
-
                 dom.clearCustomerNameBtn.addEventListener('click', () => {
                     dom.customerNameInput.value = '';
                     dom.clearCustomerNameBtn.classList.add('hidden');
                     dom.customerNameInput.dispatchEvent(new Event('input'));
                     dom.customerNameInput.focus();
                 });
-
                 document.addEventListener("click", (e) => {
                     if (!e.target.closest('.relative')) {
                         dom.suggestionsBox.classList.add("hidden");
@@ -1033,13 +957,11 @@
                 if (!userId) return;
                 if (itemsUnsubscribe) itemsUnsubscribe();
                 if (customersUnsubscribe) customersUnsubscribe();
-
                 const itemsQuery = query(collection(db, "users", userId, "items"));
                 itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
                     allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderAll();
                 }, error => console.error("Error listening to items: ", error));
-
                 const customersQuery = query(collection(db, "users", userId, "customers"));
                 customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
                     allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1051,41 +973,27 @@
                 }, error => console.error("Error listening to customers: ", error));
             }
             
-            // --- EVENT HANDLERS (Same as before, just using dom object) ---
-            // handleMainContentClick, handleSettingsPanelClick etc. remain the same.
             async function handleMainContentClick(e) {
                 const button = e.target.closest('button[data-action]');
                 if (!button) return;
-                
                 const action = button.dataset.action;
                 const itemDiv = button.closest('div[data-id]');
-
                 if (action === 'view-customer') {
                     const customerName = itemDiv?.dataset.customerName;
-                    if (customerName) {
-                        showCustomerDetailModal(customerName);
-                    }
+                    if (customerName) showCustomerDetailModal(customerName);
                     return;
                 }
-
                 if (!itemDiv) return;
-
                 const id = itemDiv.dataset.id;
                 const item = allItems.find(i => i.id === id);
                 if (!item) return;
-
                 const defaultActions = itemDiv.querySelector('.default-actions');
                 const editCountActions = itemDiv.querySelector('.edit-count-actions');
-
                 switch (action) {
                     case 'deliver': {
                         const result = await showDeliverConfirmationModal(item);
                         if (result.confirmed) {
-                            updateItem(id, {
-                                status: 'delivered',
-                                deliveredAt: serverTimestamp(),
-                                deliveredBy: result.value
-                            });
+                            updateItem(id, { status: 'delivered', deliveredAt: serverTimestamp(), deliveredBy: result.value });
                         }
                         break;
                     }
@@ -1095,10 +1003,6 @@
                         }
                         break;
                     case 'delete-permanent':
-                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "Kalıcı Olarak Sil", true)) {
-                            deleteItem(id);
-                        }
-                        break;
                     case 'delete-item':
                         if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "Kaydı Sil", true)) {
                             deleteItem(id);
@@ -1134,11 +1038,9 @@
                             showSimpleMessageModal("Geçersiz Sayı", "Poşet sayısı en az 1 olmalıdır.");
                             return;
                         }
-
                         const oldBagCount = item.bagCount;
                         const updatePayload = { bagCount: newBagCount };
                         const countDifference = newBagCount - oldBagCount;
-
                         if (countDifference !== 0) {
                             const currentDates = [...(item.additionalDates || [])];
                             let newDates;
@@ -1151,7 +1053,6 @@
                             }
                             updatePayload.additionalDates = newDates;
                         }
-
                         await updateItem(id, updatePayload);
                         break;
                     }
@@ -1167,51 +1068,53 @@
                       applySettings();
                       return;
                  }
-                 
                  const targetId = e.target.id;
                  switch(targetId) {
+                    case 'settings-logout-btn':
+                        signOut(auth);
+                        break;
                      case 'manage-customers-btn':
                          showCustomerManagementModal();
                          break;
-                     case 'export-json-btn':
-                         exportDataToJSON();
-                         break;
-                     case 'import-json-btn':
-                         dom.importFileInput.click();
-                         break;
-                     case 'export-active-pdf-btn':
-                         exportActiveItemsToPDF();
-                         break;
-                     case 'export-csv-btn':
-                         exportToCSV();
-                         break;
-                     case 'reset-items-btn': {
-                         const passwordCorrect = await showPasswordPrompt();
-                         if (passwordCorrect) {
-                              if(await showConfirmationModal("Tüm bekleyen ve teslim edilen poşet kayıtlarınızı kalıcı olarak silmek istediğinizden emin misiniz? Müşteri listesi etkilenmeyecektir. Bu işlem geri alınamaz.", "Evet, Sil", true)) {
-                                 showLoading('Poşetler siliniyor...');
-                                 const itemsCollectionRef = collection(db, 'users', userId, 'items');
-                                 const batch = writeBatch(db);
-                                 allItems.forEach(item => batch.delete(doc(itemsCollectionRef, item.id)));
-                                 await batch.commit();
-                                 hideLoading();
-                              }
-                         }
-                         break;
-                     }
+                     case 'export-json-btn': exportDataToJSON(); break;
+                     case 'import-json-btn': dom.importFileInput.click(); break;
+                     case 'export-active-pdf-btn': exportActiveItemsToPDF(); break;
+                     case 'export-csv-btn': exportToCSV(); break;
+                     case 'reset-items-btn':
                      case 'reset-all-btn': {
-                         const passwordCorrect = await showPasswordPrompt();
-                         if (passwordCorrect) {
-                             if (await showConfirmationModal("Bu hesaptaki TÜM poşet ve müşteri verilerini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", "EVET, TÜMÜNÜ SİL", true)) {
-                                 resetAllData();
-                             }
-                         }
-                         break;
+                        const isResetAll = targetId === 'reset-all-btn';
+                        const title = isResetAll ? "Tüm Verileri Sıfırla" : "Poşet Listesini Sıfırla";
+                        const message = isResetAll ? "Bu hesaptaki TÜM müşteri ve poşet verilerini kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz." : "Tüm bekleyen ve teslim edilen poşet kayıtlarınızı kalıcı olarak silmek üzeresiniz. Müşteri listeniz etkilenmeyecektir.";
+                        const confirmText = isResetAll ? "Evet, Tüm Verilerimi Sil" : "Evet, Poşetleri Sil";
+
+                        const password = await showPasswordConfirmationModal(title, `${message} Devam etmek için lütfen hesap şifrenizi girin.`, confirmText, true);
+                        if (password) {
+                            showLoading('Kimlik doğrulanıyor...');
+                            const credential = EmailAuthProvider.credential(currentUser.email, password);
+                            try {
+                                await reauthenticateWithCredential(currentUser, credential);
+                                if (isResetAll) {
+                                    await resetAllDataForUser();
+                                } else {
+                                    showLoading('Poşetler siliniyor...');
+                                    const itemsCollectionRef = collection(db, 'users', userId, 'items');
+                                    const batch = writeBatch(db);
+                                    allItems.forEach(item => batch.delete(doc(itemsCollectionRef, item.id)));
+                                    await batch.commit();
+                                    hideLoading();
+                                    showSimpleMessageModal('Başarılı', 'Poşet listesi başarıyla sıfırlandı.');
+                                }
+                            } catch (error) {
+                                hideLoading();
+                                console.error("Re-authentication failed: ", error);
+                                showSimpleMessageModal("Hata", "Şifre yanlış. İşlem iptal edildi.");
+                            }
+                        }
+                        break;
                      }
                  }
             }
 
-            // --- MAIN INITIALIZATION ---
             function initialize() {
                 try {
                     app = initializeApp(firebaseConfig);
@@ -1227,6 +1130,7 @@
                             initializeAppLogic();
                         } else {
                             userId = null;
+                            currentUser = null;
                             if(itemsUnsubscribe) itemsUnsubscribe();
                             if(customersUnsubscribe) customersUnsubscribe();
                             allItems = [];
@@ -1234,7 +1138,6 @@
                             showAuthUI();
                         }
                     });
-
                 } catch(e) {
                     console.error("Firebase initialization error:", e);
                     dom.loadingText.innerHTML = '<span class="text-red-400 font-semibold">Uygulama başlatılamadı.</span>';
@@ -1262,10 +1165,8 @@
             function switchTab(target, instant = false) {
                 const tabs = document.querySelectorAll('nav button[id^="tab-"]');
                 const panels = document.querySelectorAll('.panel[id^="panel-"]');
-                
                 tabs.forEach(tab => tab.classList.remove('tab-active'));
                 document.getElementById(`tab-${target}`).classList.add('tab-active');
-
                 panels.forEach(panel => {
                     const isTargetPanel = panel.id === `panel-${target}`;
                     if (instant) {
@@ -1293,7 +1194,6 @@
                 [dom.sortAlphaBtn, dom.sortBagsBtn, dom.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
                 const activeBtn = document.getElementById(`sort-${sortState.type}`);
                 if (activeBtn) activeBtn.classList.add('sort-active');
-
                 dom.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
                 dom.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
                 dom.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
@@ -1302,7 +1202,6 @@
             function renderArchivePagination(totalPages) {
                 dom.archivePagination.innerHTML = '';
                 if(totalPages <= 1) return;
-
                 const createBtn = (text, onClick, disabled = false) => {
                     const btn = document.createElement('button');
                     btn.innerHTML = text;
@@ -1311,15 +1210,12 @@
                     btn.onclick = onClick;
                     return btn;
                 }
-
                 dom.archivePagination.appendChild(createBtn('&laquo;', () => { archiveCurrentPage--; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === 1));
-
                 for(let i = 1; i <= totalPages; i++) {
                     const pageBtn = createBtn(i, () => { archiveCurrentPage = i; renderArchive(allItems.filter(i => i.status === 'delivered')) });
                     if (i === archiveCurrentPage) pageBtn.classList.add('active');
                     dom.archivePagination.appendChild(pageBtn);
                 }
-
                 dom.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
             }
 
@@ -1342,18 +1238,10 @@
             
             function showSimpleMessageModal(title, message) {
                 return new Promise(resolve => {
-                       const modalHtml =`
-                            <h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3>
-                            <p class="text-secondary mb-4">${message}</p>
-                            <div class="flex justify-end gap-3">
-                                <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
-                            </div>`;
+                       const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button></div>`;
                         dom.modalContent.innerHTML = modalHtml;
                         const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
-                        const close = () => {
-                            hideModalUI();
-                            resolve(true);
-                        }
+                        const close = () => { hideModalUI(); resolve(true); }
                         confirmBtn.addEventListener('click', close, {once: true});
                         showModalUI();
                 });
@@ -1362,23 +1250,11 @@
             function showConfirmationModal(message, confirmText = "Onayla", isDestructive = false) {
                  return new Promise(resolve => {
                     const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
-                    const modalHtml = `
-                        <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3>
-                        <p class="text-secondary mb-6">${message}</p>
-                        <div class="flex justify-end gap-3">
-                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                            <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
-                        </div>`;
+                    const modalHtml = `<h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3><p class="text-secondary mb-6">${message}</p><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button></div>`;
                     dom.modalContent.innerHTML = modalHtml;
-                    
                     const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
-                    
-                    const close = (confirmed) => {
-                        hideModalUI();
-                        resolve(confirmed);
-                    }
-                    
+                    const close = (confirmed) => { hideModalUI(); resolve(confirmed); }
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
                     showModalUI();
@@ -1389,29 +1265,12 @@
                  return new Promise(resolve => {
                     const deliveryPersonnel = [ 'Cengiz Tuna', 'Süleyman Özgür', 'Muhammed Ali Koç', 'Fatih köse', 'Abdullah Alalalı', 'Ömer Alioğlu', 'Murat Avaid', 'Mahir Avaid' ];
                     const optionsHtml = deliveryPersonnel.map(name => `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`).join('');
-                    const modalHtml =`
-                        <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
-                        <p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
-                        <div class="mb-6">
-                            <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
-                            <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
-                                ${optionsHtml}
-                            </select>
-                        </div>
-                        <div class="flex justify-end gap-3">
-                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button>
-                        </div>`;
+                    const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3><p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p><div class="mb-6"><label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label><select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select></div><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button></div>`;
                     dom.modalContent.innerHTML = modalHtml;
-
                     const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
                     const select = dom.modalContent.querySelector('#delivered-by-select');
-
-                    const close = (confirmed) => {
-                         hideModalUI();
-                         resolve({ confirmed, value: confirmed ? select.value : null });
-                    };
+                    const close = (confirmed) => { hideModalUI(); resolve({ confirmed, value: confirmed ? select.value : null }); };
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
                     showModalUI();
@@ -1420,53 +1279,33 @@
             
             async function showNoteModal(item) {
                 return new Promise(resolve => {
-                    const modalHtml = `
-                        <h3 class="text-xl font-semibold mb-2 text-primary">Not ve Hatırlatıcı</h3>
-                        <p class="text-secondary mb-4">'${item.customerName}' için notu ve hatırlatıcıyı düzenleyin.</p>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="note-textarea" class="block text-sm font-medium text-secondary mb-1">Not:</label>
-                                <textarea id="note-textarea" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-24">${item.note || ''}</textarea>
-                            </div>
-                            <div>
-                                <label for="reminder-date" class="block text-sm font-medium text-secondary mb-1">Hatırlatma Tarihi (Opsiyonel):</label>
-                                <input type="date" id="reminder-date" value="${item.reminderDate || ''}" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
-                            </div>
-                        </div>
-                        <div class="flex justify-end gap-3 mt-6">
-                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button>
-                        </div>`;
+                    const modalHtml = `<h3 class="text-xl font-semibold mb-2 text-primary">Not ve Hatırlatıcı</h3><p class="text-secondary mb-4">'${item.customerName}' için notu ve hatırlatıcıyı düzenleyin.</p><div class="space-y-4"><div><label for="note-textarea" class="block text-sm font-medium text-secondary mb-1">Not:</label><textarea id="note-textarea" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-24">${item.note || ''}</textarea></div><div><label for="reminder-date" class="block text-sm font-medium text-secondary mb-1">Hatırlatma Tarihi (Opsiyonel):</label><input type="date" id="reminder-date" value="${item.reminderDate || ''}" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition"></div></div><div class="flex justify-end gap-3 mt-6"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button></div>`;
                     dom.modalContent.innerHTML = modalHtml;
-                    
                     const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
                     const noteTextarea = dom.modalContent.querySelector('#note-textarea');
                     const reminderDateInput = dom.modalContent.querySelector('#reminder-date');
-
-                    const close = (confirmed) => {
-                         hideModalUI();
-                         resolve({ confirmed, note: noteTextarea.value, reminderDate: reminderDateInput.value || null });
-                    };
+                    const close = (confirmed) => { hideModalUI(); resolve({ confirmed, note: noteTextarea.value, reminderDate: reminderDateInput.value || null }); };
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
                     showModalUI();
                 });
             }
 
-            async function showPasswordPrompt() {
+            async function showPasswordConfirmationModal(title, message, confirmText, isDestructive = false) {
                 return new Promise(resolve => {
+                    const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
                     const modalHtml = `
-                        <h3 class="text-xl font-semibold mb-2 text-yellow-400">Güvenlik Onayı</h3>
-                        <p class="text-secondary mb-4">Bu tehlikeli bir işlemdir. Devam etmek için lütfen yönetici şifresini girin.</p>
+                        <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">${title}</h3>
+                        <p class="text-secondary mb-4">${message}</p>
                         <div>
-                            <label for="password-input" class="block text-sm font-medium text-secondary mb-1">Şifre:</label>
+                            <label for="password-input" class="block text-sm font-medium text-secondary mb-1">Hesap Şifreniz:</label>
                             <input id="password-input" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" autofocus>
-                            <p id="password-error" class="text-red-400 text-sm mt-2 hidden">Hatalı şifre. Lütfen tekrar deneyin.</p>
+                            <p id="password-error" class="text-red-400 text-sm mt-2 hidden">Hatalı şifre.</p>
                         </div>
                         <div class="flex justify-end gap-3 mt-6">
                             <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
-                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Onayla</button>
+                            <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
                         </div>`;
                     
                     dom.modalContent.innerHTML = modalHtml;
@@ -1477,16 +1316,26 @@
                     const passwordInput = dom.modalContent.querySelector('#password-input');
                     const errorMsg = dom.modalContent.querySelector('#password-error');
                     
+                    const close = (password) => {
+                        hideModalUI();
+                        resolve(password);
+                    };
+
                     const handleConfirm = () => {
-                        if (passwordInput.value === '00042') { // Keep your password
-                            hideModalUI();
-                            resolve(true);
-                        } else {
+                        const password = passwordInput.value;
+                        if (!password) {
+                            errorMsg.textContent = "Şifre boş olamaz.";
                             errorMsg.classList.remove('hidden');
+                        } else {
+                           close(password);
                         }
                     };
-                    confirmBtn.addEventListener('click', handleConfirm, {once: true});
-                    cancelBtn.addEventListener('click', () => { hideModalUI(); resolve(false); }, {once: true});
+
+                    confirmBtn.addEventListener('click', handleConfirm, { once: true });
+                    cancelBtn.addEventListener('click', () => close(null), { once: true });
+                    passwordInput.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') handleConfirm();
+                    });
                 });
             }
 
@@ -1504,7 +1353,6 @@
             function getUnseenReminders() {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-
                 return allItems.filter(item => {
                     if (item.status !== 'active' || !item.reminderDate) return false;
                     const [year, month, day] = item.reminderDate.split('-').map(Number);
@@ -1517,7 +1365,6 @@
                 const unseenReminders = getUnseenReminders();
                 const unseenOverdue = getUnseenOverdueItems();
                 const totalUnseen = new Set([...unseenReminders.map(i => i.id), ...unseenOverdue.map(i => i.id)]).size;
-
                 dom.notificationBadge.textContent = totalUnseen;
                 dom.notificationBadge.classList.toggle('hidden', totalUnseen === 0);
             }
@@ -1563,7 +1410,7 @@
                     });
                 });
             }
-            // All other modal and export functions (showCustomerDetailModal, exportToCSV, etc.) remain the same
+
             function showCustomerDetailModal(customerName) {
                 const customerItems = allItems.filter(item => item.customerName === customerName);
                 const activeItem = customerItems.find(item => item.status === 'active');
@@ -1614,9 +1461,7 @@
                 if (!listContainer) return;
                 listContainer.innerHTML = '';
                 const ucFilter = toTrUpperCase(filter);
-                const filtered = allCustomers
-                    .filter(c => toTrUpperCase(c.name).includes(ucFilter))
-                    .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                const filtered = allCustomers.filter(c => toTrUpperCase(c.name).includes(ucFilter)).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
                 if(filtered.length === 0) { listContainer.innerHTML = '<p class="text-center text-secondary py-4">Filtreyle eşleşen müşteri bulunamadı.</p>'; return; }
                 filtered.forEach(customer => {
                     const div = document.createElement('div');
