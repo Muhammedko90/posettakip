@@ -83,9 +83,7 @@
             transition: opacity 0.3s ease-in-out; text-align: center; padding: 2rem;
         }
         .theme-btn.active {
-            ring: 2px;
-            --tw-ring-color: var(--accent-color);
-            box-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: 0 0 0 2px var(--accent-color);
         }
         .item-bag-count-dynamic {
             background-color: var(--accent-bg-light);
@@ -95,54 +93,57 @@
 </head>
 <body class="bg-secondary text-primary">
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay">
         <div id="loading-spinner">
-            <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
         <p id="loading-text">Uygulama yükleniyor...</p>
     </div>
 
-    <!-- Auth Container (Login/Register) -->
     <div id="auth-container" class="hidden min-h-screen flex items-center justify-center p-4">
         <div class="max-w-md w-full bg-primary p-8 rounded-2xl shadow-lg border border-dynamic">
-            <!-- Login Form -->
-            <form id="login-form" class="">
+            <form id="login-form">
                 <h2 class="text-3xl font-bold text-center text-primary mb-2">Giriş Yap</h2>
-                <p class="text-center text-secondary mb-6">Müşteri listenize erişmek için giriş yapın.</p>
+                <p class="text-center text-secondary mb-6">Listenize erişmek için giriş yapın.</p>
                 <div id="login-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
                 <div class="space-y-4">
                     <input type="email" id="login-email" placeholder="E-posta Adresi" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                     <input type="password" id="login-password" placeholder="Şifre" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                 </div>
-                <button type="submit" class="w-full mt-6 accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Giriş Yap</button>
-                <p class="text-center text-sm text-secondary mt-6">
-                    Hesabınız yok mu? <a href="#" id="show-register" class="font-medium accent-text hover:underline">Kayıt Olun</a>
-                </p>
+                <div class="text-right mt-2">
+                    <a href="#" id="forgot-password-link" class="text-xs font-medium text-secondary hover:accent-text transition-colors">Şifremi unuttum</a>
+                </div>
+                <button type="submit" class="w-full mt-4 accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Giriş Yap</button>
+                <p class="text-center text-sm text-secondary mt-6">Hesabınız yok mu? <a href="#" id="show-register" class="font-medium accent-text hover:underline">Kayıt Olun</a></p>
             </form>
 
-            <!-- Register Form -->
             <form id="register-form" class="hidden">
                 <h2 class="text-3xl font-bold text-center text-primary mb-2">Hesap Oluştur</h2>
                 <p class="text-center text-secondary mb-6">Başlamak için yeni bir hesap oluşturun.</p>
-                 <div id="register-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                <div id="register-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
                 <div class="space-y-4">
                     <input type="email" id="register-email" placeholder="E-posta Adresi" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                     <input type="password" id="register-password" placeholder="Şifre (en az 6 karakter)" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                 </div>
                 <button type="submit" class="w-full mt-6 accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Kayıt Ol</button>
-                <p class="text-center text-sm text-secondary mt-6">
-                    Zaten hesabınız var mı? <a href="#" id="show-login" class="font-medium accent-text hover:underline">Giriş Yapın</a>
-                </p>
+                <p class="text-center text-sm text-secondary mt-6">Zaten hesabınız var mı? <a href="#" id="show-login" class="font-medium accent-text hover:underline">Giriş Yapın</a></p>
+            </form>
+
+            <form id="forgot-password-form" class="hidden">
+                <h2 class="text-3xl font-bold text-center text-primary mb-2">Şifre Sıfırlama</h2>
+                <p class="text-center text-secondary mb-6">Hesabınıza ait e-posta adresini girerek sıfırlama bağlantısı alın.</p>
+                <div id="forgot-success" class="hidden text-center p-2 mb-4 bg-green-500/20 text-green-300 rounded-md text-sm"></div>
+                <div id="forgot-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                <div class="space-y-4">
+                    <input type="email" id="forgot-email" placeholder="E-posta Adresi" class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
+                </div>
+                <button type="submit" class="w-full mt-6 accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Sıfırlama E-postası Gönder</button>
+                <p class="text-center text-sm text-secondary mt-6"><a href="#" id="back-to-login" class="font-medium accent-text hover:underline">Giriş ekranına dön</a></p>
             </form>
         </div>
     </div>
 
 
-    <!-- App Container -->
     <div id="app-container" class="hidden container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen">
         
         <header class="relative text-center mb-6">
@@ -252,13 +253,14 @@
             <div id="panel-settings" class="panel hidden space-y-8">
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
                     <h2 class="text-2xl font-semibold text-primary">Hesap Yönetimi</h2>
-                    <div>
-                        <p class="text-sm text-secondary">Giriş Yapılan Hesap:</p>
-                        <p id="settings-user-email" class="font-medium text-primary break-all"></p>
+                    <div class="space-y-3">
+                        <div>
+                           <p class="text-sm text-secondary">Giriş Yapılan Hesap:</p>
+                           <p id="settings-user-email" class="font-medium text-primary break-all"></p>
+                        </div>
+                         <button id="change-password-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Şifre Değiştir</button>
+                         <button id="settings-logout-btn" class="w-full bg-red-600/20 text-red-300 font-semibold p-3 rounded-lg hover:bg-red-600/40 transition-all">Çıkış Yap</button>
                     </div>
-                    <button id="settings-logout-btn" class="w-full bg-red-600/20 text-red-300 font-semibold p-3 rounded-lg hover:bg-red-600/40 transition-all">
-                        Çıkış Yap
-                    </button>
                 </div>
                 
                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
@@ -330,7 +332,9 @@
             signInWithEmailAndPassword,
             signOut,
             EmailAuthProvider,
-            reauthenticateWithCredential
+            reauthenticateWithCredential,
+            sendPasswordResetEmail,
+            updatePassword
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
@@ -356,12 +360,18 @@
                 appContainer: document.getElementById('app-container'),
                 loginForm: document.getElementById('login-form'),
                 registerForm: document.getElementById('register-form'),
+                forgotPasswordForm: document.getElementById('forgot-password-form'),
                 loginError: document.getElementById('login-error'),
                 registerError: document.getElementById('register-error'),
+                forgotSuccess: document.getElementById('forgot-success'),
+                forgotError: document.getElementById('forgot-error'),
                 showRegisterBtn: document.getElementById('show-register'),
                 showLoginBtn: document.getElementById('show-login'),
+                forgotPasswordLink: document.getElementById('forgot-password-link'),
+                backToLoginLink: document.getElementById('back-to-login'),
                 logoutBtn: document.getElementById('settings-logout-btn'),
                 settingsUserEmail: document.getElementById('settings-user-email'),
+                changePasswordBtn: document.getElementById('change-password-btn'),
                 mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
@@ -390,9 +400,6 @@
                 modalContainer: document.getElementById('modal-container'),
                 modalContentWrapper: document.getElementById('modal-content-wrapper'),
                 modalContent: document.getElementById('modal-content'),
-                exportArchivePdfBtn: document.getElementById('export-archive-pdf-btn'),
-                exportReportsPdfBtn: document.getElementById('export-reports-pdf-btn'),
-                exportActivePdfBtn: document.getElementById('export-active-pdf-btn'),
                 notificationBell: document.getElementById('notification-bell'),
                 notificationBadge: document.getElementById('notification-badge'),
             };
@@ -465,6 +472,9 @@
             function showAuthUI() {
                 dom.appContainer.classList.add('hidden');
                 dom.authContainer.classList.remove('hidden');
+                dom.loginForm.classList.remove('hidden');
+                dom.registerForm.classList.add('hidden');
+                dom.forgotPasswordForm.classList.add('hidden');
                 hideLoading();
             }
 
@@ -512,6 +522,24 @@
                         hideLoading();
                     }
                 });
+                
+                dom.forgotPasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = dom.forgotPasswordForm['forgot-email'].value;
+                    showLoading('Sıfırlama linki gönderiliyor...');
+                    dom.forgotError.classList.add('hidden');
+                    dom.forgotSuccess.classList.add('hidden');
+                    try {
+                        await sendPasswordResetEmail(auth, email);
+                        dom.forgotSuccess.textContent = 'Sıfırlama linki e-posta adresinize gönderildi.';
+                        dom.forgotSuccess.classList.remove('hidden');
+                    } catch(error) {
+                        dom.forgotError.textContent = 'E-posta gönderilemedi. Adresin doğru olduğundan emin olun.';
+                        dom.forgotError.classList.remove('hidden');
+                    } finally {
+                        hideLoading();
+                    }
+                });
 
                 dom.logoutBtn.addEventListener('click', () => {
                     signOut(auth);
@@ -521,25 +549,36 @@
                     e.preventDefault();
                     dom.loginForm.classList.add('hidden');
                     dom.registerForm.classList.remove('hidden');
-                    dom.loginError.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
                 });
 
                 dom.showLoginBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    dom.registerForm.classList.add('hidden');
                     dom.loginForm.classList.remove('hidden');
-                    dom.registerError.classList.add('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
+                });
+                
+                dom.forgotPasswordLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.add('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.remove('hidden');
+                });
+
+                dom.backToLoginLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.remove('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
                 });
             }
 
             function applySettings() {
-                // Remove all theme classes first
-                document.body.classList.remove('theme-sunset', 'theme-ocean', 'theme-graphite', 'theme-mint', 'theme-aurora');
-                // Add the current theme class
+                document.body.className = '';
                 if(settings.theme) {
                     document.body.classList.add(`theme-${settings.theme}`);
                 }
-                
                 document.querySelectorAll('.theme-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.theme === settings.theme);
                 });
@@ -1072,28 +1111,33 @@
 
 
             async function handleSettingsPanelClick(e) {
-                 const themeBtn = e.target.closest('.theme-btn');
-                 if(themeBtn) {
-                      settings.theme = themeBtn.dataset.theme;
-                      saveSettingsToStorage(settings);
-                      applySettings();
-                      return;
+                 const button = e.target.closest('button');
+                 if (!button) return;
+                 
+                 if(button.dataset.theme){
+                    settings.theme = button.dataset.theme;
+                    saveSettingsToStorage(settings);
+                    applySettings();
+                    return;
                  }
-                 const targetId = e.target.id;
-                 switch(targetId) {
+                 
+                 switch(button.id) {
                     case 'settings-logout-btn':
                         signOut(auth);
                         break;
-                     case 'manage-customers-btn':
+                    case 'change-password-btn':
+                        showChangePasswordModal();
+                        break;
+                    case 'manage-customers-btn':
                          showCustomerManagementModal();
                          break;
-                     case 'export-json-btn': exportDataToJSON(); break;
-                     case 'import-json-btn': dom.importFileInput.click(); break;
-                     case 'export-active-pdf-btn': exportActiveItemsToPDF(); break;
-                     case 'export-csv-btn': exportToCSV(); break;
-                     case 'reset-items-btn':
-                     case 'reset-all-btn': {
-                        const isResetAll = targetId === 'reset-all-btn';
+                    case 'export-json-btn': exportDataToJSON(); break;
+                    case 'import-json-btn': dom.importFileInput.click(); break;
+                    case 'export-active-pdf-btn': exportActiveItemsToPDF(); break;
+                    case 'export-csv-btn': exportToCSV(); break;
+                    case 'reset-items-btn':
+                    case 'reset-all-btn': {
+                        const isResetAll = button.id === 'reset-all-btn';
                         const title = isResetAll ? "Tüm Verileri Sıfırla" : "Poşet Listesini Sıfırla";
                         const message = isResetAll ? "Bu hesaptaki TÜM müşteri ve poşet verilerini kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz." : "Tüm bekleyen ve teslim edilen poşet kayıtlarınızı kalıcı olarak silmek üzeresiniz. Müşteri listeniz etkilenmeyecektir.";
                         const confirmText = isResetAll ? "Evet, Tüm Verilerimi Sil" : "Evet, Poşetleri Sil";
@@ -1247,9 +1291,10 @@
                 }, 300);
             }
             
-            function showSimpleMessageModal(title, message) {
-                return new Promise(resolve => {
-                       const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">${title}</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button></div>`;
+            function showSimpleMessageModal(title, message, isSuccess = false) {
+                 const titleColor = isSuccess ? 'text-green-400' : 'text-primary';
+                 return new Promise(resolve => {
+                       const modalHtml =`<h3 class="text-xl font-semibold mb-2 ${titleColor}">${title}</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button></div>`;
                         dom.modalContent.innerHTML = modalHtml;
                         const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                         const close = () => { hideModalUI(); resolve(true); }
@@ -1328,6 +1373,9 @@
                     const errorMsg = dom.modalContent.querySelector('#password-error');
                     
                     const close = (password) => {
+                        confirmBtn.removeEventListener('click', handleConfirm);
+                        cancelBtn.removeEventListener('click', handleCancel);
+                        passwordInput.removeEventListener('keydown', handleKeydown);
                         hideModalUI();
                         resolve(password);
                     };
@@ -1341,12 +1389,90 @@
                            close(password);
                         }
                     };
+                    
+                    const handleCancel = () => close(null);
+                    const handleKeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleConfirm();
+                        } else if (e.key === 'Escape'){
+                            handleCancel();
+                        }
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    cancelBtn.addEventListener('click', handleCancel);
+                    passwordInput.addEventListener('keydown', handleKeydown);
+                });
+            }
+            
+            async function showChangePasswordModal() {
+                 return new Promise((resolve, reject) => {
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-4 text-primary">Şifre Değiştir</h3>
+                        <div id="change-pass-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="current-password" class="block text-sm font-medium text-secondary mb-1">Mevcut Şifre:</label>
+                                <input id="current-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                            <div>
+                                <label for="new-password" class="block text-sm font-medium text-secondary mb-1">Yeni Şifre:</label>
+                                <input id="new-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                            <div>
+                                <label for="confirm-password" class="block text-sm font-medium text-secondary mb-1">Yeni Şifre (Tekrar):</label>
+                                <input id="confirm-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Değiştir</button>
+                        </div>`;
+
+                    dom.modalContent.innerHTML = modalHtml;
+                    showModalUI();
+
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const errorDiv = dom.modalContent.querySelector('#change-pass-error');
+                    const currentPass = dom.modalContent.querySelector('#current-password');
+                    const newPass = dom.modalContent.querySelector('#new-password');
+                    const confirmPass = dom.modalContent.querySelector('#confirm-password');
+
+                    const handleConfirm = async () => {
+                        errorDiv.classList.add('hidden');
+                        if (newPass.value !== confirmPass.value) {
+                            errorDiv.textContent = 'Yeni şifreler eşleşmiyor.';
+                            errorDiv.classList.remove('hidden');
+                            return;
+                        }
+                        if (newPass.value.length < 6) {
+                            errorDiv.textContent = 'Yeni şifre en az 6 karakter olmalıdır.';
+                            errorDiv.classList.remove('hidden');
+                            return;
+                        }
+                        
+                        showLoading('Şifre değiştiriliyor...');
+                        try {
+                            const credential = EmailAuthProvider.credential(currentUser.email, currentPass.value);
+                            await reauthenticateWithCredential(currentUser, credential);
+                            await updatePassword(currentUser, newPass.value);
+                            hideLoading();
+                            hideModalUI();
+                            showSimpleMessageModal('Başarılı', 'Şifreniz başarıyla değiştirildi.', true);
+                            resolve();
+                        } catch (error) {
+                            hideLoading();
+                            console.error("Password change error:", error);
+                            errorDiv.textContent = 'Mevcut şifre hatalı veya bir sorun oluştu.';
+                            errorDiv.classList.remove('hidden');
+                            reject(error);
+                        }
+                    };
 
                     confirmBtn.addEventListener('click', handleConfirm, { once: true });
-                    cancelBtn.addEventListener('click', () => close(null), { once: true });
-                    passwordInput.addEventListener('keydown', e => {
-                        if (e.key === 'Enter') handleConfirm();
-                    });
+                    cancelBtn.addEventListener('click', () => { hideModalUI(); resolve(); }, { once: true });
                 });
             }
 
