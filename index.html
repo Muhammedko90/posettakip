@@ -468,9 +468,10 @@
                     if (sortState.type === 'alpha') return a.customerName.localeCompare(b.customerName, 'tr') * direction;
                     if (sortState.type === 'bags') return (a.bagCount - b.bagCount) * direction;
                     
-                    const dateA = a.lastModified?.seconds ? a.lastModified.seconds : new Date(a.lastModified).getTime() / 1000;
-                    const dateB = b.lastModified?.seconds ? b.lastModified.seconds : new Date(b.lastModified).getTime() / 1000;
-                    return (dateB - dateA) * direction;
+                    // Tarih sıralaması için `createdAt` (eklenme tarihi) kullanılır.
+                    const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt || 0).getTime();
+                    const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt || 0).getTime();
+                    return (dateB - dateA) * direction; // dateB - dateA = en yeni en üstte (desc)
                 });
                 
                 allElements.itemList.innerHTML = '';
@@ -1251,7 +1252,9 @@
                     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
                 } else {
                     sortState.type = type;
-                    sortState.direction = (type === 'alpha' || type === 'date') ? 'asc' : 'desc';
+                    // Tarih ve poşet sayısı için varsayılan olarak azalan (yeni/çok olan üstte) sıralama yap,
+                    // alfabe için artan (A'dan Z'ye) yap.
+                    sortState.direction = (type === 'alpha') ? 'asc' : 'desc';
                 }
                 updateSortButtons();
                 renderItems(allItems.filter(item => item.status !== 'delivered'));
