@@ -17,33 +17,40 @@
     <style>
         :root {
             --bg-primary: #1e293b; --bg-secondary: #0f172a; --bg-tertiary: #334155;
-            --text-primary: #cbd5e1; --text-secondary: #94a3b8; --border-color: #475569;
-            --accent-color: #a78bfa; --accent-color-dark: #8b5cf6; --font-size-base: 16px;
+            --text-primary: #e2e8f0; --text-secondary: #94a3b8; --border-color: #475569;
+            --accent-color: #a78bfa; --accent-color-dark: #8b5cf6;
+            --accent-bg-light: #a78bfa26; --accent-text-light: var(--accent-color);
+            --font-size-base: 16px;
         }
         .theme-sunset { /* Neon Gün Batımı */
             --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
-            --text-primary: #f3e8ff; --text-secondary: #c0b1d3; --border-color: #5a3c82;
+            --text-primary: #f5eaff; --text-secondary: #d1c4e9; --border-color: #5a3c82;
             --accent-color: #ff79c6; --accent-color-dark: #ff4da6;
+            --accent-bg-light: #ff79c626; --accent-text-light: #ff79c6;
         }
         .theme-ocean { /* Okyanus Esintisi */
-            --bg-primary: #ffffff; --bg-secondary: #e6f7ff; --bg-tertiary: #b3ecff;
-            --text-primary: #005f80; --text-secondary: #007da6; --border-color: #80dfff;
-            --accent-color: #00bfff; --accent-color-dark: #0099cc;
+            --bg-primary: #ffffff; --bg-secondary: #f0f9ff; --bg-tertiary: #e0f2fe;
+            --text-primary: #082f49; --text-secondary: #075985; --border-color: #bae6fd;
+            --accent-color: #0ea5e9; --accent-color-dark: #0284c7;
+            --accent-bg-light: #0ea5e926; --accent-text-light: var(--accent-color-dark);
         }
         .theme-graphite { /* Grafit ve Altın */
             --bg-primary: #282c34; --bg-secondary: #1e2228; --bg-tertiary: #3e444c;
-            --text-primary: #abb2bf; --text-secondary: #828997; --border-color: #4b5263;
+            --text-primary: #dce1e8; --text-secondary: #a0a8b4; --border-color: #4b5263;
             --accent-color: #d4af37; --accent-color-dark: #c09b2d;
+            --accent-bg-light: #d4af3726; --accent-text-light: #e6c35c;
         }
         .theme-mint { /* Nane Şekeri */
             --bg-primary: #f0fdf4; --bg-secondary: #dcfce7; --bg-tertiary: #bbf7d0;
             --text-primary: #14532d; --text-secondary: #166534; --border-color: #86efac;
             --accent-color: #4ade80; --accent-color-dark: #22c55e;
+            --accent-bg-light: #4ade8026; --accent-text-light: #16a34a;
         }
         .theme-aurora { /* Kuzey Işıkları */
             --bg-primary: #0d1117; --bg-secondary: #010409; --bg-tertiary: #161b22;
-            --text-primary: #c9d1d9; --text-secondary: #8b949e; --border-color: #30363d;
+            --text-primary: #e6edf3; --text-secondary: #a1aab4; --border-color: #30363d;
             --accent-color: #58a6ff; --accent-color-dark: #388bfd;
+            --accent-bg-light: #58a6ff26; --accent-text-light: #58a6ff;
         }
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-secondary);
@@ -79,6 +86,10 @@
             ring: 2px;
             --tw-ring-color: var(--accent-color);
             box-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+        }
+        .item-bag-count-dynamic {
+            background-color: var(--accent-bg-light);
+            color: var(--accent-text-light);
         }
     </style>
 </head>
@@ -257,7 +268,7 @@
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
                             <button data-theme="aurora" class="theme-btn p-2 rounded-lg border-2 border-[#30363d] bg-[#0d1117] text-[#c9d1d9]">Aurora</button>
                             <button data-theme="sunset" class="theme-btn p-2 rounded-lg border-2 border-[#5a3c82] bg-[#2c1b3e] text-[#f3e8ff]">Sunset</button>
-                            <button data-theme-graphite" class="theme-btn p-2 rounded-lg border-2 border-[#4b5263] bg-[#282c34] text-[#abb2bf]">Graphite</button>
+                            <button data-theme="graphite" class="theme-btn p-2 rounded-lg border-2 border-[#4b5263] bg-[#282c34] text-[#abb2bf]">Graphite</button>
                             <button data-theme="ocean" class="theme-btn p-2 rounded-lg border-2 border-[#80dfff] bg-[#e6f7ff] text-[#005f80]">Ocean</button>
                             <button data-theme="mint" class="theme-btn p-2 rounded-lg border-2 border-[#86efac] bg-[#f0fdf4] text-[#14532d]">Mint</button>
                         </div>
@@ -608,7 +619,7 @@
                 div.dataset.customerName = item.customerName;
                 div.innerHTML = `
                     <div class="item-details flex-1 flex items-center gap-4">
-                        <div class="item-bag-count bg-purple-500/20 text-purple-300 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
                         <div class="flex-1">
                             <button data-action="view-customer" class="item-customer-name font-semibold text-lg text-primary text-left flex items-center gap-2 hover:underline">${item.customerName} ${noteIndicatorHTML}</button>
                             ${historyHtml}
@@ -657,7 +668,7 @@
                 const deliveredByHtml = item.deliveredBy ? `<p class="item-subtext text-xs text-secondary/80 mt-1">Teslim Eden: ${item.deliveredBy}</p>` : '';
                 div.innerHTML = `
                     <div class="item-details flex-1 flex items-center gap-4">
-                        <div class="item-bag-count bg-slate-600/50 text-slate-400 font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
                         <div class="flex-1">
                             <p class="item-customer-name font-semibold text-lg text-primary/80">${item.customerName}</p>
                             <p class="item-subtext text-sm text-secondary">Teslim Edildi: ${formatDate(item.deliveredAt)}</p>
