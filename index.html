@@ -1031,8 +1031,8 @@
                     allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     const modalList = document.getElementById('modal-customers-list');
                     if (modalList && !allElements.modalContainer.classList.contains('hidden')) {
-                        const searchInput = document.getElementById('modal-customer-search');
-                        renderCustomerModalList(searchInput?.value || '');
+                        const customerInput = document.getElementById('modal-customer-input');
+                        renderCustomerModalList(customerInput?.value || '');
                     }
                 }, error => {
                     console.error("Error listening to customers: ", error)
@@ -1731,7 +1731,7 @@
                     .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
                 if(filtered.length === 0) {
-                    listContainer.innerHTML = '<p class="text-center text-secondary">Müşteri bulunamadı.</p>';
+                    listContainer.innerHTML = '<p class="text-center text-secondary py-4">Filtreyle eşleşen müşteri bulunamadı.</p>';
                     return;
                 }
 
@@ -1772,23 +1772,21 @@
                  allElements.modalContent.innerHTML =`
                     <div class="flex flex-col h-[70vh]">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold text-primary">Müşteri Listesi</h3>
+                            <h3 class="text-xl font-semibold text-primary">Müşteri Yönetimi</h3>
                             <button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button>
                         </div>
                         <div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
-                        <form id="modal-add-customer-form" class="flex gap-2 mb-4">
-                            <input type="text" id="modal-new-customer-name" placeholder="Yeni Müşteri Ekle" class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
+                        <form id="modal-customer-form" class="flex gap-2 mb-4">
+                            <input type="text" id="modal-customer-input" placeholder="Müşteri Ara veya Yeni Müşteri Ekle..." class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
                             <button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button>
                         </form>
-                        <input type="search" id="modal-customer-search" placeholder="Müşteri ara..." class="w-full p-2 mb-4 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
                         <div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                     </div>
                 `;
                 
                 const listContainer = document.getElementById('modal-customers-list');
-                const searchInput = document.getElementById('modal-customer-search');
-                const addForm = document.getElementById('modal-add-customer-form');
-                const addInput = document.getElementById('modal-new-customer-name');
+                const customerForm = document.getElementById('modal-customer-form');
+                const customerInput = document.getElementById('modal-customer-input');
                 const errorDiv = document.getElementById('modal-customer-error');
                 const closeBtn = document.getElementById('modal-close');
                 
@@ -1800,7 +1798,7 @@
                     setTimeout(() => errorDiv.classList.add('hidden'), 3000);
                 }
 
-                searchInput.addEventListener('input', () => renderCustomerModalList(searchInput.value));
+                customerInput.addEventListener('input', () => renderCustomerModalList(customerInput.value));
                 
                 listContainer.addEventListener('click', async e => {
                     const button = e.target.closest('button[data-cust-action]');
@@ -1824,7 +1822,9 @@
                             displayView.classList.remove('hidden');
                             break;
                         case 'confirm-delete':
-                            await deleteCustomer(customerId);
+                             if (await showConfirmationModal("Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", "Evet, Sil", true)) {
+                                await deleteCustomer(customerId);
+                             }
                             break;
                         case 'edit':
                             displayView.classList.add('hidden');
@@ -1855,17 +1855,20 @@
                                 return;
                             }
                             
-                            await updateCustomerNameAndItems(customerId, oldName, newName);
+                            if (await showConfirmationModal(`'${oldName}' ismini '${newName}' olarak değiştirmek istediğinizden emin misiniz? Bu işlem müşterinin tüm geçmiş kayıtlarını da güncelleyecektir.`, "Evet, Değiştir")) {
+                               await updateCustomerNameAndItems(customerId, oldName, newName);
+                            }
                             break;
                     }
                 });
                 
-                addForm.addEventListener('submit', async e => {
+                customerForm.addEventListener('submit', async e => {
                     e.preventDefault();
-                    const name = toTrUpperCase(addInput.value.trim());
+                    const name = toTrUpperCase(customerInput.value.trim());
                     if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) {
                        await addDoc(collection(db, 'customers'), { name });
-                       addInput.value = '';
+                       customerInput.value = '';
+                       customerInput.dispatchEvent(new Event('input')); // Filtreyi temizle
                     } else if (name) {
                        showModalError('Bu müşteri zaten mevcut.');
                     }
