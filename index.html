@@ -68,7 +68,16 @@
         .accent-bg { background-color: var(--accent-color-dark); }
         .accent-bg-hover:hover { background-color: var(--accent-color); }
         .ring-accent:focus { --tw-ring-color: var(--accent-color); }
-        .tab-active { border-color: var(--accent-color) !important; color: var(--text-primary) !important; }
+        
+        /* GÜNCELLENMİŞ TAB STİLLERİ */
+        .tab-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .tab-active { 
+            background-color: var(--accent-bg-light) !important; 
+            color: var(--accent-text-light) !important; 
+        }
+
         .sort-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
         .panel { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; will-change: opacity, transform; }
         .panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
@@ -160,15 +169,43 @@
             </div>
         </header>
 
-        <div class="mb-6 border-b border-dynamic">
-            <nav class="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
-                <button id="tab-list" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Liste</button>
-                <button id="tab-archive" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Teslim Edilenler</button>
-                <button id="tab-reports" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Raporlar</button>
-                <button id="tab-notes" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Notlarım</button>
-                <button id="tab-settings" class="whitespace-nowrap py-4 px-2 sm:px-4 border-b-2 font-medium text-lg border-transparent text-secondary hover:text-primary hover:border-gray-500">Ayarlar</button>
+        <!-- YENİ NAVİGASYON MENÜSÜ -->
+        <div class="mb-6 bg-primary p-1 sm:p-2 rounded-xl border border-dynamic shadow-lg">
+            <nav class="flex justify-around items-center" aria-label="Tabs">
+                <button id="tab-list" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <span class="text-xs font-medium">Liste</span>
+                </button>
+                <button id="tab-archive" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    <span class="text-xs font-medium">Teslim Edilenler</span>
+                </button>
+                <button id="tab-reports" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span class="text-xs font-medium">Raporlar</span>
+                </button>
+                <button id="tab-notes" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="text-xs font-medium">Notlarım</span>
+                </button>
+                <button id="tab-settings" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs font-medium">Ayarlar</span>
+                </button>
             </nav>
         </div>
+
 
         <main id="main-content" class="relative">
             <div id="panel-list" class="panel space-y-8">
@@ -964,10 +1001,8 @@
                     renderArchive(allItems.filter(item => item.status === 'delivered'));
                 });
                 
-                // === GÜNCELLENEN BÖLÜM: PDF butonları için olay dinleyicileri eklendi ===
                 document.getElementById('export-archive-pdf-btn')?.addEventListener('click', exportArchiveToPDF);
                 document.getElementById('export-reports-pdf-btn')?.addEventListener('click', exportReportsToPDF);
-                // === GÜNCELLEME SONU ===
 
                 dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
                 dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
@@ -993,8 +1028,9 @@
                     });
                 });
                 document.querySelector('nav').addEventListener('click', (e) => {
-                    if (e.target.id && e.target.id.startsWith('tab-')) {
-                        switchTab(e.target.id.replace('tab-', ''));
+                    const button = e.target.closest('button.tab-button');
+                    if (button && button.id && button.id.startsWith('tab-')) {
+                        switchTab(button.id.replace('tab-', ''));
                     }
                 });
                 dom.customerNameInput.addEventListener("input", () => {
