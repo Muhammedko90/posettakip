@@ -146,18 +146,12 @@
 
     <div id="app-container" class="hidden container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen">
         
-        <!-- === GÜNCELLENEN BAŞLIK BÖLÜMÜ === -->
         <header class="flex items-center justify-between mb-6 gap-2">
-            <!-- Sol tarafta bildirim butonu kadar boşluk bırakarak başlığın tam ortalanmasını sağlar -->
             <div class="w-10 flex-shrink-0"></div>
-        
-            <!-- Ortalanmış Başlık -->
             <div class="flex-grow text-center">
                 <h1 class="text-3xl sm:text-4xl font-bold text-primary">Müşteri Poşet Takibi</h1>
                 <p class="mt-2 text-secondary text-sm sm:text-base">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
             </div>
-        
-            <!-- Sağdaki Bildirim Zili -->
             <div class="w-10 flex-shrink-0 flex justify-end">
                 <button id="notification-bell" class="relative p-2 text-slate-400 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
@@ -165,7 +159,6 @@
                 </button>
             </div>
         </header>
-        <!-- === GÜNCELLEME SONU === -->
 
         <div class="mb-6 border-b border-dynamic">
             <nav class="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
@@ -292,12 +285,20 @@
                 </div>
 
                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Müşteri Yönetimi</h2>
-                    <div>
-                        <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi Yönetimi</h3>
-                        <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
-                            Müşteri Listesini Görüntüle ve Yönet
-                        </button>
+                    <h2 class="text-2xl font-semibold text-primary">Uygulama Yönetimi</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi</h3>
+                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
+                                Müşteri Listesini Yönet
+                            </button>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-medium text-primary mb-2">Teslim Eden Kişiler</h3>
+                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
+                                Teslim Eden Kişileri Yönet
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -402,6 +403,7 @@
                 notesList: document.getElementById('notes-list'),
                 emptyNotesMessage: document.getElementById('empty-notes-message'),
                 manageCustomersBtn: document.getElementById('manage-customers-btn'),
+                manageDeliveryPersonnelBtn: document.getElementById('manage-delivery-personnel-btn'),
                 exportJsonBtn: document.getElementById('export-json-btn'),
                 importJsonBtn: document.getElementById('import-json-btn'),
                 importFileInput: document.getElementById('import-file-input'),
@@ -417,12 +419,14 @@
             let app, auth, db, userId, currentUser;
             let allItems = [];
             let allCustomers = [];
+            let deliveryPersonnel = [];
             let settings = {};
             let sortState = { type: 'alpha', direction: 'asc' };
             let archiveCurrentPage = 1;
             const itemsPerPage = 10;
             let itemsUnsubscribe = null;
             let customersUnsubscribe = null;
+            let deliveryPersonnelUnsubscribe = null;
             let seenNotifications = []; 
             let customerDetailCurrentPage = 1;
             const customerDetailItemsPerPage = 5;
@@ -850,6 +854,10 @@
             async function deleteCustomer(id) {
                 await deleteDoc(doc(db, 'users', userId, 'customers', id));
             }
+
+            async function deleteDeliveryPerson(id) {
+                await deleteDoc(doc(db, 'users', userId, 'deliveryPersonnel', id));
+            }
             
             async function updateCustomerNameAndItems(customerId, oldName, newName) {
                 const upperNewName = toTrUpperCase(newName);
@@ -881,14 +889,16 @@
                 showLoading('Mevcut veriler siliniyor...');
                 const itemsCollectionRef = collection(db, 'users', userId, 'items');
                 const customersCollectionRef = collection(db, 'users', userId, 'customers');
-                const itemsBatch = writeBatch(db);
-                allItems.forEach(item => itemsBatch.delete(doc(itemsCollectionRef, item.id)));
-                await itemsBatch.commit();
-                const customersBatch = writeBatch(db);
-                allCustomers.forEach(customer => customersBatch.delete(doc(customersCollectionRef, customer.id)));
-                await customersBatch.commit();
+                const personnelCollectionRef = collection(db, 'users', userId, 'deliveryPersonnel');
+                
+                const deleteBatch = writeBatch(db);
+                allItems.forEach(item => deleteBatch.delete(doc(itemsCollectionRef, item.id)));
+                allCustomers.forEach(customer => deleteBatch.delete(doc(customersCollectionRef, customer.id)));
+                deliveryPersonnel.forEach(person => deleteBatch.delete(doc(personnelCollectionRef, person.id)));
+                await deleteBatch.commit();
+                
                 showLoading('Yeni veriler içe aktarılıyor...');
-                const newItemsBatch = writeBatch(db);
+                const importBatch = writeBatch(db);
                 data.allItems.forEach(item => {
                     const newItemRef = doc(itemsCollectionRef);
                     const cleanItem = { ...item };
@@ -898,34 +908,43 @@
                     if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
                     if (cleanItem.lastModified) cleanItem.lastModified = new Date(cleanItem.lastModified.seconds ? cleanItem.lastModified.seconds * 1000 : cleanItem.lastModified);
                     if (cleanItem.deliveredAt) cleanItem.deliveredAt = new Date(cleanItem.deliveredAt.seconds ? cleanItem.deliveredAt.seconds * 1000 : cleanItem.deliveredAt);
-                    newItemsBatch.set(newItemRef, cleanItem);
+                    importBatch.set(newItemRef, cleanItem);
                 });
-                await newItemsBatch.commit();
-                const newCustomersBatch = writeBatch(db);
-                data.allCustomers.forEach(customer => {
+                 data.allCustomers.forEach(customer => {
                     const newCustomerRef = doc(customersCollectionRef);
                     const cleanCustomer = { ...customer };
                     if (cleanCustomer.name) cleanCustomer.name = toTrUpperCase(cleanCustomer.name);
                     delete cleanCustomer.id;
-                    newCustomersBatch.set(newCustomerRef, cleanCustomer);
+                    importBatch.set(newCustomerRef, cleanCustomer);
                 });
-                await newCustomersBatch.commit();
+                if(data.deliveryPersonnel && Array.isArray(data.deliveryPersonnel)){
+                    data.deliveryPersonnel.forEach(person => {
+                        const newPersonRef = doc(personnelCollectionRef);
+                        const cleanPerson = { ...person };
+                        if(cleanPerson.name) cleanPerson.name = toTrUpperCase(cleanPerson.name);
+                        delete cleanPerson.id;
+                        importBatch.set(newPersonRef, cleanPerson);
+                    });
+                }
+                await importBatch.commit();
+
                 hideLoading();
                 showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
             }
             
             async function resetAllDataForUser() {
                 showLoading('Tüm verileriniz siliniyor...');
-                const itemsCollectionRef = collection(db, 'users', userId, 'items');
-                const customersCollectionRef = collection(db, 'users', userId, 'customers');
-                const itemsBatch = writeBatch(db);
-                allItems.forEach(item => itemsBatch.delete(doc(itemsCollectionRef, item.id)));
-                await itemsBatch.commit();
-                const customersBatch = writeBatch(db);
-                allCustomers.forEach(customer => customersBatch.delete(doc(customersCollectionRef, customer.id)));
-                await customersBatch.commit();
+                const collectionsToDelete = ['items', 'customers', 'deliveryPersonnel'];
+                const batch = writeBatch(db);
+
+                for (const coll of collectionsToDelete) {
+                    const snapshot = await getDocs(collection(db, 'users', userId, coll));
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                }
+                
+                await batch.commit();
                 hideLoading();
-                 showSimpleMessageModal('Başarılı', 'Bu hesaptaki tüm verileriniz başarıyla silindi.');
+                showSimpleMessageModal('Başarılı', 'Bu hesaptaki tüm verileriniz başarıyla silindi.');
             }
 
             function initializeAppLogic() {
@@ -1017,11 +1036,14 @@
                 if (!userId) return;
                 if (itemsUnsubscribe) itemsUnsubscribe();
                 if (customersUnsubscribe) customersUnsubscribe();
+                if (deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
+
                 const itemsQuery = query(collection(db, "users", userId, "items"));
                 itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
                     allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderAll();
                 }, error => console.error("Error listening to items: ", error));
+
                 const customersQuery = query(collection(db, "users", userId, "customers"));
                 customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
                     allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1031,6 +1053,15 @@
                         renderCustomerModalList(customerInput?.value || '');
                     }
                 }, error => console.error("Error listening to customers: ", error));
+
+                const personnelQuery = query(collection(db, "users", userId, "deliveryPersonnel"));
+                 deliveryPersonnelUnsubscribe = onSnapshot(personnelQuery, (snapshot) => {
+                    deliveryPersonnel = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                    const modalList = document.getElementById('modal-personnel-list');
+                    if(modalList && !dom.modalContainer.classList.contains('hidden')) {
+                        renderDeliveryPersonnelModalList();
+                    }
+                }, error => console.error("Error listening to delivery personnel: ", error));
             }
             
             async function handleMainContentClick(e) {
@@ -1141,6 +1172,9 @@
                     case 'manage-customers-btn':
                          showCustomerManagementModal();
                          break;
+                    case 'manage-delivery-personnel-btn':
+                         showDeliveryPersonnelManagementModal();
+                         break;
                     case 'export-json-btn': exportDataToJSON(); break;
                     case 'import-json-btn': dom.importFileInput.click(); break;
                     case 'export-active-pdf-btn': exportActiveItemsToPDF(); break;
@@ -1198,8 +1232,10 @@
                             currentUser = null;
                             if(itemsUnsubscribe) itemsUnsubscribe();
                             if(customersUnsubscribe) customersUnsubscribe();
+                            if(deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
                             allItems = [];
                             allCustomers = [];
+                            deliveryPersonnel = [];
                             showAuthUI();
                         }
                     });
@@ -1329,14 +1365,22 @@
 
             async function showDeliverConfirmationModal(item) {
                  return new Promise(resolve => {
-                    const deliveryPersonnel = [ 'Cengiz Tuna', 'Süleyman Özgür', 'Muhammed Ali Koç', 'Fatih köse', 'Abdullah Alalalı', 'Ömer Alioğlu', 'Murat Avaid', 'Mahir Avaid' ];
-                    const optionsHtml = deliveryPersonnel.map(name => `<option value="${name}" ${name === 'Cengiz Tuna' ? 'selected' : ''}>${name}</option>`).join('');
-                    const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3><p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p><div class="mb-6"><label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label><select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select></div><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Teslim Et</button></div>`;
+                    let optionsHtml = '';
+                    if (deliveryPersonnel.length > 0) {
+                        optionsHtml = deliveryPersonnel.map(person => `<option value="${person.name}">${person.name}</option>`).join('');
+                    } else {
+                        optionsHtml = '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
+                    }
+
+                    const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3><p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p><div class="mb-6"><label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label><select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select></div><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition disabled:opacity-50" ${deliveryPersonnel.length === 0 ? 'disabled' : ''}>Teslim Et</button></div>`;
+                    
                     dom.modalContent.innerHTML = modalHtml;
                     const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
                     const select = dom.modalContent.querySelector('#delivered-by-select');
+                    
                     const close = (confirmed) => { hideModalUI(); resolve({ confirmed, value: confirmed ? select.value : null }); };
+                    
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
                     showModalUI();
@@ -1619,6 +1663,23 @@
                     listContainer.appendChild(div);
                 });
             }
+
+            function renderDeliveryPersonnelModalList() {
+                const listContainer = document.getElementById('modal-personnel-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '';
+                
+                if(deliveryPersonnel.length === 0) { listContainer.innerHTML = '<p class="text-center text-secondary py-4">Henüz teslim eden kişi eklenmemiş.</p>'; return; }
+
+                deliveryPersonnel.forEach(person => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.personId = person.id;
+                    div.dataset.personName = person.name;
+                    div.innerHTML = `<div class="person-display flex justify-between items-center"><span class="person-name-text text-primary text-sm">${person.name}</span><div class="flex items-center gap-2"><button data-person-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button><button data-person-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button></div></div><div class="person-edit hidden flex items-center gap-2"><input type="text" value="${person.name}" class="person-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button data-person-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button><button data-person-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button></div></div>`;
+                    listContainer.appendChild(div);
+                });
+            }
             
             async function showCustomerManagementModal() {
                  showModalUI();
@@ -1643,7 +1704,18 @@
                     switch (action) {
                         case 'delete': displayView.classList.add('hidden'); deleteConfirmView.classList.remove('hidden'); break;
                         case 'cancel-delete': deleteConfirmView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
-                        case 'confirm-delete': if (await showConfirmationModal("Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.", "Evet, Sil", true)) await deleteCustomer(customerId); break;
+                        case 'confirm-delete': if (await showConfirmationModal("Bu müşteriyi silmek, müşteriye ait TÜM poşet kayıtlarını da kalıcı olarak silecektir. Emin misiniz?", "Evet, Sil", true)) {
+                                showLoading('Müşteri ve ilişkili poşetler siliniyor...');
+                                const oldName = customerDiv.dataset.customerName;
+                                const batch = writeBatch(db);
+                                const itemsQuery = query(collection(db, 'users', userId, 'items'), where("customerName", "==", oldName));
+                                const itemsSnapshot = await getDocs(itemsQuery);
+                                itemsSnapshot.forEach(itemDoc => batch.delete(itemDoc.ref));
+                                batch.delete(doc(db, 'users', userId, 'customers', customerId));
+                                await batch.commit();
+                                hideLoading();
+                            }
+                            break;
                         case 'edit': displayView.classList.add('hidden'); editView.classList.remove('hidden'); editView.querySelector('input').focus(); break;
                         case 'cancel-edit': editView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
                         case 'save-edit':
@@ -1666,9 +1738,74 @@
                 });
                 renderCustomerModalList();
             }
+
+            async function showDeliveryPersonnelManagementModal() {
+                 showModalUI();
+                 dom.modalContent.innerHTML =`<div class="flex flex-col h-[70vh]"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-primary">Teslim Eden Kişi Yönetimi</h3><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div id="modal-personnel-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div><form id="modal-personnel-form" class="flex gap-2 mb-4"><input type="text" id="modal-personnel-input" placeholder="Yeni Kişi Ekle..." class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required><button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button></form><div id="modal-personnel-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div></div>`;
+                const listContainer = document.getElementById('modal-personnel-list');
+                const form = document.getElementById('modal-personnel-form');
+                const input = document.getElementById('modal-personnel-input');
+                const errorDiv = document.getElementById('modal-personnel-error');
+                const closeBtn = document.getElementById('modal-close');
+                
+                closeBtn.addEventListener('click', hideModalUI, {once: true});
+                function showModalError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); setTimeout(() => errorDiv.classList.add('hidden'), 3000); }
+
+                listContainer.addEventListener('click', async e => {
+                    const button = e.target.closest('button[data-person-action]');
+                    if (!button) return;
+                    const action = button.dataset.personAction;
+                    const personDiv = button.closest('div[data-person-id]');
+                    const personId = personDiv.dataset.personId;
+                    const displayView = personDiv.querySelector('.person-display');
+                    const editView = personDiv.querySelector('.person-edit');
+
+                    switch (action) {
+                        case 'delete':
+                            if (await showConfirmationModal("Bu kişiyi silmek istediğinizden emin misiniz?", "Evet, Sil", true)) {
+                                await deleteDeliveryPerson(personId);
+                            }
+                            break;
+                        case 'edit': 
+                            displayView.classList.add('hidden'); 
+                            editView.classList.remove('hidden'); 
+                            editView.querySelector('input').focus(); 
+                            break;
+                        case 'cancel-edit': 
+                            editView.classList.add('hidden'); 
+                            displayView.classList.remove('hidden'); 
+                            break;
+                        case 'save-edit':
+                            const nameInput = editView.querySelector('.person-name-input');
+                            const newName = toTrUpperCase(nameInput.value.trim());
+                            const oldName = personDiv.dataset.personName;
+                            if (!newName) { showModalError("İsim boş olamaz."); return; }
+                            if (newName === oldName) { editView.classList.add('hidden'); displayView.classList.remove('hidden'); return; }
+                            if (deliveryPersonnel.some(p => toTrUpperCase(p.name) === newName && p.id !== personId)) { showModalError("Bu isimde başka bir kişi zaten var."); return; }
+                            
+                            await updateDoc(doc(db, 'users', userId, 'deliveryPersonnel', personId), { name: newName });
+                            break;
+                    }
+                });
+
+                form.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = toTrUpperCase(input.value.trim());
+                    if (!name) return;
+                    if (deliveryPersonnel.some(p => toTrUpperCase(p.name) === name)) {
+                        showModalError('Bu kişi zaten mevcut.');
+                        return;
+                    }
+                    const personnelCollectionRef = collection(db, 'users', userId, 'deliveryPersonnel');
+                    await addDoc(personnelCollectionRef, { name });
+                    input.value = '';
+                });
+
+                renderDeliveryPersonnelModalList();
+            }
             
             function exportDataToJSON() {
-                const data = { allItems, allCustomers, settings };
+                const data = { allItems, allCustomers, deliveryPersonnel, settings };
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
