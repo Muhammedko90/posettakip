@@ -963,6 +963,12 @@
                     archiveCurrentPage = 1;
                     renderArchive(allItems.filter(item => item.status === 'delivered'));
                 });
+                
+                // === GÜNCELLENEN BÖLÜM: PDF butonları için olay dinleyicileri eklendi ===
+                document.getElementById('export-archive-pdf-btn')?.addEventListener('click', exportArchiveToPDF);
+                document.getElementById('export-reports-pdf-btn')?.addEventListener('click', exportReportsToPDF);
+                // === GÜNCELLEME SONU ===
+
                 dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
                 dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
                 dom.sortDateBtn.addEventListener('click', () => handleSort('date'));
