@@ -146,16 +146,26 @@
 
     <div id="app-container" class="hidden container mx-auto max-w-4xl p-4 sm:p-6 md:p-8 min-h-screen">
         
-        <header class="relative text-center mb-6">
-            <h1 class="text-3xl sm:text-4xl font-bold text-primary">Müşteri Poşet Takibi</h1>
-            <p class="mt-2 text-secondary">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
-            <div class="absolute top-0 right-0">
+        <!-- === GÜNCELLENEN BAŞLIK BÖLÜMÜ === -->
+        <header class="flex items-center justify-between mb-6 gap-2">
+            <!-- Sol tarafta bildirim butonu kadar boşluk bırakarak başlığın tam ortalanmasını sağlar -->
+            <div class="w-10 flex-shrink-0"></div>
+        
+            <!-- Ortalanmış Başlık -->
+            <div class="flex-grow text-center">
+                <h1 class="text-3xl sm:text-4xl font-bold text-primary">Müşteri Poşet Takibi</h1>
+                <p class="mt-2 text-secondary text-sm sm:text-base">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
+            </div>
+        
+            <!-- Sağdaki Bildirim Zili -->
+            <div class="w-10 flex-shrink-0 flex justify-end">
                 <button id="notification-bell" class="relative p-2 text-slate-400 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
                     <span id="notification-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"></span>
                 </button>
             </div>
         </header>
+        <!-- === GÜNCELLEME SONU === -->
 
         <div class="mb-6 border-b border-dynamic">
             <nav class="-mb-px flex space-x-2 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
