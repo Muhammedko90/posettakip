@@ -1297,11 +1297,20 @@
                     case 'deliver': {
                         const result = await showDeliverConfirmationModal(item);
                         if (result.confirmed) {
+                            let deliveryTimestamp;
+                            if (result.deliveryDate) {
+                                // YYYY-MM-DD formatındaki dizeyi yerel saat diliminde bir Date nesnesine dönüştür
+                                // Saat dilimi sorunlarından kaçınmak için T00:00:00 ekliyoruz
+                                deliveryTimestamp = new Date(result.deliveryDate + 'T00:00:00');
+                            } else {
+                                deliveryTimestamp = new Date(); // Herhangi bir nedenle tarih boşsa şimdiki zamanı kullan
+                            }
+
                             updateItem(id, { 
                                 status: 'delivered', 
-                                deliveredAt: serverTimestamp(), 
-                                deliveredBy: result.value,
-                                note: '', // Notu ve hatırlatıcıyı temizle
+                                deliveredAt: deliveryTimestamp, 
+                                deliveredBy: result.deliveredBy,
+                                note: '', // Teslimatta notu ve hatırlatıcıyı temizle
                                 reminderDate: null 
                             });
                         }
@@ -1590,15 +1599,41 @@
                     } else {
                         optionsHtml = '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
                     }
+                    
+                    const today = new Date().toISOString().split('T')[0];
 
-                    const modalHtml =`<h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3><p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p><div class="mb-6"><label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label><select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select></div><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition disabled:opacity-50" ${deliveryPersonnel.length === 0 ? 'disabled' : ''}>Teslim Et</button></div>`;
+                    const modalHtml =`
+                        <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
+                        <p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
+                                <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select>
+                            </div>
+                            <div>
+                                <label for="delivery-date-input" class="block text-sm font-medium text-secondary mb-1">Teslim Tarihi:</label>
+                                <input type="date" id="delivery-date-input" value="${today}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition disabled:opacity-50" ${deliveryPersonnel.length === 0 ? 'disabled' : ''}>Teslim Et</button>
+                        </div>`;
                     
                     dom.modalContent.innerHTML = modalHtml;
                     const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
                     const select = dom.modalContent.querySelector('#delivered-by-select');
+                    const dateInput = dom.modalContent.querySelector('#delivery-date-input');
                     
-                    const close = (confirmed) => { hideModalUI(); resolve({ confirmed, value: confirmed ? select.value : null }); };
+                    const close = (confirmed) => { 
+                        hideModalUI(); 
+                        resolve({ 
+                            confirmed, 
+                            deliveredBy: confirmed ? select.value : null,
+                            deliveryDate: confirmed ? dateInput.value : null 
+                        }); 
+                    };
                     
                     confirmBtn.addEventListener('click', () => close(true), { once: true });
                     cancelBtn.addEventListener('click', () => close(false), { once: true });
