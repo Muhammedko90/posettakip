@@ -1298,12 +1298,15 @@
                         const result = await showDeliverConfirmationModal(item);
                         if (result.confirmed) {
                             let deliveryTimestamp;
-                            if (result.deliveryDate) {
-                                // YYYY-MM-DD formatındaki dizeyi yerel saat diliminde bir Date nesnesine dönüştür
-                                // Saat dilimi sorunlarından kaçınmak için T00:00:00 ekliyoruz
+                            if (result.deliveryDate && result.deliveryTime) {
+                                // Date ve time birleştirilerek tam bir tarih nesnesi oluşturulur
+                                deliveryTimestamp = new Date(`${result.deliveryDate}T${result.deliveryTime}`);
+                            } else if (result.deliveryDate) {
+                                // Sadece tarih varsa, günün başlangıcı kullanılır
                                 deliveryTimestamp = new Date(result.deliveryDate + 'T00:00:00');
                             } else {
-                                deliveryTimestamp = new Date(); // Herhangi bir nedenle tarih boşsa şimdiki zamanı kullan
+                                // Hiçbir şey seçilmezse, şimdiki zaman kullanılır
+                                deliveryTimestamp = new Date(); 
                             }
 
                             updateItem(id, { 
@@ -1600,7 +1603,9 @@
                         optionsHtml = '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
                     }
                     
-                    const today = new Date().toISOString().split('T')[0];
+                    const now = new Date();
+                    const today = now.toISOString().split('T')[0];
+                    const currentTime = now.toTimeString().slice(0, 5);
 
                     const modalHtml =`
                         <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
@@ -1610,9 +1615,15 @@
                                 <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
                                 <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select>
                             </div>
-                            <div>
-                                <label for="delivery-date-input" class="block text-sm font-medium text-secondary mb-1">Teslim Tarihi:</label>
-                                <input type="date" id="delivery-date-input" value="${today}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="delivery-date-input" class="block text-sm font-medium text-secondary mb-1">Teslim Tarihi:</label>
+                                    <input type="date" id="delivery-date-input" value="${today}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                                </div>
+                                <div>
+                                    <label for="delivery-time-input" class="block text-sm font-medium text-secondary mb-1">Teslim Saati:</label>
+                                    <input type="time" id="delivery-time-input" value="${currentTime}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                                </div>
                             </div>
                         </div>
                         <div class="flex justify-end gap-3">
@@ -1625,13 +1636,15 @@
                     const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
                     const select = dom.modalContent.querySelector('#delivered-by-select');
                     const dateInput = dom.modalContent.querySelector('#delivery-date-input');
+                    const timeInput = dom.modalContent.querySelector('#delivery-time-input');
                     
                     const close = (confirmed) => { 
                         hideModalUI(); 
                         resolve({ 
                             confirmed, 
                             deliveredBy: confirmed ? select.value : null,
-                            deliveryDate: confirmed ? dateInput.value : null 
+                            deliveryDate: confirmed ? dateInput.value : null,
+                            deliveryTime: confirmed ? timeInput.value : null
                         }); 
                     };
                     
