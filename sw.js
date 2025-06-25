@@ -1,84 +1,87 @@
-// Cache adı ve versiyonu - Her büyük güncellemede versiyonu artırmak önemlidir.
-const CACHE_NAME = 'emre-bebe-takip-cache-v4';
-
-// Önbelleğe alınacak ÇEKİRDEK uygulama dosyaları. 
-// Bunlar uygulamanın çalışması için zorunlu olanlardır.
-const CORE_ASSETS = [
+// Cache adı ve versiyonu
+const CACHE_NAME = 'emre-bebe-takip-cache-v1';
+// Çevrimdışı mod için önbelleğe alınacak temel dosyalar
+const urlsToCache = [
   '/',
   'index.html',
-  'manifest.json'
+  'manifest.json',
+  'https://cdn.tailwindcss.com',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
 ];
 
-// 1. Service Worker'ı Yükleme (Install)
-// Bu adım, service worker ilk kez kaydedildiğinde veya güncellendiğinde çalışır.
+// Service Worker'ı yükle ve temel dosyaları önbelleğe al
 self.addEventListener('install', event => {
-  console.log('[Service Worker] Yükleniyor (v4)...');
-  // Yeni service worker'ın eski olanın yerini alması için beklemesini engeller.
-  self.skipWaiting(); 
-  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[Service Worker] Çekirdek dosyalar önbelleğe alınıyor.');
-        // Çekirdek dosyaları önbelleğe ekler. Bunlardan biri bile indirilemezse kurulum başarısız olur.
-        return cache.addAll(CORE_ASSETS);
-      })
-      .catch(error => {
-        console.error('[Service Worker] Çekirdek dosyaları önbelleğe alma başarısız oldu:', error);
+        console.log('Cache açıldı ve temel dosyalar ekleniyor.');
+        return cache.addAll(urlsToCache);
       })
   );
 });
 
-// 2. Service Worker'ı Aktifleştirme ve Eski Cache'leri Temizleme (Activate)
-// Bu adım, yeni service worker kontrolü eline aldığında çalışır.
-self.addEventListener('activate', event => {
-  console.log('[Service Worker] Aktifleştiriliyor (v4)...');
-  const cacheWhitelist = [CACHE_NAME]; // Mevcut cache adını koru
+// Fetch event'lerini dinle ve cache stratejisi uygula
+self.addEventListener('fetch', event => {
+  // Sadece GET isteklerini işleme al
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Firebase ve Google Fonts gibi dinamik kaynaklar için her zaman ağı kullan (network-first)
+  if (event.request.url.includes('firebase') || event.request.url.includes('gstatic.com')) {
+      event.respondWith(
+          fetch(event.request).catch(() => {
+              console.log('Ağ isteği başarısız oldu. Bu kaynak önbellekte bulunmuyor.');
+          })
+      );
+      return;
+  }
   
+  // Diğer tüm istekler için önce önbelleğe bak (cache-first)
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        // Eğer kaynak önbellekte varsa, oradan döndür
+        if (response) {
+          return response;
+        }
+
+        // Kaynak önbellekte yoksa, ağdan getirmeye çalış
+        return fetch(event.request.clone()).then(
+          response => {
+            // Geçerli bir cevap alınamazsa, olduğu gibi döndür
+            if (!response || response.status !== 200) {
+              return response;
+            }
+            
+            // Başarılı cevabı hem tarayıcıya gönder hem de önbelleğe ekle
+            let responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
+    );
+});
+
+// Eski cache'leri temizle
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Eğer cache adı beyaz listede (whitelist) değilse, eski olduğu için sil.
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('[Service Worker] Eski cache temizleniyor:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    })
-    // Yeni service worker'ın tüm açık sekmeleri hemen kontrol etmesini sağlar.
-    .then(() => self.clients.claim())
-  );
-});
-
-// 3. Ağ İsteklerini Yönetme (Fetch) - Stale-While-Revalidate Stratejisi
-// Bu, uygulamadan yapılan her ağ isteğini yakalar.
-self.addEventListener('fetch', event => {
-  const { request } = event;
-
-  // Sadece GET isteklerini işle. Firebase ve chrome-extension isteklerini yoksay.
-  if (request.method !== 'GET' || request.url.startsWith('chrome-extension://') || request.url.includes('firestore.googleapis.com')) {
-    return;
-  }
-
-  event.respondWith(
-    caches.open(CACHE_NAME).then(cache => {
-      // 1. Önce önbellekten yanıt vermeye çalış (Hızlı yanıt için)
-      return cache.match(request).then(cachedResponse => {
-        
-        // 2. Arka planda ağı kontrol et ve önbelleği güncelle (Revalidate)
-        const fetchPromise = fetch(request).then(networkResponse => {
-          // Gelen yanıt geçerliyse, önbelleği güncelle
-          if (networkResponse.status === 200) {
-            cache.put(request, networkResponse.clone());
-          }
-          return networkResponse;
-        });
-
-        // 3. Eğer önbellekte yanıt varsa onu hemen döndür, yoksa ağdan gelen yanıtı bekle.
-        return cachedResponse || fetchPromise;
-      });
     })
   );
 });
