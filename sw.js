@@ -1,89 +1,90 @@
-// Cache adı ve versiyonu
-const CACHE_NAME = 'emre-bebe-takip-cache-v2'; // Versiyonu artırarak eski cache'in temizlenmesini sağlıyoruz
-// Çevrimdışı mod için önbelleğe alınacak temel dosyalar
-const urlsToCache = [
+// Cache adı ve versiyonu - Her güncellemede versiyonu artırmak önemlidir.
+const CACHE_NAME = 'emre-bebe-takip-cache-v3';
+
+// Önbelleğe alınacak ÇEKİRDEK uygulama dosyaları.
+// Harici URL'leri (imgur gibi) buradan kaldırdık çünkü kurulumu riskli hale getirebilirler.
+// Bu dosyalar ilk ağ isteğinde önbelleğe alınacak.
+const CORE_ASSETS = [
   '/',
   'index.html',
-  'manifest.json',
-  // Temel kütüphaneler
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-  // YENİ EKLENEN UYGULAMA İKONLARI
-  'https://i.imgur.com/k4x9YAL.png', // manifest.json içinde kullanılan ikon
-  'https://i.imgur.com/VvBwWzV.png'   // index.html içinde kullanılan apple-touch-icon
+  'manifest.json'
 ];
 
-// Service Worker'ı yükle ve temel dosyaları önbelleğe al
+// 1. Service Worker'ı Yükleme (Install)
 self.addEventListener('install', event => {
-  // skipWaiting() yeni service worker'ın beklemeden aktif olmasını sağlar
+  console.log('[Service Worker] Yükleniyor...');
+  // Yeni service worker'ın beklemeden aktif olmasını sağlar.
   self.skipWaiting(); 
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache açıldı ve temel dosyalar ekleniyor.');
-        return cache.addAll(urlsToCache);
+        console.log('[Service Worker] Çekirdek dosyalar önbelleğe alınıyor.');
+        return cache.addAll(CORE_ASSETS);
+      })
+      .catch(error => {
+        console.error('[Service Worker] Çekirdek dosyaları önbelleğe alma başarısız oldu:', error);
       })
   );
 });
 
-// Eski cache'leri temizle
+// 2. Service Worker'ı Aktifleştirme ve Eski Cache'leri Temizleme (Activate)
 self.addEventListener('activate', event => {
+  console.log('[Service Worker] Aktifleştiriliyor...');
   const cacheWhitelist = [CACHE_NAME];
+  
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
+          // Eğer cache adı beyaz listede değilse, sil.
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Eski cache temizleniyor:', cacheName);
+            console.log('[Service Worker] Eski cache temizleniyor:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Yeni service worker'ın tüm açık client'ları kontrol etmesini sağlar
+    })
+    // Yeni service worker'ın tüm açık sekmeleri kontrol etmesini sağlar.
+    .then(() => self.clients.claim())
   );
 });
 
-// Fetch event'lerini dinle ve cache stratejisi uygula
+// 3. Ağ İsteklerini Yönetme (Fetch)
 self.addEventListener('fetch', event => {
-  // Sadece GET isteklerini işleme al ve chrome-extension isteklerini yoksay
-  if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
+  const { request } = event;
+
+  // Sadece GET isteklerini işle. Firebase ve chrome-extension isteklerini yoksay.
+  if (request.method !== 'GET' || request.url.startsWith('chrome-extension://') || request.url.includes('firestore.googleapis.com')) {
     return;
   }
 
-  // Firebase istekleri için ağa gitmesine izin ver
-  if (event.request.url.includes('firebase') || event.request.url.includes('firestore.googleapis.com')) {
-      return;
-  }
-  
-  // Diğer tüm istekler için önce önbelleğe bak (Cache-First Stratejisi)
+  // Strateji: Önce Cache, sonra Ağ (Cache First, fallback to Network)
   event.respondWith(
-    caches.match(event.request)
-      .then(cachedResponse => {
-        // Eğer kaynak önbellekte varsa, oradan döndür
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(request).then(cachedResponse => {
+        // Kaynak cache'de varsa, cache'den ver.
         if (cachedResponse) {
+          // console.log(`[Service Worker] Cache'den bulundu: ${request.url}`);
           return cachedResponse;
         }
 
-        // Kaynak önbellekte yoksa, ağdan getirmeye çalış
-        return fetch(event.request).then(
-          networkResponse => {
-            // Geçerli bir cevap alınamazsa, olduğu gibi döndür
-            if (!networkResponse || networkResponse.status !== 200) {
-              return networkResponse;
-            }
-            
-            // Başarılı cevabı hem tarayıcıya gönder hem de önbelleğe ekle
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
+        // Kaynak cache'de yoksa, ağdan getirmeye çalış.
+        return fetch(request).then(networkResponse => {
+          // console.log(`[Service Worker] Ağdan getirildi: ${request.url}`);
+          
+          // Gelen yanıtı klonla ve cache'e ekle.
+          // Bu sayede bir sonraki istekte aynı kaynak cache'den gelir.
+          // Bu, Imgur ikonlarınızın da ilk ziyaretten sonra önbelleğe alınmasını sağlar.
+          cache.put(request, networkResponse.clone());
 
-            return networkResponse;
-          }
-        );
-      })
-    );
+          // Yanıtı tarayıcıya döndür.
+          return networkResponse;
+        }).catch(error => {
+          console.error(`[Service Worker] Ağ isteği başarısız oldu: ${request.url}`, error);
+          // İsteğe bağlı olarak burada genel bir çevrimdışı sayfası döndürebilirsiniz.
+        });
+      });
+    })
+  );
 });
