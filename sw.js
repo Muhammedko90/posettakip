@@ -1,5 +1,5 @@
 // Cache adı ve versiyonu
-const CACHE_NAME = 'emre-bebe-takip-cache-v1';
+const CACHE_NAME = 'emre-bebe-takip-cache-v2'; // Versiyon güncellendi
 // Çevrimdışı mod için önbelleğe alınacak temel dosyalar
 const urlsToCache = [
   '/',
@@ -17,7 +17,14 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache açıldı ve temel dosyalar ekleniyor.');
-        return cache.addAll(urlsToCache);
+        // Önbelleğe alınacak URL'lerden bir tanesi bile başarısız olursa, yükleme başarısız olur.
+        // Bu yüzden her bir isteği ayrı ayrı ele alıp hataları yakalamak daha güvenli olabilir.
+        const promises = urlsToCache.map(url => {
+            return cache.add(url).catch(err => {
+                console.warn(`Önbelleğe eklenemedi: ${url}`, err);
+            });
+        });
+        return Promise.all(promises);
       })
   );
 });
@@ -29,11 +36,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Firebase ve Google Fonts gibi dinamik kaynaklar için her zaman ağı kullan (network-first)
-  if (event.request.url.includes('firebase') || event.request.url.includes('gstatic.com')) {
+  // Hava durumu, Firebase ve Google Fonts gibi dinamik kaynaklar için her zaman ağı kullan (network-first)
+  // wttr.in adresini bu kurala ekledim.
+  if (event.request.url.includes('wttr.in') || event.request.url.includes('firebase') || event.request.url.includes('gstatic.com')) {
       event.respondWith(
-          fetch(event.request).catch(() => {
-              console.log('Ağ isteği başarısız oldu. Bu kaynak önbellekte bulunmuyor.');
+          fetch(event.request).catch((err) => {
+              console.error('Ağ isteği başarısız oldu:', event.request.url, err);
+              // Burada çevrimdışı bir yedek yanıt döndürülebilir.
+              // Örneğin, "Çevrimdışı olduğunuz için veri alınamadı" gibi bir JSON objesi.
           })
       );
       return;
@@ -51,8 +61,8 @@ self.addEventListener('fetch', event => {
         // Kaynak önbellekte yoksa, ağdan getirmeye çalış
         return fetch(event.request.clone()).then(
           response => {
-            // Geçerli bir cevap alınamazsa, olduğu gibi döndür
-            if (!response || response.status !== 200) {
+            // Geçerli bir cevap alınamazsa veya opak bir cevap ise, önbelleğe almadan döndür
+            if (!response || response.status !== 200 || response.type === 'opaque') {
               return response;
             }
             
@@ -65,19 +75,23 @@ self.addEventListener('fetch', event => {
 
             return response;
           }
-        );
+        ).catch(err => {
+             console.error('Fetch hatası:', err);
+             // Ağ hatası durumunda genel bir çevrimdışı sayfası gösterilebilir.
+        });
       })
     );
 });
 
 // Eski cache'leri temizle
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [CACHE_NAME]; // Beyaz listeye yeni cache adını ekledim
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Eski cache siliniyor:', cacheName);
             return caches.delete(cacheName);
           }
         })
