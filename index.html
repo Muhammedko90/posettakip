@@ -847,7 +847,8 @@
 
              function createItemElement(item) {
                 const div = document.createElement('div');
-                const date = item.lastModified?.seconds ? new Date(item.lastModified.seconds * 1000) : new Date();
+                // DÜZELTME: Renklendirme için 'createdAt' (oluşturulma tarihi) kullanılıyor.
+                const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                 const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
                 const overdueClass = (() => {
                     if (diffDays >= 20) return 'border-red-500/60 bg-red-500/10';
