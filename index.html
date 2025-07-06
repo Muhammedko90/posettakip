@@ -456,6 +456,24 @@
             onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
+        // --- ÖNEMLİ AÇIKLAMA: GITHUB & FIREBASE API ANAHTARI ---
+        // GitHub'a kod yüklerken "API anahtarı sızdırıldı" gibi bir güvenlik uyarısı alabilirsiniz.
+        // Bu durum, aşağıdaki `firebaseConfig` nesnesindeki `apiKey` yüzündendir.
+        //
+        // 1. BU BİR HATA DEĞİLDİR: Firebase'in web uygulamaları için sağladığı API anahtarları
+        //    "gizli" bilgi değildir. Bu anahtar, uygulamanızın hangi Firebase projesine
+        //    ait olduğunu belirtir.
+        //
+        // 2. GÜVENLİK NASIL SAĞLANIR?: Uygulamanızın gerçek güvenliği, API anahtarını gizlemekle
+        //    değil, Firebase konsolunda yazacağınız "Güvenlik Kuralları" (Security Rules)
+        //    ile sağlanır. Bu kurallar, veritabanınıza kimin, ne koşulda erişebileceğini belirler.
+        //
+        // 3. GITHUB UYARISINI GEÇME: Eğer GitHub bu dosyanın yüklenmesini engellerse,
+        //    deponuzun (repository) "Security" -> "Secret scanning alerts" bölümüne gidin.
+        //    Orada bu anahtarla ilgili uyarıyı bulup "false positive" (yanlış alarm) veya
+        //    "used in production" (kullanımda) olarak işaretleyerek sorunu çözebilirsiniz.
+        //
+        // Bu anahtarı silerseniz uygulama çalışmaz. Bu yüzden olduğu gibi bırakın.
         const firebaseConfig = {
             apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
             authDomain: "emre-bebe-takip.firebaseapp.com",
@@ -465,9 +483,11 @@
             appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
         };
         
+        // PDF kütüphanesini global scope'tan alıyoruz.
         const { jsPDF } = window.jspdf;
         
         document.addEventListener('DOMContentLoaded', () => {
+            // DOM elementlerini tek bir objede toplayarak kod okunurluğunu artırıyoruz.
             const dom = {
                 loadingOverlay: document.getElementById('loading-overlay'),
                 loadingText: document.getElementById('loading-text'),
@@ -530,6 +550,7 @@
                 }
             };
 
+            // Uygulama state'ini (durumunu) yöneten değişkenler
             let app, auth, db, userId, currentUser;
             let allItems = [];
             let allCustomers = [];
@@ -545,6 +566,7 @@
             let customerDetailCurrentPage = 1;
             const customerDetailItemsPerPage = 5;
 
+            // Sık kullanılan ikonları bir objede topluyoruz.
             const icons = {
                 alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
                 alpha_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 3.629 9.664 2H8.598l1.789 5.332h1.234L13.402 2h-1.12l-.419 1.371h-1.781zm1.57 1.055h-1.296l.648 2.042.648 2.042z"/><path d="M12.96 10.022c.16.21.283-.417.371.622h.043c.09-.205.214-.412.375-.622L15.04 8.5h-1.2l-.71 1.258h-.043l-.71-1.258h-1.21l1.83 3.05zM4.5 13.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L4.5 3.707V13.5z"/></svg>',
@@ -559,6 +581,7 @@
                 cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
             };
 
+            // Yardımcı Fonksiyonlar
             const toTrUpperCase = (str) => str ? str.toLocaleUpperCase('tr-TR') : '';
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { theme: 'aurora', fontSize: 16 };
             const saveSettingsToStorage = (settings) => localStorage.setItem(`emanet-settings-${userId}`, JSON.stringify(settings));
@@ -571,7 +594,7 @@
                 if (!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
                 const now = new Date();
-                const diffDays = Math.floor((now.setHours(0,0,0,0) - date.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+                const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / (1000 * 60 * 60 * 24));
                 if (diffDays < 0) return 'gelecekte';
                 if (diffDays === 0) return 'bugün';
                 if (diffDays === 1) return 'dün';
@@ -586,6 +609,7 @@
                 return days >= 0 ? days : '-';
             }
 
+            // UI Fonksiyonları (Yükleme, Arayüz Geçişleri)
             function showLoading(message) {
                 dom.loadingText.textContent = message;
                 dom.loadingOverlay.style.display = 'flex';
@@ -614,6 +638,7 @@
                 hideLoading();
             }
 
+            // Authentication (Giriş/Kayıt) Fonksiyonları
             function setupAuthEventListeners() {
                 dom.loginForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
@@ -701,9 +726,10 @@
                     dom.forgotPasswordForm.classList.add('hidden');
                 });
             }
-
+            
+            // Ayarlar ve Render Fonksiyonları
             function applySettings() {
-                document.body.className = '';
+                document.body.className = 'bg-secondary text-primary'; // Reset classes
                 if(settings.theme) {
                     document.body.classList.add(`theme-${settings.theme}`);
                 }
@@ -847,7 +873,6 @@
 
              function createItemElement(item) {
                 const div = document.createElement('div');
-                // DÜZELTME: Renklendirme için 'createdAt' (oluşturulma tarihi) kullanılıyor.
                 const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                 const diffDays = Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
                 const overdueClass = (() => {
@@ -984,9 +1009,9 @@
                     return;
                 }
                 overdueMessage.classList.add('hidden');
-                activeItems.sort((a, b) => (a.lastModified?.seconds || 0) - (b.lastModified?.seconds || 0));
+                activeItems.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
                 const top10 = activeItems.slice(0, 10);
-                overdueList.innerHTML = top10.map((item, index) => `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center"><span class="text-primary">${index + 1}. ${item.customerName}</span><span class="text-sm text-secondary">${formatRelativeTime(item.lastModified)}</span></div>`).join('');
+                overdueList.innerHTML = top10.map((item, index) => `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center"><span class="text-primary">${index + 1}. ${item.customerName}</span><span class="text-sm text-secondary">${formatRelativeTime(item.createdAt)}</span></div>`).join('');
             }
             
             function renderPeriodicReport(range = null) {
@@ -1011,6 +1036,7 @@
                 contentDiv.innerHTML = `<div class="grid grid-cols-2 gap-4 text-center"><div><p class="text-3xl font-bold text-green-400">${added}</p><p class="text-sm text-secondary">Yeni Poşet Eklendi</p></div><div><p class="text-3xl font-bold text-blue-400">${delivered}</p><p class="text-sm text-secondary">Poşet Teslim Edildi</p></div></div>`;
             }
 
+            // Firestore (Veritabanı) Fonksiyonları
             async function handleAddItem(e) {
                 e.preventDefault();
                 const customerName = toTrUpperCase(dom.customerNameInput.value.trim());
@@ -1091,6 +1117,7 @@
                 }
             }
 
+            // Veri Yönetimi Fonksiyonları (İçe/Dışa Aktarma, Sıfırlama)
             async function importDataFromJSON(data) {
                 if (!data.allItems || !data.allCustomers) {
                     showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.'); return;
@@ -1156,6 +1183,7 @@
                 showSimpleMessageModal('Başarılı', 'Bu hesaptaki tüm verileriniz başarıyla silindi.');
             }
 
+            // Olay Dinleyicileri (Event Listeners)
             function initializeAppLogic() {
                 settings = getSettingsFromStorage();
                 seenNotifications = JSON.parse(localStorage.getItem(`seenNotifications-${userId}`)) || [];
@@ -1302,13 +1330,10 @@
                         if (result.confirmed) {
                             let deliveryTimestamp;
                             if (result.deliveryDate && result.deliveryTime) {
-                                // Date ve time birleştirilerek tam bir tarih nesnesi oluşturulur
                                 deliveryTimestamp = new Date(`${result.deliveryDate}T${result.deliveryTime}`);
                             } else if (result.deliveryDate) {
-                                // Sadece tarih varsa, günün başlangıcı kullanılır
                                 deliveryTimestamp = new Date(result.deliveryDate + 'T00:00:00');
                             } else {
-                                // Hiçbir şey seçilmezse, şimdiki zaman kullanılır
                                 deliveryTimestamp = new Date(); 
                             }
 
@@ -1316,7 +1341,7 @@
                                 status: 'delivered', 
                                 deliveredAt: deliveryTimestamp, 
                                 deliveredBy: result.deliveredBy,
-                                note: '', // Teslimatta notu ve hatırlatıcıyı temizle
+                                note: '',
                                 reminderDate: null 
                             });
                         }
@@ -1448,6 +1473,7 @@
                  }
             }
 
+            // Uygulama Başlatma
             function initialize() {
                 try {
                     app = initializeApp(firebaseConfig);
@@ -1475,7 +1501,7 @@
                     });
                 } catch(e) {
                     console.error("Firebase initialization error:", e);
-                    dom.loadingText.innerHTML = '<span class="text-red-400 font-semibold">Uygulama başlatılamadı.</span>';
+                    dom.loadingText.innerHTML = '<span class="text-red-400 font-semibold">Uygulama başlatılamadı.</span><br><span class="text-xs">İnternet bağlantınızı kontrol edin.</span>';
                 }
             }
              async function handleFileImport(e) {
@@ -1497,6 +1523,7 @@
                 e.target.value = null;
             }
             
+            // Sekme ve Sıralama Fonksiyonları
             function switchTab(target, instant = false) {
                 const tabs = document.querySelectorAll('nav button[id^="tab-"]');
                 const panels = document.querySelectorAll('.panel[id^="panel-"]');
@@ -1554,6 +1581,7 @@
                 dom.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
             }
 
+            // Modal (Popup) Fonksiyonları
             function showModalUI() {
                 dom.modalContainer.classList.remove('hidden');
                 requestAnimationFrame(() => {
@@ -1697,9 +1725,6 @@
                     const errorMsg = dom.modalContent.querySelector('#password-error');
                     
                     const close = (password) => {
-                        confirmBtn.removeEventListener('click', handleConfirm);
-                        cancelBtn.removeEventListener('click', handleCancel);
-                        passwordInput.removeEventListener('keydown', handleKeydown);
                         hideModalUI();
                         resolve(password);
                     };
@@ -1724,8 +1749,8 @@
                         }
                     };
 
-                    confirmBtn.addEventListener('click', handleConfirm);
-                    cancelBtn.addEventListener('click', handleCancel);
+                    confirmBtn.addEventListener('click', handleConfirm, { once: true });
+                    cancelBtn.addEventListener('click', handleCancel, { once: true });
                     passwordInput.addEventListener('keydown', handleKeydown);
                 });
             }
@@ -1795,11 +1820,12 @@
                         }
                     };
 
-                    confirmBtn.addEventListener('click', handleConfirm, { once: true });
+                    confirmBtn.addEventListener('click', handleConfirm);
                     cancelBtn.addEventListener('click', () => { hideModalUI(); resolve(); }, { once: true });
                 });
             }
 
+            // Bildirim Fonksiyonları
              function getUnseenOverdueItems() {
                 const OVERDUE_DAYS = 20;
                 const now = new Date();
@@ -1872,6 +1898,7 @@
                 });
             }
 
+            // Müşteri Detay ve Yönetim Modalları
             function showCustomerDetailModal(customerName) {
                 const customerItems = allItems.filter(item => item.customerName === customerName);
                 const activeItem = customerItems.find(item => item.status === 'active');
@@ -1898,7 +1925,7 @@
                 paginationContainer.innerHTML = '';
                 const totalPages = Math.ceil(deliveredItems.length / customerDetailItemsPerPage);
                 const startIndex = (page - 1) * customerDetailItemsPerPage;
-                const paginatedItems = deliveredItems.slice(startIndex, startIndex + itemsPerPage);
+                const paginatedItems = deliveredItems.slice(startIndex, startIndex + customerDetailItemsPerPage);
                 paginatedItems.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'bg-tertiary/50 p-3 rounded-md';
@@ -2074,6 +2101,7 @@
                 renderDeliveryPersonnelModalList();
             }
             
+            // PDF & CSV Aktarma Fonksiyonları
             function exportDataToJSON() {
                 const data = { allItems, allCustomers, deliveryPersonnel, settings };
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -2159,17 +2187,19 @@
                 pdf.save(`${customerName}-gecmisi-${new Date().toISOString().slice(0,10)}.pdf`);
             }
 
+            // Uygulamayı başlat
             initialize();
         });
     </script>
     
     <script>
+        // Service Worker kaydını yapıyoruz. Bu, uygulamanın çevrimdışı çalışmasını sağlar.
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    console.log('ServiceWorker kaydı başarılı, scope: ', registration.scope);
                 }, err => {
-                    console.log('ServiceWorker registration failed: ', err);
+                    console.log('ServiceWorker kaydı başarısız: ', err);
                 });
             });
         }
