@@ -1,6 +1,6 @@
 // Önbellek (cache) adı ve versiyonu.
 // Uygulamada büyük bir değişiklik yaptığınızda (örn. CSS veya JS dosyalarını güncellediğinizde)
-// bu versiyonu ('v3', 'v4' gibi) değiştirerek eski önbelleğin silinip yenisinin kurulmasını sağlarsınız.
+// bu versiyonu ('v3', 'v4' gibi) değiştirerek eski önbelleğin silinip yenisinin kurulmasını sağlarsınız. tamam
 const CACHE_NAME = 'emre-bebe-takip-cache-v2';
 
 // Uygulama ilk yüklendiğinde veya çevrimdışıyken çalışması için
