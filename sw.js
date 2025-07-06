@@ -1,7 +1,7 @@
 // Önbellek (cache) adı ve versiyonu.
 // Uygulamada büyük bir değişiklik yaptığınızda (örn. CSS veya JS dosyalarını güncellediğinizde)
-// bu versiyonu ('v3', 'v4' gibi) değiştirerek eski önbelleğin silinip yenisinin kurulmasını sağlarsınız. tamam
-const CACHE_NAME = 'emre-bebe-takip-cache-v2';
+// bu versiyonu ('v3', 'v4' gibi) değiştirerek eski önbelleğin silinip yenisinin kurulmasını sağlarsınız.
+const CACHE_NAME = 'emre-bebe-takip-cache-v3'; // Versiyonu güncelledim
 
 // Uygulama ilk yüklendiğinde veya çevrimdışıyken çalışması için
 // önbelleğe alınacak temel dosyaların ve kaynakların listesi.
@@ -44,7 +44,6 @@ self.addEventListener('fetch', event => {
 
   // Strateji 1: Network First (Önce Ağ)
   // Sürekli güncel olması gereken kaynaklar (API'ler gibi) için önce ağdan getirmeyi deneriz.
-  // Eğer ağ bağlantısı yoksa, bir yedek yanıt döndürebiliriz (bu kodda sadece hata loglanır).
   const isDynamicResource = event.request.url.includes('wttr.in') || 
                             event.request.url.includes('firebase') || 
                             event.request.url.includes('gstatic.com');
@@ -54,7 +53,6 @@ self.addEventListener('fetch', event => {
           fetch(event.request).catch((err) => {
               console.error('Ağ isteği başarısız oldu:', event.request.url, err);
               // İsteğe bağlı: Çevrimdışı durum için özel bir yanıt döndürülebilir.
-              // return new Response(JSON.stringify({ error: "Çevrimdışı" }), { headers: { 'Content-Type': 'application/json' } });
           })
       );
       return;
@@ -62,7 +60,6 @@ self.addEventListener('fetch', event => {
   
   // Strateji 2: Cache First (Önce Önbellek)
   // Diğer tüm statik kaynaklar (HTML, CSS, JS dosyaları) için önce önbelleğe bakarız.
-  // Bu, uygulamanın çok daha hızlı açılmasını ve çevrimdışı çalışmasını sağlar.
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -91,7 +88,6 @@ self.addEventListener('fetch', event => {
         ).catch(err => {
              console.error('Fetch hatası:', err);
              // Ağ hatası durumunda genel bir çevrimdışı sayfası gösterilebilir.
-             // return caches.match('offline.html');
         });
       })
     );
