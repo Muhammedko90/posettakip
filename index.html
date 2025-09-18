@@ -80,7 +80,7 @@
             color: var(--accent-text-light) !important; 
         }
 
-        .sort-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .sort-active, .view-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
         .panel { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; will-change: opacity, transform; }
         .panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
         #modal-container.hidden { pointer-events: none; opacity: 0; }
@@ -111,6 +111,11 @@
         }
         .action-menu.hidden {
             display: none;
+        }
+        #item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
         }
     </style>
 </head>
@@ -298,6 +303,14 @@
                             <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
                         </div>
                         <div class="flex items-center gap-2">
+                             <div id="view-toggle-buttons" class="flex border border-dynamic rounded-lg mr-2">
+                                <button id="view-list-btn" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Liste Görünümü">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
+                                </button>
+                                <button id="view-grid-btn" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic rounded-r-md" title="Izgara Görünümü">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
+                                </button>
+                             </div>
                              <div class="flex border border-dynamic rounded-lg">
                                 <button id="sort-alpha" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Alfabetik Sırala"></button>
                                 <button id="sort-bags" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic" title="Poşet Sayısına Göre Sırala"></button>
@@ -306,6 +319,7 @@
                         </div>
                     </div>
                     <div id="item-list" class="space-y-2"></div>
+                    <div id="item-grid" class="hidden"></div>
                     <p id="empty-item-list-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Henüz bekleyen poşet bulunmuyor.</p>
                 </div>
             </div>
@@ -543,12 +557,15 @@
                 changePasswordBtn: document.getElementById('change-password-btn'),
                 mainContent: document.getElementById('main-content'),
                 itemList: document.getElementById('item-list'),
+                itemGrid: document.getElementById('item-grid'),
                 emptyItemListMessage: document.getElementById('empty-item-list-message'),
                 totalBagsCounter: document.getElementById('total-bags-counter'),
                 totalCustomersCounter: document.getElementById('total-customers-counter'),
                 sortAlphaBtn: document.getElementById('sort-alpha'),
                 sortBagsBtn: document.getElementById('sort-bags'),
                 sortDateBtn: document.getElementById('sort-date'),
+                viewListBtn: document.getElementById('view-list-btn'),
+                viewGridBtn: document.getElementById('view-grid-btn'),
                 addItemForm: document.getElementById('add-item-form'),
                 customerNameInput: document.getElementById('customer-name'),
                 bagCountInput: document.getElementById('bag-count'),
@@ -602,6 +619,7 @@
             let deliveryPersonnel = [];
             let settings = {};
             let sortState = { type: 'alpha', direction: 'asc' };
+            let viewMode = 'list';
             let archiveCurrentPage = 1;
             const itemsPerPage = 10;
             let itemsUnsubscribe = null;
@@ -634,6 +652,7 @@
             const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { 
                 theme: 'aurora', 
                 fontSize: 16,
+                viewMode: 'list',
                 customTitle: 'GÜNÜN NOTU',
                 customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.',
                 shareTemplate: 'Merhaba, [Müşteri Adı] adına ayrılan [Poşet Sayısı] poşetiniz [Bekleme Süresi] gündür beklemektedir.'
@@ -801,6 +820,10 @@
                 if(dom.customText.titleInput) dom.customText.titleInput.value = settings.customTitle || '';
                 if(dom.customText.contentInput) dom.customText.contentInput.value = settings.customContent || '';
                 if(dom.shareTemplate.input) dom.shareTemplate.input.value = settings.shareTemplate || '';
+
+                // Görünüm modunu ayarla
+                viewMode = settings.viewMode || 'list';
+                updateViewToggleButtons();
             }
 
             function renderAll() {
@@ -885,9 +908,19 @@
                 });
                 
                 dom.itemList.innerHTML = '';
+                dom.itemGrid.innerHTML = '';
                 dom.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
                 dom.emptyItemListMessage.textContent = searchQuery ? `"${searchQuery}" İLE EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
-                filteredItems.forEach(item => dom.itemList.appendChild(createItemElement(item)));
+                
+                if (viewMode === 'list') {
+                    dom.itemList.classList.remove('hidden');
+                    dom.itemGrid.classList.add('hidden');
+                    filteredItems.forEach(item => dom.itemList.appendChild(createItemElement(item)));
+                } else {
+                    dom.itemList.classList.add('hidden');
+                    dom.itemGrid.classList.remove('hidden');
+                    filteredItems.forEach(item => dom.itemGrid.appendChild(createItemCardElement(item)));
+                }
             }
 
              function createItemElement(item) {
@@ -964,6 +997,65 @@
                             </div>
                         </div>
                     </div>`;
+                return div;
+            }
+
+            function createItemCardElement(item) {
+                const div = document.createElement('div');
+                const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
+                const now = new Date();
+                const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+                const overdueClass = (() => {
+                    if (diffDays >= 20) return 'border-red-500/60 bg-red-500/10';
+                    if (diffDays >= 10 && diffDays <= 19) return 'border-yellow-500/60 bg-yellow-500/10';
+                    return 'border-dynamic';
+                })();
+
+                let noteIndicatorHTML = '';
+                if(item.note) {
+                    noteIndicatorHTML += `<span class="accent-text text-xs" title="Not Mevcut">●</span>`;
+                }
+                if(item.reminderDate) {
+                     noteIndicatorHTML += `<span class="text-cyan-400 text-xs ml-1" title="Hatırlatıcı: ${item.reminderDate}">🔔</span>`;
+                }
+
+                div.className = `bg-primary p-4 rounded-lg shadow-md flex flex-col justify-between border ${overdueClass} transition-colors duration-300`;
+                div.dataset.id = item.id;
+                div.dataset.customerName = item.customerName;
+                div.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                             <button data-action="view-customer" class="item-customer-name font-semibold text-lg text-primary text-left flex items-center gap-2 hover:underline mb-2">${item.customerName} ${noteIndicatorHTML}</button>
+                             <div class="default-actions relative">
+                                <button data-action="toggle-menu" class="p-2 -mt-2 -mr-2 text-secondary hover:accent-text rounded-full transition" title="Seçenekler">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
+                                </button>
+                                <div class="action-menu hidden absolute right-0 top-full mt-2 z-30 bg-tertiary border border-dynamic rounded-lg shadow-xl w-48 overflow-hidden">
+                                    <button data-action="deliver" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition text-green-400 hover:text-green-300"><span class="w-4">${icons.deliver}</span> Teslim Et</button>
+                                    <button data-action="share" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.share}</span> Paylaş</button>
+                                    <button data-action="edit-note" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.note}</span> Notu Düzenle</button>
+                                    <button data-action="edit-count" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.edit}</span> Sayıyı Düzenle</button>
+                                    <button data-action="delete-item" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition text-red-500 hover:text-red-400"><span class="w-4">${icons.cancel_item}</span> Kaydı Sil</button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="item-subtext text-sm text-secondary">${formatRelativeTime(item.createdAt)}</p>
+                    </div>
+                    <div class="mt-4 flex justify-between items-end">
+                        <div class="text-secondary text-xs">
+                             <p>${formatDate(item.createdAt).split(' ')[0]}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <div class="edit-count-actions hidden flex items-center gap-2">
+                                 <input type="number" value="${item.bagCount}" min="1" class="w-16 p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                                 <button data-action="save-count" class="p-2 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                                 <button data-action="cancel-edit-count" class="p-2 text-red-500 hover:text-red-400 transition" title="Vazgeç">${icons.cancel}</button>
+                             </div>
+                             <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        </div>
+                    </div>`;
+
                 return div;
             }
 
@@ -1272,6 +1364,8 @@
                 dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
                 dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
                 dom.sortDateBtn.addEventListener('click', () => handleSort('date'));
+                dom.viewListBtn.addEventListener('click', () => handleViewChange('list'));
+                dom.viewGridBtn.addEventListener('click', () => handleViewChange('grid'));
                 dom.mainContent.addEventListener('click', handleMainContentClick);
                 dom.notificationBell?.addEventListener('click', showNotificationsModal);
                 document.querySelector('#panel-settings').addEventListener('click', handleSettingsPanelClick);
@@ -1497,7 +1591,7 @@
                         }
                         break;
                     case 'edit-count':
-                        defaultActions.parentElement.classList.add('hidden');
+                        if(defaultActions) defaultActions.parentElement.classList.add('hidden');
                         editCountActions.classList.remove('hidden');
                         const input = editCountActions.querySelector('input');
                         input.focus();
@@ -1505,7 +1599,7 @@
                         break;
                     case 'cancel-edit-count':
                         editCountActions.classList.add('hidden');
-                        defaultActions.parentElement.classList.remove('hidden');
+                        if(defaultActions) defaultActions.parentElement.classList.remove('hidden');
                         break;
                     case 'save-count': {
                         const saveInput = editCountActions.querySelector('input');
@@ -1531,7 +1625,7 @@
                         }
                         await updateItem(id, updatePayload);
                         editCountActions.classList.add('hidden');
-                        defaultActions.parentElement.classList.remove('hidden');
+                        if(defaultActions) defaultActions.parentElement.classList.remove('hidden');
                         break;
                     }
                 }
@@ -1701,6 +1795,19 @@
                 dom.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
                 dom.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
                 dom.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
+            }
+            
+            function handleViewChange(mode) {
+                viewMode = mode;
+                settings.viewMode = mode;
+                saveSettingsToStorage(settings);
+                updateViewToggleButtons();
+                renderItems(allItems.filter(item => item.status !== 'delivered'));
+            }
+
+            function updateViewToggleButtons() {
+                dom.viewListBtn.classList.toggle('view-active', viewMode === 'list');
+                dom.viewGridBtn.classList.toggle('view-active', viewMode === 'grid');
             }
             
             function renderArchivePagination(totalPages) {
