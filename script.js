@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemsUnsubscribe, customersUnsubscribe, deliveryPersonnelUnsubscribe;
     let seenNotifications = [];
 
-    // --- YENİ EKLENEN HATA AYIKLAMA BÖLÜMÜ ---
+    // Firebase Başlatma ve Kimlik Doğrulama
     try {
         console.log("Uygulama başlatılıyor, Firebase ayarları yapılıyor...");
         app = initializeApp(firebaseConfig);
@@ -115,13 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log("Kimlik doğrulama durumu değişti:", user ? `Giriş yapıldı (${user.uid})` : "Giriş yapılmadı.");
             if (user) {
                 userId = user.uid;
-                // Tüm veri dinleyicilerini ve uygulama arayüzünü burada başlat.
-                // Örn: initializeDataListeners();
                 showAppUI(user);
+                // TODO: Uygulama verilerini dinlemeye başla
             } else {
-                // Oturum kapalıysa veya kullanıcı yoksa, tüm dinleyicileri durdur.
-                // Örn: detachDataListeners();
+                userId = null;
                 showAuthUI();
+                // TODO: Veri dinleyicilerini durdur
             }
         });
 
@@ -130,7 +129,137 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.loadingText.textContent = `Hata: ${error.message}. Lütfen konsolu kontrol edin.`;
         if (dom.loadingSpinner) dom.loadingSpinner.style.display = 'none';
     }
-    // --- HATA AYIKLAMA BÖLÜMÜ SONU ---
+    
+    // --- YENİ EKLENEN KİMLİK DOĞRULAMA FORM İŞLEMLERİ ---
+
+    // Giriş, Kayıt ve Şifremi Unuttum formları arasında geçiş
+    dom.showRegisterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        dom.loginForm.classList.add('hidden');
+        dom.forgotPasswordForm.classList.add('hidden');
+        dom.registerForm.classList.remove('hidden');
+    });
+
+    dom.showLoginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        dom.registerForm.classList.add('hidden');
+        dom.forgotPasswordForm.classList.add('hidden');
+        dom.loginForm.classList.remove('hidden');
+    });
+
+    dom.forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        dom.loginForm.classList.add('hidden');
+        dom.registerForm.classList.add('hidden');
+        dom.forgotPasswordForm.classList.remove('hidden');
+    });
+
+    dom.backToLoginLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        dom.forgotPasswordForm.classList.add('hidden');
+        dom.registerForm.classList.add('hidden');
+        dom.loginForm.classList.remove('hidden');
+    });
+
+    // Giriş Formu
+    dom.loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = dom.loginForm['login-email'].value;
+        const password = dom.loginForm['login-password'].value;
+        
+        showLoading('Giriş yapılıyor...');
+        dom.loginError.classList.add('hidden');
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                console.log('Giriş başarılı:', userCredential.user.uid);
+                // onAuthStateChanged tetiklenecek ve UI'yı güncelleyecek.
+                // hideLoading() onAuthStateChanged'de çağrılıyor.
+            })
+            .catch(error => {
+                console.error('Giriş hatası:', error.code, error.message);
+                dom.loginError.textContent = getAuthErrorMessage(error.code);
+                dom.loginError.classList.remove('hidden');
+                hideLoading();
+            });
+    });
+
+    // Kayıt Formu
+    dom.registerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = dom.registerForm['register-email'].value;
+        const password = dom.registerForm['register-password'].value;
+
+        showLoading('Hesap oluşturuluyor...');
+        dom.registerError.classList.add('hidden');
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                console.log('Kayıt başarılı:', userCredential.user.uid);
+                // onAuthStateChanged tetiklenecek ve UI'yı güncelleyecek.
+            })
+            .catch(error => {
+                console.error('Kayıt hatası:', error.code, error.message);
+                dom.registerError.textContent = getAuthErrorMessage(error.code);
+                dom.registerError.classList.remove('hidden');
+                hideLoading();
+            });
+    });
+
+    // Şifre Sıfırlama Formu
+    dom.forgotPasswordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = dom.forgotPasswordForm['forgot-email'].value;
+
+        showLoading('E-posta gönderiliyor...');
+        dom.forgotError.classList.add('hidden');
+        dom.forgotSuccess.classList.add('hidden');
+
+        sendPasswordResetEmail(auth, email)
+            .then(() => {
+                console.log('Şifre sıfırlama e-postası gönderildi.');
+                dom.forgotSuccess.textContent = 'Sıfırlama bağlantısı e-posta adresinize gönderildi.';
+                dom.forgotSuccess.classList.remove('hidden');
+                hideLoading();
+            })
+            .catch(error => {
+                console.error('Şifre sıfırlama hatası:', error.code, error.message);
+                dom.forgotError.textContent = getAuthErrorMessage(error.code);
+                dom.forgotError.classList.remove('hidden');
+                hideLoading();
+            });
+    });
+
+    // Çıkış Yap Butonu
+    dom.logoutBtn.addEventListener('click', () => {
+        showLoading('Çıkış yapılıyor...');
+        signOut(auth).then(() => {
+            console.log('Çıkış başarılı.');
+            // onAuthStateChanged tetiklenecek ve login ekranını gösterecek.
+        }).catch(error => {
+            console.error('Çıkış hatası:', error);
+            hideLoading();
+        });
+    });
+
+    // Hata kodlarını anlaşılır metinlere çeviren fonksiyon
+    function getAuthErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/invalid-email':
+                return 'Geçersiz e-posta adresi.';
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+                return 'E-posta veya şifre hatalı.';
+            case 'auth/email-already-in-use':
+                return 'Bu e-posta adresi zaten kullanılıyor.';
+            case 'auth/weak-password':
+                return 'Şifre en az 6 karakter olmalıdır.';
+            default:
+                return 'Bir hata oluştu. Lütfen tekrar deneyin.';
+        }
+    }
+    
+    // --- KİMLİK DOĞRULAMA İŞLEMLERİ SONU ---
 
 
     // İkonlar
@@ -232,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.settingsUserEmail.textContent = user.email;
         hideLoading();
     }
-    // Geri kalan tüm diğer fonksiyonlar ve event listener'lar buraya gelecek...
-    // Bu dosyanın geri kalanını olduğu gibi bırakabilirsiniz.
+
+    // Geri kalan uygulama kodu (liste işlemleri, ayarlar vb.) buraya eklenecek.
 });
+
