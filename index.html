@@ -7,18 +7,17 @@
     <meta name="description" content="Kullanıcı bazlı Müşteri Poşet Takip Uygulaması">
 
     <meta name="theme-color" content="#1e293b"/>
-    <!-- UYGULAMA LOGOSU (APPLE) -->
-    <!-- Apple cihazlar için ana ekran logosu. "href" kısmını kendi 180x180 piksel logonuzun linki ile değiştirinn -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=EB">
     <link rel="manifest" href="manifest.json">
 
+    <!-- Harici Stiller -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Harici Kütüphaneler -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Harici CSS Dosyası -->
-    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-secondary text-primary">
 
@@ -72,7 +71,6 @@
         </div>
     </div>
 
-
     <div id="app-container" class="hidden container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 min-h-screen">
         
         <header class="flex items-center justify-between mb-6 gap-2">
@@ -89,55 +87,38 @@
             </div>
         </header>
 
-        <!-- YENİ NAVİGASYON MENÜSÜ -->
         <div class="mb-6 bg-primary p-1 sm:p-2 rounded-xl border border-dynamic shadow-lg">
             <nav class="flex justify-around items-center" aria-label="Tabs">
                 <button id="tab-anasayfa" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     <span class="text-xs font-medium">Ana Sayfa</span>
                 </button>
                 <button id="tab-list" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                     <span class="text-xs font-medium">Liste</span>
                 </button>
                 <button id="tab-archive" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                     <span class="text-xs font-medium">Teslim Edilenler</span>
                 </button>
                 <button id="tab-reports" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                     <span class="text-xs font-medium">Raporlar</span>
                 </button>
                 <button id="tab-notes" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     <span class="text-xs font-medium">Notlarım</span>
                 </button>
                 <button id="tab-settings" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     <span class="text-xs font-medium">Ayarlar</span>
                 </button>
             </nav>
         </div>
 
-
         <main id="main-content" class="relative">
-            <!-- YENİ ANA SAYFA PANELİ -->
             <div id="panel-anasayfa" class="panel hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- İstatistik Kartları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
                         <div class="bg-blue-500/20 text-blue-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 015.688 0M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
                         <div>
@@ -159,31 +140,18 @@
                             <p id="dashboard-delivered-last-week" class="text-2xl font-bold text-primary">0</p>
                         </div>
                     </div>
-
-                    <!-- En Eski Bekleyen 3 Müşteri -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-1 lg:col-span-1">
                         <h3 class="font-semibold text-primary mb-3">En Eski 3 Bekleyen Müşteri</h3>
-                        <div id="dashboard-oldest-customers" class="space-y-3">
-                            <p class="text-secondary text-center py-4">Veri bulunamadı.</p>
-                        </div>
+                        <div id="dashboard-oldest-customers" class="space-y-3"><p class="text-secondary text-center py-4">Veri bulunamadı.</p></div>
                     </div>
-                    
-                    <!-- Günün Hatırlatmaları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-2 lg:col-span-2">
                         <h3 class="font-semibold text-primary mb-3">Günün Hatırlatmaları (Notlar)</h3>
-                        <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto">
-                            <p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p>
-                        </div>
+                        <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto"><p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p></div>
                     </div>
-
-                    <!-- Özel Not (Eski Günün Sözü yerine) -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex flex-col justify-center items-center text-center md:col-span-2 lg:col-span-3">
                         <h3 id="dashboard-custom-text-title" class="font-semibold text-primary mb-3">...</h3>
-                        <div id="dashboard-custom-text-content" class="text-secondary italic">
-                            <p>Yükleniyor...</p>
-                        </div>
+                        <div id="dashboard-custom-text-content" class="text-secondary italic"><p>Yükleniyor...</p></div>
                     </div>
-
                 </div>
             </div>
 
@@ -193,9 +161,7 @@
                     <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
                         <div class="relative sm:col-span-3">
                             <input type="text" id="customer-name" placeholder="Müşteri Adı / Listede Ara..." class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
-                            <button type="button" id="clear-customer-name" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary">
-                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-                            </button>
+                            <button type="button" id="clear-customer-name" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></button>
                             <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
                         </div>
                         <input type="number" id="bag-count" placeholder="Poşet Sayısı" value="1" min="1" class="sm:col-span-1 w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
@@ -227,9 +193,7 @@
                     <h2 class="text-2xl font-semibold text-primary">Teslim Edilenler Arşivi</h2>
                      <div class="flex items-center gap-2">
                         <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
-                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-                        </button>
+                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button>
                     </div>
                 </div>
                 <div id="archive-list" class="space-y-2"></div>
@@ -245,9 +209,7 @@
                         <button data-range="30" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Son 30 Gün</button>
                         <button data-range="all" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Tüm Zamanlar</button>
                     </div>
-                    <div id="periodic-report-content" class="text-center p-4 bg-secondary rounded-lg border border-dynamic">
-                        Raporu görmek için bir zaman aralığı seçin.
-                    </div>
+                    <div id="periodic-report-content" class="text-center p-4 bg-secondary rounded-lg border border-dynamic">Raporu görmek için bir zaman aralığı seçin.</div>
                 </div>
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">En Uzun Süredir Bekleyen 10 Poşet</h2>
@@ -256,9 +218,7 @@
                 </div>
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Raporları Aktar</h2>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button>
-                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4"><button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button></div>
                     <p class="text-xs text-secondary mt-3">Teslim edilen tüm poşetlerin alınma, teslim edilme ve bekleme sürelerini içeren detaylı bir PDF raporu oluşturur.</p>
                 </div>
             </div>
@@ -305,15 +265,11 @@
                     <div class="space-y-4">
                         <div>
                             <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi</h3>
-                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
-                                Müşteri Listesini Yönet
-                            </button>
+                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Müşteri Listesini Yönet</button>
                         </div>
                         <div>
                             <h3 class="text-lg font-medium text-primary mb-2">Teslim Eden Kişiler</h3>
-                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
-                                Teslim Eden Kişileri Yönet
-                            </button>
+                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Teslim Eden Kişileri Yönet</button>
                         </div>
                     </div>
                 </div>
@@ -370,14 +326,12 @@
         </main>
     </div>
 
-    <!-- Modal Container -->
     <div id="modal-container" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
         <div id="modal-content-wrapper" class="bg-primary border border-dynamic rounded-lg shadow-xl p-6 w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0">
              <div id="modal-content"></div>
         </div>
     </div>
     
-    <!-- Yukarı Çık Butonu -->
     <button id="scroll-to-top-btn" class="hidden fixed bottom-6 right-6 accent-bg text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-opacity duration-300 hover:opacity-80 z-40">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
@@ -387,6 +341,18 @@
     <!-- Harici JavaScript Dosyası -->
     <script type="module" src="script.js"></script>
 
+    <!-- Service Worker Kaydı -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    console.log('ServiceWorker kaydı başarılı, scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker kaydı başarısız: ', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
 
