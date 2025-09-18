@@ -792,7 +792,7 @@
                 if(fontSizeSlider) fontSizeSlider.value = settings.fontSize;
                 if(fontSizePreview) fontSizePreview.textContent = `${settings.fontSize}px`;
 
-                // Özel not ayarlarını yükle
+                // Özel not ve şablon ayarlarını yükle
                 if(dom.customText.titleInput) dom.customText.titleInput.value = settings.customTitle || '';
                 if(dom.customText.contentInput) dom.customText.contentInput.value = settings.customContent || '';
                 if(dom.shareTemplate.input) dom.shareTemplate.input.value = settings.shareTemplate || '';
@@ -923,8 +923,16 @@
                 div.dataset.id = item.id;
                 div.dataset.customerName = item.customerName;
                 div.innerHTML = `
-                    <div class="item-details flex-1 flex items-center gap-4">
-                        <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                    <div class="item-details flex-1 flex items-center gap-2 sm:gap-3">
+                        <div class="flex-shrink-0 flex items-center justify-center gap-1">
+                            <button data-action="decrement-bag" class="p-2 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition disabled:opacity-50" ${item.bagCount <= 1 ? 'disabled' : ''} title="Poşet Çıkar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="currentColor" viewBox="0 0 16 16"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></svg>
+                            </button>
+                            <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                            <button data-action="increment-bag" class="p-2 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition" title="Poşet Ekle">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                            </button>
+                        </div>
                         <div class="flex-1">
                             <button data-action="view-customer" class="item-customer-name font-semibold text-lg text-primary text-left flex items-center gap-2 hover:underline">${item.customerName} ${noteIndicatorHTML}</button>
                             ${historyHtml}
@@ -1384,6 +1392,23 @@
                 const editCountActions = itemDiv.querySelector('.edit-count-actions');
 
                 switch (action) {
+                    case 'increment-bag':
+                        await updateItem(id, {
+                            bagCount: item.bagCount + 1,
+                            additionalDates: arrayUnion(new Date())
+                        });
+                        break;
+                    case 'decrement-bag':
+                        if (item.bagCount > 1) {
+                            const currentDates = [...(item.additionalDates || [])];
+                            currentDates.sort((a, b) => (a.seconds || a.getTime()/1000) - (b.seconds || b.getTime()/1000));
+                            currentDates.pop();
+                            await updateItem(id, {
+                                bagCount: item.bagCount - 1,
+                                additionalDates: currentDates
+                            });
+                        }
+                        break;
                     case 'share': {
                         const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                         const now = new Date();
@@ -1395,13 +1420,8 @@
                             .replace(/\[Bekleme Süresi\]/gi, diffDays);
 
                         if (navigator.share) {
-                            try {
-                                await navigator.share({
-                                    text: message,
-                                });
-                            } catch (err) {
-                                console.error('Share failed:', err);
-                            }
+                            try { await navigator.share({ text: message }); } 
+                            catch (err) { console.error('Share failed:', err); }
                         } else {
                             showSimpleMessageModal('Paylaşım Desteklenmiyor', 'Cihazınız veya tarayıcınız bu özelliği desteklemiyor. Mesajı kopyalayarak manuel olarak paylaşabilirsiniz: <br><br> <code class="bg-tertiary p-2 rounded-md block break-words">' + message + '</code>');
                         }
@@ -1410,15 +1430,7 @@
                     case 'deliver': {
                         const result = await showDeliverConfirmationModal(item);
                         if (result.confirmed) {
-                            let deliveryTimestamp;
-                            if (result.deliveryDate && result.deliveryTime) {
-                                deliveryTimestamp = new Date(`${result.deliveryDate}T${result.deliveryTime}`);
-                            } else if (result.deliveryDate) {
-                                deliveryTimestamp = new Date(result.deliveryDate + 'T00:00:00');
-                            } else {
-                                deliveryTimestamp = new Date(); 
-                            }
-
+                            let deliveryTimestamp = result.deliveryDate ? new Date(`${result.deliveryDate}T${result.deliveryTime || '00:00:00'}`) : new Date();
                             updateItem(id, { 
                                 status: 'delivered', 
                                 deliveredAt: deliveryTimestamp, 
