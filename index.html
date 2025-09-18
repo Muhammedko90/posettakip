@@ -109,6 +109,9 @@
         #scroll-to-top-btn.visible {
             opacity: 1; visibility: visible;
         }
+        .action-menu.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-secondary text-primary">
@@ -616,12 +619,14 @@
                 bags_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L11.5 13.293V1.5a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
                 date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
                 date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
-                cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
-                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                note: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg>',
+                deliver: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
+                share: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>',
                 delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
                 save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
                 cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
-                share: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>'
             };
 
             // Yardımcı Fonksiyonlar
@@ -923,14 +928,14 @@
                 div.dataset.id = item.id;
                 div.dataset.customerName = item.customerName;
                 div.innerHTML = `
-                    <div class="item-details flex-1 flex items-center gap-2 sm:gap-3">
-                        <div class="flex-shrink-0 flex items-center justify-center gap-1">
-                            <button data-action="decrement-bag" class="p-2 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition disabled:opacity-50" ${item.bagCount <= 1 ? 'disabled' : ''} title="Poşet Çıkar">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="currentColor" viewBox="0 0 16 16"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></svg>
-                            </button>
-                            <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
-                            <button data-action="increment-bag" class="p-2 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition" title="Poşet Ekle">
+                    <div class="item-details flex-1 flex items-center gap-4">
+                         <div class="flex-shrink-0 flex flex-col items-center justify-center">
+                            <button data-action="increment-bag" class="p-1 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition" title="Poşet Ekle">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+                            </button>
+                            <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl my-1">${item.bagCount}</div>
+                            <button data-action="decrement-bag" class="p-1 rounded-full bg-tertiary text-secondary hover:bg-slate-600 transition disabled:opacity-50" ${item.bagCount <= 1 ? 'disabled' : ''} title="Poşet Çıkar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="currentColor" viewBox="0 0 16 16"><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/></svg>
                             </button>
                         </div>
                         <div class="flex-1">
@@ -938,18 +943,25 @@
                             ${historyHtml}
                         </div>
                     </div>
-                    <div class="item-actions flex items-center gap-1 sm:gap-2 ml-2">
-                        <div class="default-actions flex items-center gap-1 sm:gap-2">
-                            <button data-action="share" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Durumu Paylaş">${icons.share}</button>
-                            <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle">${icons.edit}</button>
-                            <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note || item.reminderDate ? 'accent-text' : ''}" title="Notu ve Hatırlatıcıyı Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
-                            <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
-                            <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="Kaydı Sil">${icons.cancel_item}</button>
-                        </div>
+                    <div class="item-actions flex items-center">
                         <div class="edit-count-actions hidden flex items-center gap-2">
                              <input type="number" value="${item.bagCount}" min="1" class="w-16 p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
                              <button data-action="save-count" class="p-2 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
                              <button data-action="cancel-edit-count" class="p-2 text-red-500 hover:text-red-400 transition" title="Vazgeç">${icons.cancel}</button>
+                        </div>
+                        <div class="default-actions relative">
+                            <button data-action="toggle-menu" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Seçenekler">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                                </svg>
+                            </button>
+                            <div class="action-menu hidden absolute right-0 top-full mt-2 z-30 bg-tertiary border border-dynamic rounded-lg shadow-xl w-48 overflow-hidden">
+                                <button data-action="deliver" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition text-green-400 hover:text-green-300"><span class="w-4">${icons.deliver}</span> Teslim Et</button>
+                                <button data-action="share" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.share}</span> Paylaş</button>
+                                <button data-action="edit-note" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.note}</span> Notu Düzenle</button>
+                                <button data-action="edit-count" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition"><span class="w-4">${icons.edit}</span> Sayıyı Düzenle</button>
+                                <button data-action="delete-item" class="w-full text-left p-3 flex items-center gap-3 hover:bg-slate-600 transition text-red-500 hover:text-red-400"><span class="w-4">${icons.cancel_item}</span> Kaydı Sil</button>
+                            </div>
                         </div>
                     </div>`;
                 return div;
@@ -1324,6 +1336,10 @@
                     if (!e.target.closest('.relative')) {
                         dom.suggestionsBox.classList.add("hidden");
                     }
+                    const openMenu = document.querySelector('.action-menu:not(.hidden)');
+                    if (openMenu && !e.target.closest('.default-actions')) {
+                        openMenu.classList.add('hidden');
+                    }
                 });
 
                 // Scroll to Top Button Logic
@@ -1375,6 +1391,12 @@
             async function handleMainContentClick(e) {
                 const button = e.target.closest('button[data-action]');
                 if (!button) return;
+                
+                const parentMenu = button.closest('.action-menu');
+                if (parentMenu && button.dataset.action !== 'toggle-menu') {
+                    parentMenu.classList.add('hidden');
+                }
+
                 const action = button.dataset.action;
                 const itemDiv = button.closest('div[data-id]');
 
@@ -1384,6 +1406,16 @@
                     return;
                 }
 
+                if (action === 'toggle-menu') {
+                    const allMenus = document.querySelectorAll('.action-menu');
+                    const currentMenu = button.nextElementSibling;
+                    allMenus.forEach(menu => {
+                        if (menu !== currentMenu) menu.classList.add('hidden');
+                    });
+                    currentMenu.classList.toggle('hidden');
+                    return;
+                }
+                
                 if (!itemDiv) return;
                 const id = itemDiv.dataset.id;
                 const item = allItems.find(i => i.id === id);
@@ -1465,7 +1497,7 @@
                         }
                         break;
                     case 'edit-count':
-                        defaultActions.classList.add('hidden');
+                        defaultActions.parentElement.classList.add('hidden');
                         editCountActions.classList.remove('hidden');
                         const input = editCountActions.querySelector('input');
                         input.focus();
@@ -1473,7 +1505,7 @@
                         break;
                     case 'cancel-edit-count':
                         editCountActions.classList.add('hidden');
-                        defaultActions.classList.remove('hidden');
+                        defaultActions.parentElement.classList.remove('hidden');
                         break;
                     case 'save-count': {
                         const saveInput = editCountActions.querySelector('input');
@@ -1498,6 +1530,8 @@
                             updatePayload.additionalDates = newDates;
                         }
                         await updateItem(id, updatePayload);
+                        editCountActions.classList.add('hidden');
+                        defaultActions.parentElement.classList.remove('hidden');
                         break;
                     }
                 }
