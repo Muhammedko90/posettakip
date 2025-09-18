@@ -501,27 +501,12 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
-            onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion
+            onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion,
+            setDoc // setDoc'u import listesine ekliyoruz
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- ÖNEMLİ AÇIKLAMA: GITHUB & FIREBASE API ANAHTARI ---
-        // GitHub'a kod yüklerken "API anahtarı sızdırıldı" gibi bir güvenlik uyarısı alabilirsiniz.
-        // Bu durum, aşağıdaki `firebaseConfig` nesnesindeki `apiKey` yüzündendir.
-        //
-        // 1. BU BİR HATA DEĞİLDİR: Firebase'in web uygulamaları için sağladığı API anahtarları
-        //    "gizli" bilgi değildir. Bu anahtar, uygulamanızın hangi Firebase projesine
-        //    ait olduğunu belirtir.
-        //
-        // 2. GÜVENLİK NASIL SAĞLANIR?: Uygulamanızın gerçek güvenliği, API anahtarını gizlemekle
-        //    değil, Firebase konsolunda yazacağınız "Güvenlik Kuralları" (Security Rules)
-        //    ile sağlanır. Bu kurallar, veritabanınıza kimin, ne koşulda erişebileceğini belirler.
-        //
-        // 3. GITHUB UYARISINI GEÇME: Eğer GitHub bu dosyanın yüklenmesini engellerse,
-        //    deponuzun (repository) "Security" -> "Secret scanning alerts" bölümüne gidin.
-        //    Orada bu anahtarla ilgili uyarıyı bulup "false positive" (yanlış alarm) veya
-        //    "used in production" (kullanımda) olarak işaretleyerek sorunu çözebilirsiniz.
-        //
-        // Bu anahtarı silerseniz uygulama çalışmaz. Bu yüzden olduğu gibi bırakın.
+        // (Bu bölümde değişiklik yok)
         const firebaseConfig = {
             apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
             authDomain: "emre-bebe-takip.firebaseapp.com",
@@ -531,12 +516,11 @@
             appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
         };
         
-        // PDF kütüphanesini global scope'tan alıyoruz.
         const { jsPDF } = window.jspdf;
         
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM elementlerini tek bir objede toplayarak kod okunurluğunu artırıyoruz.
             const dom = {
+                // (Bu bölümde değişiklik yok)
                 loadingOverlay: document.getElementById('loading-overlay'),
                 loadingText: document.getElementById('loading-text'),
                 authContainer: document.getElementById('auth-container'),
@@ -612,25 +596,31 @@
                 }
             };
 
-            // Uygulama state'ini (durumunu) yöneten değişkenler
             let app, auth, db, userId, currentUser;
             let allItems = [];
             let allCustomers = [];
             let deliveryPersonnel = [];
+            
+            // Ayarlar artık Firestore'dan gelecek, başlangıçta boş bir obje olarak tanımlıyoruz.
             let settings = {};
+
             let sortState = { type: 'alpha', direction: 'asc' };
             let viewMode = 'list';
             let archiveCurrentPage = 1;
             const itemsPerPage = 10;
+            
+            // Veritabanı dinleyicileri için değişkenler
             let itemsUnsubscribe = null;
             let customersUnsubscribe = null;
             let deliveryPersonnelUnsubscribe = null;
+            let settingsUnsubscribe = null; // Ayarlar için yeni dinleyici değişkeni
+            
             let seenNotifications = []; 
             let customerDetailCurrentPage = 1;
             const customerDetailItemsPerPage = 5;
 
-            // Sık kullanılan ikonları bir objede topluyoruz.
             const icons = {
+                // (Bu bölümde değişiklik yok)
                 alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
                 alpha_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 3.629 9.664 2H8.598l1.789 5.332h1.234L13.402 2h-1.12l-.419 1.371h-1.781zm1.57 1.055h-1.296l.648 2.042.648 2.042z"/><path d="M12.96 10.022c.16.21.283-.417.371.622h.043c.09-.205.214-.412.375-.622L15.04 8.5h-1.2l-.71 1.258h-.043l-.71-1.258h-1.21l1.83 3.05zM4.5 13.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L4.5 3.707V13.5z"/></svg>',
                 bags_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11.5 2.707V14.5a.5.5 0 0 0 .5.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
@@ -649,15 +639,34 @@
 
             // Yardımcı Fonksiyonlar
             const toTrUpperCase = (str) => str ? str.toLocaleUpperCase('tr-TR') : '';
-            const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { 
+
+            // --- DEĞİŞİKLİK BAŞLANGICI: Ayar Fonksiyonları ---
+            // getSettingsFromStorage ve saveSettingsToStorage fonksiyonları silindi.
+            // Yerine Firestore ile çalışan fonksiyonlar eklendi.
+
+            // Varsayılan ayarları tanımlayan bir fonksiyon. Yeni kullanıcılar için kullanılacak.
+            const getDefaultSettings = () => ({
                 theme: 'aurora', 
                 fontSize: 16,
                 viewMode: 'list',
                 customTitle: 'GÜNÜN NOTU',
                 customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.',
                 shareTemplate: 'Merhaba, [Müşteri Adı] adına ayrılan [Poşet Sayısı] poşetiniz [Bekleme Süresi] gündür beklemektedir.'
-            };
-            const saveSettingsToStorage = (settings) => localStorage.setItem(`emanet-settings-${userId}`, JSON.stringify(settings));
+            });
+
+            // Ayarları Firestore'a kaydetmek için yeni fonksiyon
+            async function saveSettingsToFirestore() {
+                if (!userId) return;
+                try {
+                    const settingsRef = doc(db, 'users', userId, 'settings', 'appSettings');
+                    // { merge: true } seçeneği, belgedeki diğer alanları silmeden sadece belirtilen alanları günceller.
+                    await setDoc(settingsRef, settings, { merge: true });
+                } catch (error) {
+                    console.error("Ayarlar kaydedilirken hata oluştu:", error);
+                }
+            }
+            // --- DEĞİŞİKLİK SONU ---
+
             const formatDate = (iso) => {
                 if(!iso) return '';
                 const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
@@ -816,7 +825,7 @@
                 if(fontSizeSlider) fontSizeSlider.value = settings.fontSize;
                 if(fontSizePreview) fontSizePreview.textContent = `${settings.fontSize}px`;
 
-                // Özel not ve şablon ayarlarını yükle
+                // Özel not ve şablon ayarlarını inputlara yükle
                 if(dom.customText.titleInput) dom.customText.titleInput.value = settings.customTitle || '';
                 if(dom.customText.contentInput) dom.customText.contentInput.value = settings.customContent || '';
                 if(dom.shareTemplate.input) dom.shareTemplate.input.value = settings.shareTemplate || '';
@@ -838,7 +847,7 @@
             }
 
             function renderDashboard(activeItems, archivedItems) {
-                // Stat Cards
+                // (Bu bölümde değişiklik yok)
                 const waitingCustomers = new Set(activeItems.map(item => item.customerName));
                 const waitingBags = activeItems.reduce((sum, item) => sum + item.bagCount, 0);
                 
@@ -847,13 +856,12 @@
                 const deliveredLastWeek = archivedItems.filter(item => {
                     const deliveredDate = item.deliveredAt?.seconds ? new Date(item.deliveredAt.seconds * 1000) : new Date(item.deliveredAt);
                     return deliveredDate >= sevenDaysAgo;
-                }).reduce((sum, item) => sum + item.bagCount, 0); // Poşet sayısını topla
+                }).reduce((sum, item) => sum + item.bagCount, 0);
 
                 dom.dashboard.waitingCustomers.textContent = waitingCustomers.size;
                 dom.dashboard.waitingBags.textContent = waitingBags;
                 dom.dashboard.deliveredLastWeek.textContent = deliveredLastWeek;
 
-                // Oldest 3 Customers
                 const sortedActiveItems = [...activeItems].sort((a, b) => {
                     const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime() / 1000;
                     const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime() / 1000;
@@ -871,7 +879,6 @@
                     dom.dashboard.oldestCustomers.innerHTML = '<p class="text-secondary text-center py-4">Bekleyen müşteri yok.</p>';
                 }
 
-                // Daily Reminders
                 const today = new Date().toISOString().slice(0, 10);
                 const reminders = allItems.filter(item => item.reminderDate === today && item.status === 'active');
                 if(reminders.length > 0) {
@@ -885,12 +892,13 @@
                     dom.dashboard.reminders.innerHTML = '<p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p>';
                 }
 
-                // Custom Text
+                // Custom Text - Artık `settings` objesinden besleniyor
                 dom.dashboard.customTextTitle.textContent = settings.customTitle || 'GÜNÜN NOTU';
                 dom.dashboard.customTextContent.innerHTML = `<p>${settings.customContent || 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.'}</p>`;
             }
             
             function renderItems(items) {
+                // (Bu bölümde değişiklik yok)
                 const searchQuery = toTrUpperCase(dom.customerNameInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
@@ -922,8 +930,8 @@
                     filteredItems.forEach(item => dom.itemGrid.appendChild(createItemCardElement(item)));
                 }
             }
-
-             function createItemElement(item) {
+            function createItemElement(item) {
+                // (Bu bölümde değişiklik yok)
                 const div = document.createElement('div');
                 const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                 
@@ -1001,6 +1009,7 @@
             }
 
             function createItemCardElement(item) {
+                // (Bu bölümde değişiklik yok)
                 const div = document.createElement('div');
                 const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                 const now = new Date();
@@ -1060,6 +1069,7 @@
             }
 
             function renderArchive(items) {
+                // (Bu bölümde değişiklik yok)
                 const searchQuery = toTrUpperCase(dom.searchArchiveInput.value);
                 let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
                 
@@ -1080,6 +1090,7 @@
             }
             
             function createArchiveItemElement(item) {
+                // (Bu bölümde değişiklik yok)
                 const div = document.createElement('div');
                 div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
                 div.dataset.id = item.id;
@@ -1101,12 +1112,14 @@
             }
             
             function renderNotes() {
+                // (Bu bölümde değişiklik yok)
                 const itemsWithNotes = allItems.filter(item => (item.note && item.note.trim() !== '') || item.reminderDate).sort((a,b) => (b.lastModified?.seconds || 0) - (a.lastModified?.seconds || 0));
                 dom.notesList.innerHTML = '';
                 dom.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
                 itemsWithNotes.forEach(item => dom.notesList.appendChild(createNoteElement(item)));
             }
             function createNoteElement(item) {
+                // (Bu bölümde değişiklik yok)
                 const div = document.createElement('div');
                 div.className = 'bg-primary p-4 rounded-lg shadow-md border border-dynamic';
                 div.dataset.id = item.id;
@@ -1125,11 +1138,13 @@
             }
             
             function renderReports() {
+                // (Bu bölümde değişiklik yok)
                 renderPeriodicReport(); 
                 renderOverdueReport();
             }
             
             function renderOverdueReport() {
+                // (Bu bölümde değişiklik yok)
                 const overdueList = document.getElementById('overdue-report-list');
                 const overdueMessage = document.getElementById('empty-overdue-report-message');
                 const activeItems = allItems.filter(item => item.status !== 'delivered');
@@ -1145,6 +1160,7 @@
             }
             
             function renderPeriodicReport(range = null) {
+                // (Bu bölümde değişiklik yok)
                 const contentDiv = document.getElementById('periodic-report-content');
                 if(range === null) {
                     const activeBtn = document.querySelector('.report-range-btn.accent-bg');
@@ -1195,6 +1211,7 @@
 
             // Firestore (Veritabanı) Fonksiyonları
             async function handleAddItem(e) {
+                // (Bu bölümde değişiklik yok)
                 e.preventDefault();
                 const customerName = toTrUpperCase(dom.customerNameInput.value.trim());
                 const bagCount = parseInt(dom.bagCountInput.value, 10);
@@ -1252,6 +1269,7 @@
             }
             
             async function updateCustomerNameAndItems(customerId, oldName, newName) {
+                // (Bu bölümde değişiklik yok)
                 const upperNewName = toTrUpperCase(newName);
                 showLoading('Müşteri adı ve ilgili poşetler güncelleniyor...');
                 try {
@@ -1276,6 +1294,7 @@
 
             // Veri Yönetimi Fonksiyonları (İçe/Dışa Aktarma, Sıfırlama)
             async function importDataFromJSON(data) {
+                // (Bu bölümde değişiklik yok)
                 if (!data.allItems || !data.allCustomers) {
                     showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.'); return;
                 }
@@ -1326,6 +1345,7 @@
             }
             
             async function resetAllDataForUser() {
+                // (Bu bölümde değişiklik yok)
                 showLoading('Tüm verileriniz siliniyor...');
                 const collectionsToDelete = ['items', 'customers', 'deliveryPersonnel'];
                 const batch = writeBatch(db);
@@ -1342,16 +1362,17 @@
 
             // Olay Dinleyicileri (Event Listeners)
             function initializeAppLogic() {
-                settings = getSettingsFromStorage();
+                // `settings = getSettingsFromStorage()` satırı silindi. Ayarlar artık listenToData içinde dinleniyor.
                 seenNotifications = JSON.parse(localStorage.getItem(`seenNotifications-${userId}`)) || [];
-                applySettings();
+                // applySettings() çağrısı listenToData içindeki onSnapshot'a taşındı.
                 updateSortButtons();
-                switchTab('anasayfa', true); // Varsayılan olarak anasayfayı göster
-                listenToData();
+                switchTab('anasayfa', true);
+                listenToData(); // Bu fonksiyon artık ayarları da dinleyecek
                 setupAppEventListeners();
             }
             
             function setupAppEventListeners() {
+                // (Bu bölümde büyük değişiklik yok, sadece saveSettingsToStorage çağrıları saveSettingsToFirestore'a dönüşecek)
                 dom.addItemForm.addEventListener('submit', handleAddItem);
                 dom.searchArchiveInput.addEventListener('input', () => {
                     archiveCurrentPage = 1;
@@ -1370,6 +1391,7 @@
                 dom.notificationBell?.addEventListener('click', showNotificationsModal);
                 document.querySelector('#panel-settings').addEventListener('click', handleSettingsPanelClick);
                 dom.importFileInput.addEventListener('change', handleFileImport);
+                
                 document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
                     settings.fontSize = e.target.value;
                     document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
@@ -1377,8 +1399,9 @@
                 });
                 document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
                     settings.fontSize = e.target.value;
-                    saveSettingsToStorage(settings);
+                    saveSettingsToFirestore(); // Değişiklik
                 });
+
                 document.querySelectorAll('.report-range-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
@@ -1436,7 +1459,6 @@
                     }
                 });
 
-                // Scroll to Top Button Logic
                 dom.scrollToTopBtn.addEventListener('click', () => {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
@@ -1450,11 +1472,16 @@
                 });
             }
 
+            // --- DEĞİŞİKLİK BAŞLANGICI: listenToData Fonksiyonu ---
+            // Bu fonksiyon artık ayarları da dinleyecek.
             function listenToData() {
                 if (!userId) return;
+
+                // Mevcut dinleyicileri temizle
                 if (itemsUnsubscribe) itemsUnsubscribe();
                 if (customersUnsubscribe) customersUnsubscribe();
                 if (deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
+                if (settingsUnsubscribe) settingsUnsubscribe();
 
                 const itemsQuery = query(collection(db, "users", userId, "items"));
                 itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
@@ -1473,16 +1500,34 @@
                 }, error => console.error("Error listening to customers: ", error));
 
                 const personnelQuery = query(collection(db, "users", userId, "deliveryPersonnel"));
-                 deliveryPersonnelUnsubscribe = onSnapshot(personnelQuery, (snapshot) => {
+                deliveryPersonnelUnsubscribe = onSnapshot(personnelQuery, (snapshot) => {
                     deliveryPersonnel = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
                     const modalList = document.getElementById('modal-personnel-list');
                     if(modalList && !dom.modalContainer.classList.contains('hidden')) {
                         renderDeliveryPersonnelModalList();
                     }
                 }, error => console.error("Error listening to delivery personnel: ", error));
+
+                // YENİ: Ayarları dinle
+                const settingsRef = doc(db, "users", userId, "settings", "appSettings");
+                settingsUnsubscribe = onSnapshot(settingsRef, (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        // Eğer ayar belgesi varsa, mevcut ayarları varsayılanlarla birleştir
+                        // Bu sayede gelecekte eklenecek yeni ayarlar eski kullanıcılarda sorun çıkarmaz
+                        settings = { ...getDefaultSettings(), ...docSnapshot.data() };
+                    } else {
+                        // Eğer ayar belgesi yoksa (yeni kullanıcı), varsayılanları oluştur
+                        settings = getDefaultSettings();
+                        saveSettingsToFirestore(); // Veritabanına ilk ayarları kaydet
+                    }
+                    applySettings(); // Ayarları uygula
+                    renderAll(); // Ayarlar değişince arayüzü yeniden çiz
+                }, error => console.error("Ayarlar dinlenirken hata oluştu: ", error));
             }
+            // --- DEĞİŞİKLİK SONU ---
             
             async function handleMainContentClick(e) {
+                // ... (Bu fonksiyonun içeriğinde `settings` objesi artık güncel olduğu için share case'i doğru çalışacak)
                 const button = e.target.closest('button[data-action]');
                 if (!button) return;
                 
@@ -1638,7 +1683,7 @@
                  
                  if(button.dataset.theme){
                     settings.theme = button.dataset.theme;
-                    saveSettingsToStorage(settings);
+                    saveSettingsToFirestore(); // Değişiklik
                     applySettings();
                     return;
                  }
@@ -1659,14 +1704,14 @@
                     case 'save-custom-text-btn': {
                         settings.customTitle = dom.customText.titleInput.value.trim();
                         settings.customContent = dom.customText.contentInput.value.trim();
-                        saveSettingsToStorage(settings);
-                        renderDashboard(allItems.filter(i=>i.status!=='delivered'), allItems.filter(i=>i.status==='delivered'));
+                        await saveSettingsToFirestore(); // Değişiklik (await eklendi)
+                        // renderDashboard'ı kaldırdık çünkü onSnapshot tetiklenip zaten yapacak.
                         showSimpleMessageModal('Başarılı', 'Ana sayfa notu kaydedildi.', true);
                         break;
                     }
                     case 'save-share-template-btn': {
                         settings.shareTemplate = dom.shareTemplate.input.value.trim();
-                        saveSettingsToStorage(settings);
+                        await saveSettingsToFirestore(); // Değişiklik (await eklendi)
                         showSimpleMessageModal('Başarılı', 'Paylaşım şablonu kaydedildi.', true);
                         break;
                     }
@@ -1726,12 +1771,15 @@
                         } else {
                             userId = null;
                             currentUser = null;
+                            // Çıkış yapıldığında tüm dinleyicileri durdur
                             if(itemsUnsubscribe) itemsUnsubscribe();
                             if(customersUnsubscribe) customersUnsubscribe();
                             if(deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
+                            if(settingsUnsubscribe) settingsUnsubscribe();
                             allItems = [];
                             allCustomers = [];
                             deliveryPersonnel = [];
+                            settings = {};
                             showAuthUI();
                         }
                     });
@@ -1741,6 +1789,7 @@
                 }
             }
              async function handleFileImport(e) {
+                // (Bu bölümde değişiklik yok)
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -1761,6 +1810,7 @@
             
             // Sekme ve Sıralama Fonksiyonları
             function switchTab(target, instant = false) {
+                // (Bu bölümde değişiklik yok)
                 const tabs = document.querySelectorAll('nav button[id^="tab-"]');
                 const panels = document.querySelectorAll('.panel[id^="panel-"]');
                 tabs.forEach(tab => tab.classList.remove('tab-active'));
@@ -1778,6 +1828,7 @@
             }
 
             function handleSort(type) {
+                // (Bu bölümde değişiklik yok)
                 if (sortState.type === type) {
                     sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
                 } else {
@@ -1789,6 +1840,7 @@
             }
 
             function updateSortButtons() {
+                // (Bu bölümde değişiklik yok)
                 [dom.sortAlphaBtn, dom.sortBagsBtn, dom.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
                 const activeBtn = document.getElementById(`sort-${sortState.type}`);
                 if (activeBtn) activeBtn.classList.add('sort-active');
@@ -1800,17 +1852,19 @@
             function handleViewChange(mode) {
                 viewMode = mode;
                 settings.viewMode = mode;
-                saveSettingsToStorage(settings);
+                saveSettingsToFirestore(); // Değişiklik
                 updateViewToggleButtons();
                 renderItems(allItems.filter(item => item.status !== 'delivered'));
             }
 
             function updateViewToggleButtons() {
+                // (Bu bölümde değişiklik yok)
                 dom.viewListBtn.classList.toggle('view-active', viewMode === 'list');
                 dom.viewGridBtn.classList.toggle('view-active', viewMode === 'grid');
             }
             
             function renderArchivePagination(totalPages) {
+                // (Bu bölümde değişiklik yok)
                 dom.archivePagination.innerHTML = '';
                 if(totalPages <= 1) return;
                 const createBtn = (text, onClick, disabled = false) => {
@@ -1831,6 +1885,8 @@
             }
 
             // Modal (Popup) Fonksiyonları
+            // (Bu bölümdeki fonksiyonlarda (showModalUI, hideModalUI, showSimpleMessageModal vb.) değişiklik yok)
+            // ... (Tüm modal fonksiyonları buraya kopyalanacak)
             function showModalUI() {
                 dom.modalContainer.classList.remove('hidden');
                 requestAnimationFrame(() => {
