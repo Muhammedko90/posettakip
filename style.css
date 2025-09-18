@@ -5,31 +5,31 @@
     --accent-bg-light: #a78bfa26; --accent-text-light: var(--accent-color);
     --font-size-base: 16px;
 }
-.theme-sunset { /* Neon Gün Batımı */
+.theme-sunset {
     --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
     --text-primary: #f5eaff; --text-secondary: #d1c4e9; --border-color: #5a3c82;
     --accent-color: #ff79c6; --accent-color-dark: #ff4da6;
     --accent-bg-light: #ff79c626; --accent-text-light: #ff79c6;
 }
-.theme-ocean { /* Okyanus Esintisi */
+.theme-ocean {
     --bg-primary: #ffffff; --bg-secondary: #f0f9ff; --bg-tertiary: #e0f2fe;
     --text-primary: #082f49; --text-secondary: #075985; --border-color: #bae6fd;
     --accent-color: #0ea5e9; --accent-color-dark: #0284c7;
     --accent-bg-light: #0ea5e926; --accent-text-light: var(--accent-color-dark);
 }
-.theme-graphite { /* Grafit ve Altın */
+.theme-graphite {
     --bg-primary: #282c34; --bg-secondary: #1e2228; --bg-tertiary: #3e444c;
     --text-primary: #dce1e8; --text-secondary: #a0a8b4; --border-color: #4b5263;
     --accent-color: #d4af37; --accent-color-dark: #c09b2d;
     --accent-bg-light: #d4af3726; --accent-text-light: #e6c35c;
 }
-.theme-mint { /* Nane Şekeri */
+.theme-mint {
     --bg-primary: #f0fdf4; --bg-secondary: #dcfce7; --bg-tertiary: #bbf7d0;
     --text-primary: #14532d; --text-secondary: #166534; --border-color: #86efac;
     --accent-color: #4ade80; --accent-color-dark: #22c55e;
     --accent-bg-light: #4ade8026; --accent-text-light: #16a34a;
 }
-.theme-aurora { /* Kuzey Işıkları */
+.theme-aurora {
     --bg-primary: #0d1117; --bg-secondary: #010409; --bg-tertiary: #161b22;
     --text-primary: #e6edf3; --text-secondary: #a1aab4; --border-color: #30363d;
     --accent-color: #58a6ff; --accent-color-dark: #388bfd;
@@ -82,6 +82,6 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
 }
 
 #share-template-input {
-    text-transform: none; /* Şablonda normal büyük/küçük harf kullanımına izin ver */
+    text-transform: none;
 }
 
