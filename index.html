@@ -7,8 +7,6 @@
     <meta name="description" content="Kullanıcı bazlı Müşteri Poşet Takip Uygulaması">
 
     <meta name="theme-color" content="#1e293b"/>
-    <!-- UYGULAMA LOGOSU (APPLE) -->
-    <!-- Apple cihazlar için ana ekran logosu. "href" kısmını kendi 180x180 piksel logonuzun linki ile değiştirinn -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=EB">
     <link rel="manifest" href="manifest.json">
 
@@ -54,6 +52,9 @@
             --accent-color: #58a6ff; --accent-color-dark: #388bfd;
             --accent-bg-light: #58a6ff26; --accent-text-light: #58a6ff;
         }
+        html {
+            scroll-behavior: smooth;
+        }
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-secondary);
             color: var(--text-primary); font-size: var(--font-size-base);
@@ -98,6 +99,15 @@
         .item-bag-count-dynamic {
             background-color: var(--accent-bg-light);
             color: var(--accent-text-light);
+        }
+        #scroll-to-top-btn {
+            position: fixed; bottom: 20px; right: 20px;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 50;
+        }
+        #scroll-to-top-btn.visible {
+            opacity: 1; visibility: visible;
         }
     </style>
 </head>
@@ -170,7 +180,6 @@
             </div>
         </header>
 
-        <!-- YENİ NAVİGASYON MENÜSÜ -->
         <div class="mb-6 bg-primary p-1 sm:p-2 rounded-xl border border-dynamic shadow-lg">
             <nav class="flex justify-around items-center" aria-label="Tabs">
                 <button id="tab-anasayfa" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
@@ -215,10 +224,8 @@
 
 
         <main id="main-content" class="relative">
-            <!-- YENİ ANA SAYFA PANELİ -->
             <div id="panel-anasayfa" class="panel hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- İstatistik Kartları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
                         <div class="bg-blue-500/20 text-blue-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 015.688 0M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
                         <div>
@@ -241,7 +248,6 @@
                         </div>
                     </div>
 
-                    <!-- En Eski Bekleyen 3 Müşteri -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-1 lg:col-span-1">
                         <h3 class="font-semibold text-primary mb-3">En Eski 3 Bekleyen Müşteri</h3>
                         <div id="dashboard-oldest-customers" class="space-y-3">
@@ -249,7 +255,6 @@
                         </div>
                     </div>
                     
-                    <!-- Günün Hatırlatmaları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-2 lg:col-span-2">
                         <h3 class="font-semibold text-primary mb-3">Günün Hatırlatmaları (Notlar)</h3>
                         <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto">
@@ -257,7 +262,6 @@
                         </div>
                     </div>
 
-                    <!-- Özel Not (Eski Günün Sözü yerine) -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex flex-col justify-center items-center text-center md:col-span-2 lg:col-span-3">
                         <h3 id="dashboard-custom-text-title" class="font-semibold text-primary mb-3">...</h3>
                         <div id="dashboard-custom-text-content" class="text-secondary italic">
@@ -398,6 +402,20 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
+                    <h2 class="text-2xl font-semibold text-primary">Paylaşım Şablonu</h2>
+                     <div class="space-y-3">
+                        <div>
+                            <label for="share-template-input" class="block text-sm font-medium text-secondary mb-1">Durum Mesajı Şablonu:</label>
+                            <textarea id="share-template-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition h-24"></textarea>
+                            <p class="text-xs text-secondary mt-2">
+                                Kullanılabilir değişkenler: <code class="bg-tertiary p-1 rounded">[Müşteri Adı]</code>, <code class="bg-tertiary p-1 rounded">[Poşet Sayısı]</code>, <code class="bg-tertiary p-1 rounded">[Bekleme Süresi]</code>
+                            </p>
+                        </div>
+                        <button id="save-share-template-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Şablonu Kaydet</button>
+                    </div>
+                </div>
                 
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
                     <h2 class="text-2xl font-semibold text-primary">Ana Sayfa Notu</h2>
@@ -439,13 +457,18 @@
         </main>
     </div>
 
-    <!-- Modal Container -->
     <div id="modal-container" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
         <div id="modal-content-wrapper" class="bg-primary border border-dynamic rounded-lg shadow-xl p-6 w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0">
              <div id="modal-content"></div>
         </div>
     </div>
     
+    <button id="scroll-to-top-btn" class="accent-bg text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg accent-bg-hover transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+    </button>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -546,11 +569,16 @@
                 modalContent: document.getElementById('modal-content'),
                 notificationBell: document.getElementById('notification-bell'),
                 notificationBadge: document.getElementById('notification-badge'),
+                scrollToTopBtn: document.getElementById('scroll-to-top-btn'),
                 // Settings
                 customText: {
                     titleInput: document.getElementById('custom-text-title-input'),
                     contentInput: document.getElementById('custom-text-content-input'),
                     saveBtn: document.getElementById('save-custom-text-btn')
+                },
+                shareTemplate: {
+                    input: document.getElementById('share-template-input'),
+                    saveBtn: document.getElementById('save-share-template-btn')
                 },
                 // Dashboard Elements
                 dashboard: {
@@ -593,6 +621,7 @@
                 delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
                 save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
                 cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
+                share: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>'
             };
 
             // Yardımcı Fonksiyonlar
@@ -601,7 +630,8 @@
                 theme: 'aurora', 
                 fontSize: 16,
                 customTitle: 'GÜNÜN NOTU',
-                customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.'
+                customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.',
+                shareTemplate: 'Merhaba, [Müşteri Adı] adına ayrılan [Poşet Sayısı] poşetiniz [Bekleme Süresi] gündür beklemektedir.'
             };
             const saveSettingsToStorage = (settings) => localStorage.setItem(`emanet-settings-${userId}`, JSON.stringify(settings));
             const formatDate = (iso) => {
@@ -765,6 +795,7 @@
                 // Özel not ayarlarını yükle
                 if(dom.customText.titleInput) dom.customText.titleInput.value = settings.customTitle || '';
                 if(dom.customText.contentInput) dom.customText.contentInput.value = settings.customContent || '';
+                if(dom.shareTemplate.input) dom.shareTemplate.input.value = settings.shareTemplate || '';
             }
 
             function renderAll() {
@@ -858,8 +889,6 @@
                 const div = document.createElement('div');
                 const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
                 
-                // Gün farkını, günün saatini göz ardı ederek hesapla. Bu,
-                // formatRelativeTime fonksiyonundaki mantıkla tutarlılık sağlar.
                 const now = new Date();
                 const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / (1000 * 60 * 60 * 24));
 
@@ -903,6 +932,7 @@
                     </div>
                     <div class="item-actions flex items-center gap-1 sm:gap-2 ml-2">
                         <div class="default-actions flex items-center gap-1 sm:gap-2">
+                            <button data-action="share" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Durumu Paylaş">${icons.share}</button>
                             <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle">${icons.edit}</button>
                             <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note || item.reminderDate ? 'accent-text' : ''}" title="Notu ve Hatırlatıcıyı Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
                             <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
@@ -964,7 +994,6 @@
                 dom.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
                 itemsWithNotes.forEach(item => dom.notesList.appendChild(createNoteElement(item)));
             }
-
             function createNoteElement(item) {
                 const div = document.createElement('div');
                 div.className = 'bg-primary p-4 rounded-lg shadow-md border border-dynamic';
@@ -1288,6 +1317,19 @@
                         dom.suggestionsBox.classList.add("hidden");
                     }
                 });
+
+                // Scroll to Top Button Logic
+                dom.scrollToTopBtn.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 200) {
+                        dom.scrollToTopBtn.classList.add('visible');
+                    } else {
+                        dom.scrollToTopBtn.classList.remove('visible');
+                    }
+                });
             }
 
             function listenToData() {
@@ -1327,18 +1369,44 @@
                 if (!button) return;
                 const action = button.dataset.action;
                 const itemDiv = button.closest('div[data-id]');
+
                 if (action === 'view-customer') {
                     const customerName = itemDiv?.dataset.customerName;
                     if (customerName) showCustomerDetailModal(customerName);
                     return;
                 }
+
                 if (!itemDiv) return;
                 const id = itemDiv.dataset.id;
                 const item = allItems.find(i => i.id === id);
                 if (!item) return;
                 const defaultActions = itemDiv.querySelector('.default-actions');
                 const editCountActions = itemDiv.querySelector('.edit-count-actions');
+
                 switch (action) {
+                    case 'share': {
+                        const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
+                        const now = new Date();
+                        const diffDays = Math.max(0, Math.floor((now - date) / (1000 * 60 * 60 * 24)));
+
+                        const message = settings.shareTemplate
+                            .replace(/\[Müşteri Adı\]/gi, item.customerName)
+                            .replace(/\[Poşet Sayısı\]/gi, item.bagCount)
+                            .replace(/\[Bekleme Süresi\]/gi, diffDays);
+
+                        if (navigator.share) {
+                            try {
+                                await navigator.share({
+                                    text: message,
+                                });
+                            } catch (err) {
+                                console.error('Share failed:', err);
+                            }
+                        } else {
+                            showSimpleMessageModal('Paylaşım Desteklenmiyor', 'Cihazınız veya tarayıcınız bu özelliği desteklemiyor. Mesajı kopyalayarak manuel olarak paylaşabilirsiniz: <br><br> <code class="bg-tertiary p-2 rounded-md block break-words">' + message + '</code>');
+                        }
+                        break;
+                    }
                     case 'deliver': {
                         const result = await showDeliverConfirmationModal(item);
                         if (result.confirmed) {
@@ -1454,6 +1522,12 @@
                         saveSettingsToStorage(settings);
                         renderDashboard(allItems.filter(i=>i.status!=='delivered'), allItems.filter(i=>i.status==='delivered'));
                         showSimpleMessageModal('Başarılı', 'Ana sayfa notu kaydedildi.', true);
+                        break;
+                    }
+                    case 'save-share-template-btn': {
+                        settings.shareTemplate = dom.shareTemplate.input.value.trim();
+                        saveSettingsToStorage(settings);
+                        showSimpleMessageModal('Başarılı', 'Paylaşım şablonu kaydedildi.', true);
                         break;
                     }
                     case 'export-json-btn': exportDataToJSON(); break;
