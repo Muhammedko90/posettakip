@@ -1,86 +1,85 @@
 // Önbellek (cache) adı ve versiyonu.
-// Uygulamada büyük bir değişiklik yaptığınızda (örn. CSS veya JS dosyalarını güncellediğinizde)
-// bu versiyonu ('v4', 'v5' gibi) değiştirerek eski önbelleğin silinip yenisinin kurulmasını sağlarsınız.
-const CACHE_NAME = 'emre-bebe-takip-cache-v4'; // Versiyonu güncelledim
+// Yeni versiyon, eski önbelleğin silinip yenisinin kurulmasını tetikler.
+const CACHE_NAME = 'emre-bebe-takip-cache-v5'; 
 
-// Uygulama ilk yüklendiğinde veya çevrimdışıyken çalışması için
-// önbelleğe alınacak temel dosyaların ve kaynakların listesi.
+// Önbelleğe alınacak temel uygulama dosyaları ("App Shell").
 const urlsToCache = [
-  '/', // Ana dizini temsil eder.
-  'index.html', // Ana HTML dosyası.
-  'style.css', // UYGULAMANIN ÇALIŞMASI İÇİN EKLENDİ
-  'script.js', // UYGULAMANIN ÇALIŞMASI İÇİN EKLENDİ
-  'manifest.json', // PWA manifest dosyası.
-  'https://cdn.tailwindcss.com', // Stil için kullanılan TailwindCSS.
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', // PDF oluşturma kütüphanesi.
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', // PDF tablo eklentisi.
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' // Google Fonts.
+  '/',
+  'index.html',
+  'style.css',
+  'script.js',
+  'manifest.json',
+  'https://cdn.tailwindcss.com',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
 ];
 
-// 'install' olayı: Service Worker yüklendiğinde tetiklenir.
-// Bu aşamada, uygulamanın çevrimdışı çalışması için gerekli olan temel dosyaları önbelleğe alırız.
+// 'install' olayı: Service Worker yüklendiğinde çalışır.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache açıldı ve temel dosyalar önbelleğe alınıyor.');
-        // Bütün dosyaları tek seferde eklemeyi deneyelim. Bu daha güvenilirdir.
+        console.log('[Service Worker] Önbellek açıldı, temel dosyalar ekleniyor.');
         return cache.addAll(urlsToCache);
       })
   );
 });
 
-// 'fetch' olayı: Uygulama bir kaynak (dosya, resim, API isteği vb.) talep ettiğinde tetiklenir.
-// Bu olay, ağ isteklerini yakalayıp nasıl yanıt verileceğini kontrol etmemizi sağlar.
+// 'fetch' olayı: Uygulamadan yapılan her ağ isteğini yakalar.
 self.addEventListener('fetch', event => {
-  // Sadece GET (veri alma) isteklerini işleme alıyoruz.
-  if (event.request.method !== 'GET') {
+  // Sadece GET isteklerini işleme al.
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Strateji 1: Network First, falling back to Cache (Firebase/Google API'leri için)
+  // Bu, her zaman en güncel veriyi almamızı sağlar, çevrimdışıysak önbelleği kullanır.
+  if (url.hostname.includes('firebase') || url.hostname.includes('googleapis')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          // Ağ yanıtı başarılıysa, bir kopyasını önbelleğe alıp sonucu döndür.
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, networkResponse.clone());
+          });
+          return networkResponse;
+        })
+        .catch(() => {
+          // Ağ başarısız olursa, önbellekten yanıt vermeyi dene.
+          console.warn(`[Service Worker] Ağ hatası, ${url.href} için önbellek kontrol ediliyor.`);
+          return caches.match(event.request);
+        })
+    );
     return;
   }
-  
-  // Strateji: Cache First (Önce Önbellek), sonra ağa git.
-  // Bu strateji, uygulamayı çok daha hızlı açar ve çevrimdışı çalışmasını sağlar.
+
+  // Strateji 2: Cache First, falling back to Network (Uygulama kabuğu ve diğer statik dosyalar için)
+  // Bu, uygulamanın anında yüklenmesini sağlar.
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Eğer kaynak önbellekte varsa, doğrudan önbellekten döndürürüz.
-        if (response) {
-          return response;
+      .then(cachedResponse => {
+        // Önbellekte yanıt varsa, onu kullan.
+        if (cachedResponse) {
+          return cachedResponse;
         }
 
-        // Kaynak önbellekte yoksa, ağdan getirmeye çalışırız.
-        // Firebase ve gstatic istekleri gibi dinamik içerikler de bu bloğa girecek
-        // ve her zaman ağdan güncel olarak getirilip önbelleğe alınacaktır.
-        return fetch(event.request.clone()).then(
-          networkResponse => {
-            // Geçerli bir cevap alınamazsa (örn. hata kodu), önbelleğe almadan döndürürüz.
-            if (!networkResponse || networkResponse.status !== 200) {
-              return networkResponse;
-            }
-            
-            // Başarılı cevabı hem tarayıcıya göndeririz hem de bir kopyasını ileride kullanmak üzere önbelleğe alırız.
-            let responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                // Sadece http/https ile başlayan istekleri önbelleğe al (chrome-extension:// gibi istekleri hariç tut)
-                if(event.request.url.startsWith('http')) {
-                    cache.put(event.request, responseToCache);
-                }
-              });
-
+        // Önbellekte yoksa, ağdan getir, önbelleğe ekle ve sonucu döndür.
+        return fetch(event.request.clone()).then(networkResponse => {
+          if (!networkResponse || networkResponse.status !== 200) {
             return networkResponse;
           }
-        ).catch(err => {
-             console.error('Fetch hatası:', err);
-             // Ağ hatası durumunda, isteğe bağlı olarak genel bir çevrimdışı sayfası gösterilebilir.
-             // return caches.match('offline.html');
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
+          return networkResponse;
         });
       })
-    );
+  );
 });
 
-// 'activate' olayı: Yeni Service Worker aktif olduğunda tetiklenir.
-// Bu aşama, eski ve gereksiz önbellekleri temizlemek için en uygun yerdir.
+// 'activate' olayı: Yeni Service Worker aktif olduğunda çalışır.
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME]; // Sadece mevcut versiyonun önbelleğini koru.
   event.waitUntil(
@@ -89,7 +88,7 @@ self.addEventListener('activate', event => {
         cacheNames.map(cacheName => {
           // Eğer bir önbellek adı beyaz listede değilse, o eski bir versiyondur ve silinmelidir.
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Eski cache siliniyor:', cacheName);
+            console.log('[Service Worker] Eski önbellek siliniyor:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -97,3 +96,4 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
