@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dom = {
         loadingOverlay: document.getElementById('loading-overlay'),
         loadingText: document.getElementById('loading-text'),
+        loadingSpinner: document.getElementById('loading-spinner'),
         authContainer: document.getElementById('auth-container'),
         appContainer: document.getElementById('app-container'),
         loginForm: document.getElementById('login-form'),
@@ -101,6 +102,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPerPage = 10, customerDetailItemsPerPage = 5;
     let itemsUnsubscribe, customersUnsubscribe, deliveryPersonnelUnsubscribe;
     let seenNotifications = [];
+
+    // --- YENİ EKLENEN HATA AYIKLAMA BÖLÜMÜ ---
+    try {
+        console.log("Uygulama başlatılıyor, Firebase ayarları yapılıyor...");
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        console.log("Firebase başarıyla başlatıldı. Kimlik doğrulama durumu bekleniyor...");
+
+        onAuthStateChanged(auth, user => {
+            console.log("Kimlik doğrulama durumu değişti:", user ? `Giriş yapıldı (${user.uid})` : "Giriş yapılmadı.");
+            if (user) {
+                userId = user.uid;
+                // Tüm veri dinleyicilerini ve uygulama arayüzünü burada başlat.
+                // Örn: initializeDataListeners();
+                showAppUI(user);
+            } else {
+                // Oturum kapalıysa veya kullanıcı yoksa, tüm dinleyicileri durdur.
+                // Örn: detachDataListeners();
+                showAuthUI();
+            }
+        });
+
+    } catch (error) {
+        console.error("KRİTİK HATA: Firebase başlatılamadı!", error);
+        dom.loadingText.textContent = `Hata: ${error.message}. Lütfen konsolu kontrol edin.`;
+        if (dom.loadingSpinner) dom.loadingSpinner.style.display = 'none';
+    }
+    // --- HATA AYIKLAMA BÖLÜMÜ SONU ---
+
 
     // İkonlar
     const icons = {
@@ -201,8 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.settingsUserEmail.textContent = user.email;
         hideLoading();
     }
-
-    // Devamı diğer dosyalarda...
-    // Bu sadece bir başlangıç noktasıdır. Tüm mantık buraya taşınmalıdır.
+    // Geri kalan tüm diğer fonksiyonlar ve event listener'lar buraya gelecek...
+    // Bu dosyanın geri kalanını olduğu gibi bırakabilirsiniz.
 });
-
