@@ -7,17 +7,99 @@
     <meta name="description" content="Kullanıcı bazlı Müşteri Poşet Takip Uygulaması">
 
     <meta name="theme-color" content="#1e293b"/>
+    <!-- UYGULAMA LOGOSU (APPLE) -->
+    <!-- Apple cihazlar için ana ekran logosu. "href" kısmını kendi 180x180 piksel logonuzun linki ile değiştirinn -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/1e293b/ffffff?text=EB">
     <link rel="manifest" href="manifest.json">
 
-    <!-- Harici Stiller -->
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Harici Kütüphaneler -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1e293b; --bg-secondary: #0f172a; --bg-tertiary: #334155;
+            --text-primary: #e2e8f0; --text-secondary: #94a3b8; --border-color: #475569;
+            --accent-color: #a78bfa; --accent-color-dark: #8b5cf6;
+            --accent-bg-light: #a78bfa26; --accent-text-light: var(--accent-color);
+            --font-size-base: 16px;
+        }
+        .theme-sunset { /* Neon Gün Batımı */
+            --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
+            --text-primary: #f5eaff; --text-secondary: #d1c4e9; --border-color: #5a3c82;
+            --accent-color: #ff79c6; --accent-color-dark: #ff4da6;
+            --accent-bg-light: #ff79c626; --accent-text-light: #ff79c6;
+        }
+        .theme-ocean { /* Okyanus Esintisi */
+            --bg-primary: #ffffff; --bg-secondary: #f0f9ff; --bg-tertiary: #e0f2fe;
+            --text-primary: #082f49; --text-secondary: #075985; --border-color: #bae6fd;
+            --accent-color: #0ea5e9; --accent-color-dark: #0284c7;
+            --accent-bg-light: #0ea5e926; --accent-text-light: var(--accent-color-dark);
+        }
+        .theme-graphite { /* Grafit ve Altın */
+            --bg-primary: #282c34; --bg-secondary: #1e2228; --bg-tertiary: #3e444c;
+            --text-primary: #dce1e8; --text-secondary: #a0a8b4; --border-color: #4b5263;
+            --accent-color: #d4af37; --accent-color-dark: #c09b2d;
+            --accent-bg-light: #d4af3726; --accent-text-light: #e6c35c;
+        }
+        .theme-mint { /* Nane Şekeri */
+            --bg-primary: #f0fdf4; --bg-secondary: #dcfce7; --bg-tertiary: #bbf7d0;
+            --text-primary: #14532d; --text-secondary: #166534; --border-color: #86efac;
+            --accent-color: #4ade80; --accent-color-dark: #22c55e;
+            --accent-bg-light: #4ade8026; --accent-text-light: #16a34a;
+        }
+        .theme-aurora { /* Kuzey Işıkları */
+            --bg-primary: #0d1117; --bg-secondary: #010409; --bg-tertiary: #161b22;
+            --text-primary: #e6edf3; --text-secondary: #a1aab4; --border-color: #30363d;
+            --accent-color: #58a6ff; --accent-color-dark: #388bfd;
+            --accent-bg-light: #58a6ff26; --accent-text-light: #58a6ff;
+        }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--bg-secondary);
+            color: var(--text-primary); font-size: var(--font-size-base);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        input[type="text"], input[type="search"], textarea { text-transform: uppercase; }
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .bg-tertiary { background-color: var(--bg-tertiary); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .border-dynamic { border-color: var(--border-color); }
+        .accent-text { color: var(--accent-color); }
+        .accent-bg { background-color: var(--accent-color-dark); }
+        .accent-bg-hover:hover { background-color: var(--accent-color); }
+        .ring-accent:focus { --tw-ring-color: var(--accent-color); }
+        
+        .tab-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .tab-active { 
+            background-color: var(--accent-bg-light) !important; 
+            color: var(--accent-text-light) !important; 
+        }
+
+        .sort-active { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .panel { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; will-change: opacity, transform; }
+        .panel.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; position: absolute; width: 100%; }
+        #modal-container.hidden { pointer-events: none; opacity: 0; }
+        #modal-content-wrapper.hidden { transform: scale(0.95); opacity: 0; }
+        .pagination-btn { min-width: 2.5rem; }
+        .pagination-btn.active { background-color: var(--accent-color-dark); color: white; font-weight: bold; }
+        #loading-overlay {
+            position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9);
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 1rem; color: #cbd5e1;
+            transition: opacity 0.3s ease-in-out; text-align: center; padding: 2rem;
+        }
+        .theme-btn.active {
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+        .item-bag-count-dynamic {
+            background-color: var(--accent-bg-light);
+            color: var(--accent-text-light);
+        }
+    </style>
 </head>
 <body class="bg-secondary text-primary">
 
@@ -71,6 +153,7 @@
         </div>
     </div>
 
+
     <div id="app-container" class="hidden container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 min-h-screen">
         
         <header class="flex items-center justify-between mb-6 gap-2">
@@ -87,38 +170,55 @@
             </div>
         </header>
 
+        <!-- YENİ NAVİGASYON MENÜSÜ -->
         <div class="mb-6 bg-primary p-1 sm:p-2 rounded-xl border border-dynamic shadow-lg">
             <nav class="flex justify-around items-center" aria-label="Tabs">
                 <button id="tab-anasayfa" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                     <span class="text-xs font-medium">Ana Sayfa</span>
                 </button>
                 <button id="tab-list" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
                     <span class="text-xs font-medium">Liste</span>
                 </button>
                 <button id="tab-archive" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
                     <span class="text-xs font-medium">Teslim Edilenler</span>
                 </button>
                 <button id="tab-reports" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                     <span class="text-xs font-medium">Raporlar</span>
                 </button>
                 <button id="tab-notes" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <span class="text-xs font-medium">Notlarım</span>
                 </button>
                 <button id="tab-settings" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                     <span class="text-xs font-medium">Ayarlar</span>
                 </button>
             </nav>
         </div>
 
+
         <main id="main-content" class="relative">
+            <!-- YENİ ANA SAYFA PANELİ -->
             <div id="panel-anasayfa" class="panel hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- İstatistik Kartları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
                         <div class="bg-blue-500/20 text-blue-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 015.688 0M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
                         <div>
@@ -140,18 +240,31 @@
                             <p id="dashboard-delivered-last-week" class="text-2xl font-bold text-primary">0</p>
                         </div>
                     </div>
+
+                    <!-- En Eski Bekleyen 3 Müşteri -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-1 lg:col-span-1">
                         <h3 class="font-semibold text-primary mb-3">En Eski 3 Bekleyen Müşteri</h3>
-                        <div id="dashboard-oldest-customers" class="space-y-3"><p class="text-secondary text-center py-4">Veri bulunamadı.</p></div>
+                        <div id="dashboard-oldest-customers" class="space-y-3">
+                            <p class="text-secondary text-center py-4">Veri bulunamadı.</p>
+                        </div>
                     </div>
+                    
+                    <!-- Günün Hatırlatmaları -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-2 lg:col-span-2">
                         <h3 class="font-semibold text-primary mb-3">Günün Hatırlatmaları (Notlar)</h3>
-                        <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto"><p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p></div>
+                        <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto">
+                            <p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p>
+                        </div>
                     </div>
+
+                    <!-- Özel Not (Eski Günün Sözü yerine) -->
                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex flex-col justify-center items-center text-center md:col-span-2 lg:col-span-3">
                         <h3 id="dashboard-custom-text-title" class="font-semibold text-primary mb-3">...</h3>
-                        <div id="dashboard-custom-text-content" class="text-secondary italic"><p>Yükleniyor...</p></div>
+                        <div id="dashboard-custom-text-content" class="text-secondary italic">
+                            <p>Yükleniyor...</p>
+                        </div>
                     </div>
+
                 </div>
             </div>
 
@@ -161,7 +274,9 @@
                     <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
                         <div class="relative sm:col-span-3">
                             <input type="text" id="customer-name" placeholder="Müşteri Adı / Listede Ara..." class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
-                            <button type="button" id="clear-customer-name" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></button>
+                            <button type="button" id="clear-customer-name" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                            </button>
                             <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
                         </div>
                         <input type="number" id="bag-count" placeholder="Poşet Sayısı" value="1" min="1" class="sm:col-span-1 w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
@@ -193,7 +308,9 @@
                     <h2 class="text-2xl font-semibold text-primary">Teslim Edilenler Arşivi</h2>
                      <div class="flex items-center gap-2">
                         <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
-                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button>
+                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                        </button>
                     </div>
                 </div>
                 <div id="archive-list" class="space-y-2"></div>
@@ -209,7 +326,9 @@
                         <button data-range="30" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Son 30 Gün</button>
                         <button data-range="all" class="report-range-btn flex-1 bg-tertiary p-2 rounded-lg hover:bg-purple-500/30">Tüm Zamanlar</button>
                     </div>
-                    <div id="periodic-report-content" class="text-center p-4 bg-secondary rounded-lg border border-dynamic">Raporu görmek için bir zaman aralığı seçin.</div>
+                    <div id="periodic-report-content" class="text-center p-4 bg-secondary rounded-lg border border-dynamic">
+                        Raporu görmek için bir zaman aralığı seçin.
+                    </div>
                 </div>
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">En Uzun Süredir Bekleyen 10 Poşet</h2>
@@ -218,7 +337,9 @@
                 </div>
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Raporları Aktar</h2>
-                    <div class="flex flex-col sm:flex-row gap-4"><button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button></div>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button>
+                    </div>
                     <p class="text-xs text-secondary mt-3">Teslim edilen tüm poşetlerin alınma, teslim edilme ve bekleme sürelerini içeren detaylı bir PDF raporu oluşturur.</p>
                 </div>
             </div>
@@ -265,24 +386,16 @@
                     <div class="space-y-4">
                         <div>
                             <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi</h3>
-                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Müşteri Listesini Yönet</button>
+                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
+                                Müşteri Listesini Yönet
+                            </button>
                         </div>
                         <div>
                             <h3 class="text-lg font-medium text-primary mb-2">Teslim Eden Kişiler</h3>
-                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Teslim Eden Kişileri Yönet</button>
+                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
+                                Teslim Eden Kişileri Yönet
+                            </button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Paylaşım Şablonu</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label for="share-template-input" class="block text-sm font-medium text-secondary mb-1">Paylaşım Mesajı Şablonu:</label>
-                            <textarea id="share-template-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition h-24"></textarea>
-                            <p class="text-xs text-secondary mt-2">Kullanılabilir değişkenler: <code class="bg-tertiary px-1 rounded">[Müşteri Adı]</code>, <code class="bg-tertiary px-1 rounded">[Poşet Sayısı]</code>, <code class="bg-tertiary px-1 rounded">[Bekleme Süresi]</code></p>
-                        </div>
-                        <button id="save-share-template-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Şablonu Kaydet</button>
                     </div>
                 </div>
                 
@@ -326,23 +439,1783 @@
         </main>
     </div>
 
+    <!-- Modal Container -->
     <div id="modal-container" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
         <div id="modal-content-wrapper" class="bg-primary border border-dynamic rounded-lg shadow-xl p-6 w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0">
              <div id="modal-content"></div>
         </div>
     </div>
     
-    <button id="scroll-to-top-btn" class="hidden fixed bottom-6 right-6 accent-bg text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-opacity duration-300 hover:opacity-80 z-40">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-        </svg>
-    </button>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            EmailAuthProvider,
+            reauthenticateWithCredential,
+            sendPasswordResetEmail,
+            updatePassword
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, addDoc, getDocs, updateDoc, deleteDoc, 
+            onSnapshot, query, where, serverTimestamp, writeBatch, arrayUnion
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- ÖNEMLİ AÇIKLAMA: GITHUB & FIREBASE API ANAHTARI ---
+        // GitHub'a kod yüklerken "API anahtarı sızdırıldı" gibi bir güvenlik uyarısı alabilirsiniz.
+        // Bu durum, aşağıdaki `firebaseConfig` nesnesindeki `apiKey` yüzündendir.
+        //
+        // 1. BU BİR HATA DEĞİLDİR: Firebase'in web uygulamaları için sağladığı API anahtarları
+        //    "gizli" bilgi değildir. Bu anahtar, uygulamanızın hangi Firebase projesine
+        //    ait olduğunu belirtir.
+        //
+        // 2. GÜVENLİK NASIL SAĞLANIR?: Uygulamanızın gerçek güvenliği, API anahtarını gizlemekle
+        //    değil, Firebase konsolunda yazacağınız "Güvenlik Kuralları" (Security Rules)
+        //    ile sağlanır. Bu kurallar, veritabanınıza kimin, ne koşulda erişebileceğini belirler.
+        //
+        // 3. GITHUB UYARISINI GEÇME: Eğer GitHub bu dosyanın yüklenmesini engellerse,
+        //    deponuzun (repository) "Security" -> "Secret scanning alerts" bölümüne gidin.
+        //    Orada bu anahtarla ilgili uyarıyı bulup "false positive" (yanlış alarm) veya
+        //    "used in production" (kullanımda) olarak işaretleyerek sorunu çözebilirsiniz.
+        //
+        // Bu anahtarı silerseniz uygulama çalışmaz. Bu yüzden olduğu gibi bırakın.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
+            authDomain: "emre-bebe-takip.firebaseapp.com",
+            projectId: "emre-bebe-takip",
+            storageBucket: "emre-bebe-takip.appspot.com",
+            messagingSenderId: "174642780473",
+            appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
+        };
+        
+        // PDF kütüphanesini global scope'tan alıyoruz.
+        const { jsPDF } = window.jspdf;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM elementlerini tek bir objede toplayarak kod okunurluğunu artırıyoruz.
+            const dom = {
+                loadingOverlay: document.getElementById('loading-overlay'),
+                loadingText: document.getElementById('loading-text'),
+                authContainer: document.getElementById('auth-container'),
+                appContainer: document.getElementById('app-container'),
+                loginForm: document.getElementById('login-form'),
+                registerForm: document.getElementById('register-form'),
+                forgotPasswordForm: document.getElementById('forgot-password-form'),
+                loginError: document.getElementById('login-error'),
+                registerError: document.getElementById('register-error'),
+                forgotSuccess: document.getElementById('forgot-success'),
+                forgotError: document.getElementById('forgot-error'),
+                showRegisterBtn: document.getElementById('show-register'),
+                showLoginBtn: document.getElementById('show-login'),
+                forgotPasswordLink: document.getElementById('forgot-password-link'),
+                backToLoginLink: document.getElementById('back-to-login'),
+                logoutBtn: document.getElementById('settings-logout-btn'),
+                settingsUserEmail: document.getElementById('settings-user-email'),
+                changePasswordBtn: document.getElementById('change-password-btn'),
+                mainContent: document.getElementById('main-content'),
+                itemList: document.getElementById('item-list'),
+                emptyItemListMessage: document.getElementById('empty-item-list-message'),
+                totalBagsCounter: document.getElementById('total-bags-counter'),
+                totalCustomersCounter: document.getElementById('total-customers-counter'),
+                sortAlphaBtn: document.getElementById('sort-alpha'),
+                sortBagsBtn: document.getElementById('sort-bags'),
+                sortDateBtn: document.getElementById('sort-date'),
+                addItemForm: document.getElementById('add-item-form'),
+                customerNameInput: document.getElementById('customer-name'),
+                bagCountInput: document.getElementById('bag-count'),
+                suggestionsBox: document.getElementById('suggestions-box'),
+                clearCustomerNameBtn: document.getElementById('clear-customer-name'),
+                archiveList: document.getElementById('archive-list'),
+                emptyArchiveListMessage: document.getElementById('empty-archive-list-message'),
+                searchArchiveInput: document.getElementById('search-archive-input'),
+                archivePagination: document.getElementById('archive-pagination'),
+                notesList: document.getElementById('notes-list'),
+                emptyNotesMessage: document.getElementById('empty-notes-message'),
+                manageCustomersBtn: document.getElementById('manage-customers-btn'),
+                manageDeliveryPersonnelBtn: document.getElementById('manage-delivery-personnel-btn'),
+                exportJsonBtn: document.getElementById('export-json-btn'),
+                importJsonBtn: document.getElementById('import-json-btn'),
+                importFileInput: document.getElementById('import-file-input'),
+                resetItemsBtn: document.getElementById('reset-items-btn'),
+                resetAllBtn: document.getElementById('reset-all-btn'),
+                modalContainer: document.getElementById('modal-container'),
+                modalContentWrapper: document.getElementById('modal-content-wrapper'),
+                modalContent: document.getElementById('modal-content'),
+                notificationBell: document.getElementById('notification-bell'),
+                notificationBadge: document.getElementById('notification-badge'),
+                // Settings
+                customText: {
+                    titleInput: document.getElementById('custom-text-title-input'),
+                    contentInput: document.getElementById('custom-text-content-input'),
+                    saveBtn: document.getElementById('save-custom-text-btn')
+                },
+                // Dashboard Elements
+                dashboard: {
+                    waitingCustomers: document.getElementById('dashboard-waiting-customers'),
+                    waitingBags: document.getElementById('dashboard-waiting-bags'),
+                    deliveredLastWeek: document.getElementById('dashboard-delivered-last-week'),
+                    oldestCustomers: document.getElementById('dashboard-oldest-customers'),
+                    reminders: document.getElementById('dashboard-reminders'),
+                    customTextTitle: document.getElementById('dashboard-custom-text-title'),
+                    customTextContent: document.getElementById('dashboard-custom-text-content'),
+                }
+            };
 
-    <!-- Harici JavaScript Dosyası -->
-    <script type="module" src="script.js"></script>
+            // Uygulama state'ini (durumunu) yöneten değişkenler
+            let app, auth, db, userId, currentUser;
+            let allItems = [];
+            let allCustomers = [];
+            let deliveryPersonnel = [];
+            let settings = {};
+            let sortState = { type: 'alpha', direction: 'asc' };
+            let archiveCurrentPage = 1;
+            const itemsPerPage = 10;
+            let itemsUnsubscribe = null;
+            let customersUnsubscribe = null;
+            let deliveryPersonnelUnsubscribe = null;
+            let seenNotifications = []; 
+            let customerDetailCurrentPage = 1;
+            const customerDetailItemsPerPage = 5;
 
-    <!-- Service Worker Kaydı -->
+            // Sık kullanılan ikonları bir objede topluyoruz.
+            const icons = {
+                alpha_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 12.629 9.664 14H8.598l1.789-5.332h1.234L13.402 14h-1.12l-.419-1.371h-1.781zm1.57-1.055h-1.296l.648-2.042.648 2.042z"/><path d="M12.96 7.022c.16-.21.283-.417.371-.622h.043c.09.205.214.412.375.622L15.04 8.5h-1.2l-.71-1.258h-.043l-.71 1.258h-1.21l1.83-3.05zM4.5 2.5a.5.5 0 0 0-1 0v9.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L4.5 12.293V2.5z"/></svg>',
+                alpha_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.082 3.629 9.664 2H8.598l1.789 5.332h1.234L13.402 2h-1.12l-.419 1.371h-1.781zm1.57 1.055h-1.296l.648 2.042.648 2.042z"/><path d="M12.96 10.022c.16.21.283-.417.371.622h.043c.09-.205.214-.412.375-.622L15.04 8.5h-1.2l-.71 1.258h-.043l-.71-1.258h-1.21l1.83 3.05zM4.5 13.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L4.5 3.707V13.5z"/></svg>',
+                bags_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11.5 2.707V14.5a.5.5 0 0 0 .5.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
+                bags_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M11.5 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L11.5 13.293V1.5a.5.5 0 0 1 .5-.5z"/><path fill-rule="evenodd" d="M2.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"/></svg>',
+                date_desc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                date_asc: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.854 8.854a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 .708.708L7.5 6.707l2.646 2.647a.5.5 0 0 0 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+                cancel_item: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                edit: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.293z"/></svg>',
+                delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
+                save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
+                cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
+            };
+
+            // Yardımcı Fonksiyonlar
+            const toTrUpperCase = (str) => str ? str.toLocaleUpperCase('tr-TR') : '';
+            const getSettingsFromStorage = () => JSON.parse(localStorage.getItem(`emanet-settings-${userId}`)) || { 
+                theme: 'aurora', 
+                fontSize: 16,
+                customTitle: 'GÜNÜN NOTU',
+                customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.'
+            };
+            const saveSettingsToStorage = (settings) => localStorage.setItem(`emanet-settings-${userId}`, JSON.stringify(settings));
+            const formatDate = (iso) => {
+                if(!iso) return '';
+                const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
+                return date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short'});
+            };
+            const formatRelativeTime = (iso) => {
+                if (!iso) return '';
+                const date = iso.seconds ? new Date(iso.seconds * 1000) : new Date(iso);
+                const now = new Date();
+                const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) return 'gelecekte';
+                if (diffDays === 0) return 'bugün';
+                if (diffDays === 1) return 'dün';
+                return `${diffDays} gün önce`;
+            };
+            function getDayDifference(date1, date2) {
+                if (!date1 || !date2) return '-';
+                const d1 = date1.seconds ? new Date(date1.seconds * 1000) : new Date(date1);
+                const d2 = date2.seconds ? new Date(date2.seconds * 1000) : new Date(date2);
+                const difference = d2.getTime() - d1.getTime();
+                const days = Math.ceil(difference / (1000 * 3600 * 24));
+                return days >= 0 ? days : '-';
+            }
+
+            // UI Fonksiyonları (Yükleme, Arayüz Geçişleri)
+            function showLoading(message) {
+                dom.loadingText.textContent = message;
+                dom.loadingOverlay.style.display = 'flex';
+                dom.loadingOverlay.style.opacity = '1';
+            }
+
+            function hideLoading() {
+                dom.loadingOverlay.style.opacity = '0';
+                setTimeout(() => { dom.loadingOverlay.style.display = 'none'; }, 300);
+            }
+
+            function showAuthUI() {
+                dom.appContainer.classList.add('hidden');
+                dom.authContainer.classList.remove('hidden');
+                dom.loginForm.classList.remove('hidden');
+                dom.registerForm.classList.add('hidden');
+                dom.forgotPasswordForm.classList.add('hidden');
+                hideLoading();
+            }
+
+            function showAppUI(user) {
+                currentUser = user;
+                dom.authContainer.classList.add('hidden');
+                dom.appContainer.classList.remove('hidden');
+                dom.settingsUserEmail.textContent = user.email;
+                hideLoading();
+            }
+
+            // Authentication (Giriş/Kayıt) Fonksiyonları
+            function setupAuthEventListeners() {
+                dom.loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    showLoading('Giriş yapılıyor...');
+                    dom.loginError.classList.add('hidden');
+                    const email = dom.loginForm['login-email'].value;
+                    const password = dom.loginForm['login-password'].value;
+                    try {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    } catch (error) {
+                        dom.loginError.textContent = "Giriş başarısız. E-posta veya şifre hatalı.";
+                        dom.loginError.classList.remove('hidden');
+                        hideLoading();
+                    }
+                });
+
+                dom.registerForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    showLoading('Hesap oluşturuluyor...');
+                    dom.registerError.classList.add('hidden');
+                    const email = dom.registerForm['register-email'].value;
+                    const password = dom.registerForm['register-password'].value;
+                     if(password.length < 6) {
+                        dom.registerError.textContent = 'Şifre en az 6 karakter olmalıdır.';
+                        dom.registerError.classList.remove('hidden');
+                        hideLoading();
+                        return;
+                    }
+                    try {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } catch (error) {
+                        dom.registerError.textContent = "Kayıt başarısız. Bu e-posta zaten kullanılıyor olabilir.";
+                        dom.registerError.classList.remove('hidden');
+                        hideLoading();
+                    }
+                });
+                
+                dom.forgotPasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = dom.forgotPasswordForm['forgot-email'].value;
+                    showLoading('Sıfırlama linki gönderiliyor...');
+                    dom.forgotError.classList.add('hidden');
+                    dom.forgotSuccess.classList.add('hidden');
+                    try {
+                        await sendPasswordResetEmail(auth, email);
+                        dom.forgotSuccess.textContent = 'Sıfırlama linki e-posta adresinize gönderildi.';
+                        dom.forgotSuccess.classList.remove('hidden');
+                    } catch(error) {
+                        dom.forgotError.textContent = 'E-posta gönderilemedi. Adresin doğru olduğundan emin olun.';
+                        dom.forgotError.classList.remove('hidden');
+                    } finally {
+                        hideLoading();
+                    }
+                });
+
+                dom.logoutBtn.addEventListener('click', () => {
+                    signOut(auth);
+                });
+
+                dom.showRegisterBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.add('hidden');
+                    dom.registerForm.classList.remove('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
+                });
+
+                dom.showLoginBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.remove('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
+                });
+                
+                dom.forgotPasswordLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.add('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.remove('hidden');
+                });
+
+                dom.backToLoginLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    dom.loginForm.classList.remove('hidden');
+                    dom.registerForm.classList.add('hidden');
+                    dom.forgotPasswordForm.classList.add('hidden');
+                });
+            }
+            
+            // Ayarlar ve Render Fonksiyonları
+            function applySettings() {
+                document.body.className = 'bg-secondary text-primary'; // Reset classes
+                if(settings.theme) {
+                    document.body.classList.add(`theme-${settings.theme}`);
+                }
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.theme === settings.theme);
+                });
+
+                document.body.style.fontSize = `${settings.fontSize}px`;
+                const fontSizeSlider = document.getElementById('font-size-slider');
+                const fontSizePreview = document.getElementById('font-size-preview');
+                if(fontSizeSlider) fontSizeSlider.value = settings.fontSize;
+                if(fontSizePreview) fontSizePreview.textContent = `${settings.fontSize}px`;
+
+                // Özel not ayarlarını yükle
+                if(dom.customText.titleInput) dom.customText.titleInput.value = settings.customTitle || '';
+                if(dom.customText.contentInput) dom.customText.contentInput.value = settings.customContent || '';
+            }
+
+            function renderAll() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                const archivedItems = allItems.filter(item => item.status === 'delivered');
+                renderDashboard(activeItems, archivedItems);
+                renderItems(activeItems);
+                renderArchive(archivedItems);
+                renderNotes();
+                renderReports();
+                checkAndDisplayNotifications();
+            }
+
+            function renderDashboard(activeItems, archivedItems) {
+                // Stat Cards
+                const waitingCustomers = new Set(activeItems.map(item => item.customerName));
+                const waitingBags = activeItems.reduce((sum, item) => sum + item.bagCount, 0);
+                
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const deliveredLastWeek = archivedItems.filter(item => {
+                    const deliveredDate = item.deliveredAt?.seconds ? new Date(item.deliveredAt.seconds * 1000) : new Date(item.deliveredAt);
+                    return deliveredDate >= sevenDaysAgo;
+                }).reduce((sum, item) => sum + item.bagCount, 0); // Poşet sayısını topla
+
+                dom.dashboard.waitingCustomers.textContent = waitingCustomers.size;
+                dom.dashboard.waitingBags.textContent = waitingBags;
+                dom.dashboard.deliveredLastWeek.textContent = deliveredLastWeek;
+
+                // Oldest 3 Customers
+                const sortedActiveItems = [...activeItems].sort((a, b) => {
+                    const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime() / 1000;
+                    const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime() / 1000;
+                    return dateA - dateB;
+                });
+
+                if(sortedActiveItems.length > 0) {
+                    dom.dashboard.oldestCustomers.innerHTML = sortedActiveItems.slice(0, 3).map(item => `
+                        <div class="flex justify-between items-center text-sm bg-tertiary/40 p-2 rounded-md">
+                            <span class="font-medium text-primary">${item.customerName}</span>
+                            <span class="text-secondary">${formatRelativeTime(item.createdAt)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    dom.dashboard.oldestCustomers.innerHTML = '<p class="text-secondary text-center py-4">Bekleyen müşteri yok.</p>';
+                }
+
+                // Daily Reminders
+                const today = new Date().toISOString().slice(0, 10);
+                const reminders = allItems.filter(item => item.reminderDate === today && item.status === 'active');
+                if(reminders.length > 0) {
+                    dom.dashboard.reminders.innerHTML = reminders.map(item => `
+                        <div class="bg-tertiary/40 p-2 rounded-md">
+                            <p class="font-medium text-primary">${item.customerName}</p>
+                            <p class="text-sm text-secondary truncate">${item.note || 'Hatırlatma'}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    dom.dashboard.reminders.innerHTML = '<p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p>';
+                }
+
+                // Custom Text
+                dom.dashboard.customTextTitle.textContent = settings.customTitle || 'GÜNÜN NOTU';
+                dom.dashboard.customTextContent.innerHTML = `<p>${settings.customContent || 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.'}</p>`;
+            }
+            
+            function renderItems(items) {
+                const searchQuery = toTrUpperCase(dom.customerNameInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
+                
+                dom.totalBagsCounter.textContent = filteredItems.reduce((sum, item) => sum + item.bagCount, 0);
+                const customerNames = new Set(filteredItems.map(item => item.customerName));
+                dom.totalCustomersCounter.textContent = customerNames.size;
+
+                const direction = sortState.direction === 'asc' ? 1 : -1;
+                filteredItems.sort((a, b) => {
+                    if (sortState.type === 'alpha') return a.customerName.localeCompare(b.customerName, 'tr') * direction;
+                    if (sortState.type === 'bags') return (a.bagCount - b.bagCount) * direction;
+                    const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt || 0).getTime();
+                    const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt || 0).getTime();
+                    return (dateB - dateA) * direction;
+                });
+                
+                dom.itemList.innerHTML = '';
+                dom.emptyItemListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+                dom.emptyItemListMessage.textContent = searchQuery ? `"${searchQuery}" İLE EŞLEŞEN SONUÇ BULUNAMADI.` : `HENÜZ BEKLEYEN POŞET BULUNMUYOR.`;
+                filteredItems.forEach(item => dom.itemList.appendChild(createItemElement(item)));
+            }
+
+             function createItemElement(item) {
+                const div = document.createElement('div');
+                const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
+                
+                // Gün farkını, günün saatini göz ardı ederek hesapla. Bu,
+                // formatRelativeTime fonksiyonundaki mantıkla tutarlılık sağlar.
+                const now = new Date();
+                const diffDays = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / (1000 * 60 * 60 * 24));
+
+                const overdueClass = (() => {
+                    if (diffDays >= 20) return 'border-red-500/60 bg-red-500/10';
+                    if (diffDays >= 10 && diffDays <= 19) return 'border-yellow-500/60 bg-yellow-500/10';
+                    return 'border-dynamic';
+                })();
+
+                let noteIndicatorHTML = '';
+                if(item.note) {
+                    noteIndicatorHTML += `<span class="accent-text text-xs" title="Not Mevcut">●</span>`;
+                }
+                if(item.reminderDate) {
+                     noteIndicatorHTML += `<span class="text-cyan-400 text-xs ml-1" title="Hatırlatıcı: ${item.reminderDate}">🔔</span>`;
+                }
+                
+                let historyHtml = '';
+                if (item.createdAt) {
+                    historyHtml += `<p class="item-subtext text-sm text-secondary">Eklendi: ${formatDate(item.createdAt).split(' ')[0]} (${formatRelativeTime(item.createdAt)})</p>`;
+                } else {
+                    historyHtml += '<p class="item-subtext text-sm text-secondary">Eklenme tarihi yok</p>';
+                }
+                if (item.additionalDates && Array.isArray(item.additionalDates) && item.additionalDates.length > 0) {
+                    const otherAdditions = item.additionalDates.map(date => {
+                        return `<p class="item-subtext text-xs text-secondary/80 pl-2">+ Poşet Eklendi: ${formatDate(date).split(' ')[0]} (${formatRelativeTime(date)})</p>`;
+                    }).join('');
+                    historyHtml += otherAdditions;
+                }
+                
+                div.className = `bg-primary p-4 rounded-lg shadow-md flex items-center justify-between border ${overdueClass} transition-colors duration-300`;
+                div.dataset.id = item.id;
+                div.dataset.customerName = item.customerName;
+                div.innerHTML = `
+                    <div class="item-details flex-1 flex items-center gap-4">
+                        <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="flex-1">
+                            <button data-action="view-customer" class="item-customer-name font-semibold text-lg text-primary text-left flex items-center gap-2 hover:underline">${item.customerName} ${noteIndicatorHTML}</button>
+                            ${historyHtml}
+                        </div>
+                    </div>
+                    <div class="item-actions flex items-center gap-1 sm:gap-2 ml-2">
+                        <div class="default-actions flex items-center gap-1 sm:gap-2">
+                            <button data-action="edit-count" class="p-2 text-secondary hover:accent-text rounded-full transition" title="Poşet Sayısını Düzenle">${icons.edit}</button>
+                            <button data-action="edit-note" class="p-2 text-secondary hover:accent-text rounded-full transition ${item.note || item.reminderDate ? 'accent-text' : ''}" title="Notu ve Hatırlatıcıyı Düzenle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 12.5A.5.5 0 0 1 5 12h3.793l1.147-1.146a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .5-.5m.5 2.5a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1z"/></svg></button>
+                            <button data-action="deliver" class="p-2 text-green-400 hover:text-green-300 rounded-full transition" title="Teslim Et"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg></button>
+                            <button data-action="delete-item" class="p-2 text-red-500 hover:text-red-400 rounded-full transition" title="Kaydı Sil">${icons.cancel_item}</button>
+                        </div>
+                        <div class="edit-count-actions hidden flex items-center gap-2">
+                             <input type="number" value="${item.bagCount}" min="1" class="w-16 p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition">
+                             <button data-action="save-count" class="p-2 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button>
+                             <button data-action="cancel-edit-count" class="p-2 text-red-500 hover:text-red-400 transition" title="Vazgeç">${icons.cancel}</button>
+                        </div>
+                    </div>`;
+                return div;
+            }
+
+            function renderArchive(items) {
+                const searchQuery = toTrUpperCase(dom.searchArchiveInput.value);
+                let filteredItems = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
+                
+                filteredItems.sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                
+                dom.emptyArchiveListMessage.style.display = filteredItems.length === 0 ? 'block' : 'none';
+
+                const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+                if(archiveCurrentPage > totalPages && totalPages > 0) archiveCurrentPage = totalPages;
+
+                const startIndex = (archiveCurrentPage - 1) * itemsPerPage;
+                const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+                dom.archiveList.innerHTML = '';
+                paginatedItems.forEach(item => dom.archiveList.appendChild(createArchiveItemElement(item)));
+
+                renderArchivePagination(totalPages);
+            }
+            
+            function createArchiveItemElement(item) {
+                const div = document.createElement('div');
+                div.className = 'bg-primary/50 opacity-70 p-4 rounded-lg shadow-md flex items-center justify-between border border-dynamic';
+                div.dataset.id = item.id;
+                const deliveredByHtml = item.deliveredBy ? `<p class="item-subtext text-xs text-secondary/80 mt-1">Teslim Eden: ${item.deliveredBy}</p>` : '';
+                div.innerHTML = `
+                    <div class="item-details flex-1 flex items-center gap-4">
+                        <div class="item-bag-count-dynamic font-bold w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full text-xl">${item.bagCount}</div>
+                        <div class="flex-1">
+                            <p class="item-customer-name font-semibold text-lg text-primary/80">${item.customerName}</p>
+                            <p class="item-subtext text-sm text-secondary">Teslim Edildi: ${formatDate(item.deliveredAt)}</p>
+                            ${deliveredByHtml}
+                        </div>
+                    </div>
+                    <div class="item-actions flex items-center gap-2 ml-2">
+                        <button data-action="restore" class="p-2 text-secondary hover:text-yellow-400 rounded-full transition" title="Geri Yükle"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg></button>
+                        <button data-action="delete-permanent" class="p-2 text-secondary hover:text-red-500 rounded-full transition" title="Kalıcı Olarak Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
+                    </div>`;
+                return div;
+            }
+            
+            function renderNotes() {
+                const itemsWithNotes = allItems.filter(item => (item.note && item.note.trim() !== '') || item.reminderDate).sort((a,b) => (b.lastModified?.seconds || 0) - (a.lastModified?.seconds || 0));
+                dom.notesList.innerHTML = '';
+                dom.emptyNotesMessage.classList.toggle('hidden', itemsWithNotes.length > 0);
+                itemsWithNotes.forEach(item => dom.notesList.appendChild(createNoteElement(item)));
+            }
+
+            function createNoteElement(item) {
+                const div = document.createElement('div');
+                div.className = 'bg-primary p-4 rounded-lg shadow-md border border-dynamic';
+                div.dataset.id = item.id;
+                let reminderHtml = '';
+                if (item.reminderDate) {
+                    reminderHtml = `<p class="text-sm mt-2 text-cyan-300"><strong>Hatırlatıcı:</strong> ${item.reminderDate}</p>`;
+                }
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                         <p class="font-semibold accent-text">${item.customerName}</p>
+                         <button data-action="delete-note-from-tab" class="p-1 -mt-1 -mr-1 text-secondary hover:text-red-500 rounded-full transition" title="Notu ve Hatırlatıcıyı Sil"><svg class="pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg></button>
+                    </div>
+                    <p class="text-primary mt-2 whitespace-pre-wrap">${item.note || '<i>Not içeriği boş.</i>'}</p>
+                    ${reminderHtml}`;
+                return div;
+            }
+            
+            function renderReports() {
+                renderPeriodicReport(); 
+                renderOverdueReport();
+            }
+            
+            function renderOverdueReport() {
+                const overdueList = document.getElementById('overdue-report-list');
+                const overdueMessage = document.getElementById('empty-overdue-report-message');
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) {
+                    overdueList.innerHTML = '';
+                    overdueMessage.classList.remove('hidden');
+                    return;
+                }
+                overdueMessage.classList.add('hidden');
+                activeItems.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                const top10 = activeItems.slice(0, 10);
+                overdueList.innerHTML = top10.map((item, index) => `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center"><span class="text-primary">${index + 1}. ${item.customerName}</span><span class="text-sm text-secondary">${formatRelativeTime(item.createdAt)}</span></div>`).join('');
+            }
+            
+            function renderPeriodicReport(range = null) {
+                const contentDiv = document.getElementById('periodic-report-content');
+                if(range === null) {
+                    const activeBtn = document.querySelector('.report-range-btn.accent-bg');
+                    if (activeBtn) range = activeBtn.dataset.range;
+                    else { contentDiv.innerHTML = 'Raporu görmek için bir zaman aralığı seçin.'; return; }
+                }
+
+                let addedBags = 0;
+                let deliveredBags = 0;
+
+                if (range === 'all') {
+                    addedBags = allItems.reduce((sum, item) => sum + item.bagCount, 0);
+                    deliveredBags = allItems.filter(i => i.status === 'delivered')
+                                           .reduce((sum, item) => sum + item.bagCount, 0);
+                } else {
+                    const rangeNum = parseInt(range, 10);
+                    const endDate = new Date();
+                    const startDate = new Date();
+                    startDate.setDate(endDate.getDate() - rangeNum);
+                    startDate.setHours(0,0,0,0);
+
+                    allItems.forEach(item => {
+                        const creationDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt);
+                        const initialBagCount = item.bagCount - (item.additionalDates?.length || 0);
+
+                        if (creationDate >= startDate) {
+                            addedBags += initialBagCount;
+                        }
+
+                        if (item.additionalDates) {
+                            item.additionalDates.forEach(d => {
+                                const additionDate = d.seconds ? new Date(d.seconds * 1000) : new Date(d);
+                                if (additionDate >= startDate) {
+                                    addedBags += 1;
+                                }
+                            });
+                        }
+                    });
+
+                    deliveredBags = allItems.filter(i => {
+                        if (i.status !== 'delivered' || !i.deliveredAt) return false;
+                        const deliveredDate = i.deliveredAt.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt);
+                        return deliveredDate >= startDate;
+                    }).reduce((sum, item) => sum + item.bagCount, 0);
+                }
+                contentDiv.innerHTML = `<div class="grid grid-cols-2 gap-4 text-center"><div><p class="text-3xl font-bold text-green-400">${addedBags}</p><p class="text-sm text-secondary">Yeni Poşet Eklendi</p></div><div><p class="text-3xl font-bold text-blue-400">${deliveredBags}</p><p class="text-sm text-secondary">Poşet Teslim Edildi</p></div></div>`;
+            }
+
+            // Firestore (Veritabanı) Fonksiyonları
+            async function handleAddItem(e) {
+                e.preventDefault();
+                const customerName = toTrUpperCase(dom.customerNameInput.value.trim());
+                const bagCount = parseInt(dom.bagCountInput.value, 10);
+                if (!customerName || isNaN(bagCount) || bagCount < 1) return;
+                try {
+                    const activeItems = allItems.filter(item => item.status === 'active');
+                    const existingItem = activeItems.find(item => toTrUpperCase(item.customerName) === customerName);
+                    const itemsCollectionRef = collection(db, 'users', userId, 'items');
+                    const customersCollectionRef = collection(db, 'users', userId, 'customers');
+                    if (existingItem) {
+                        const itemRef = doc(itemsCollectionRef, existingItem.id);
+                        const datesToAdd = Array(bagCount).fill(null).map(() => new Date());
+                        await updateDoc(itemRef, {
+                            bagCount: existingItem.bagCount + bagCount,
+                            lastModified: serverTimestamp(),
+                            additionalDates: arrayUnion(...datesToAdd)
+                        });
+                    } else {
+                        const customerExists = allCustomers.some(c => c.name.toLowerCase() === customerName.toLowerCase());
+                        if (!customerExists) {
+                            await addDoc(customersCollectionRef, { name: customerName });
+                        }
+                        await addDoc(itemsCollectionRef, {
+                            customerName, bagCount, note: '', status: 'active',
+                            createdAt: serverTimestamp(), lastModified: serverTimestamp(),
+                            deliveredAt: null, deliveredBy: null,
+                            additionalDates: [], reminderDate: null
+                        });
+                    }
+                    dom.addItemForm.reset();
+                    dom.bagCountInput.value = 1;
+                    dom.customerNameInput.focus();
+                } catch (error) {
+                    console.error("Error in handleAddItem: ", error);
+                    showSimpleMessageModal("Hata", "Kayıt eklenirken bir hata oluştu.");
+                }
+            }
+
+            async function updateItem(id, data) {
+                 if (data.note !== undefined) data.note = toTrUpperCase(data.note);
+                const itemRef = doc(db, 'users', userId, 'items', id);
+                await updateDoc(itemRef, { ...data, lastModified: serverTimestamp() });
+            }
+
+            async function deleteItem(id) {
+                await deleteDoc(doc(db, 'users', userId, 'items', id));
+            }
+            
+            async function deleteCustomer(id) {
+                await deleteDoc(doc(db, 'users', userId, 'customers', id));
+            }
+
+            async function deleteDeliveryPerson(id) {
+                await deleteDoc(doc(db, 'users', userId, 'deliveryPersonnel', id));
+            }
+            
+            async function updateCustomerNameAndItems(customerId, oldName, newName) {
+                const upperNewName = toTrUpperCase(newName);
+                showLoading('Müşteri adı ve ilgili poşetler güncelleniyor...');
+                try {
+                    const batch = writeBatch(db);
+                    const itemsCollectionRef = collection(db, 'users', userId, 'items');
+                    const customersCollectionRef = collection(db, 'users', userId, 'customers');
+                    const customerRef = doc(customersCollectionRef, customerId);
+                    batch.update(customerRef, { name: upperNewName });
+                    const itemsQuery = query(itemsCollectionRef, where("customerName", "==", oldName));
+                    const itemsSnapshot = await getDocs(itemsQuery);
+                    itemsSnapshot.forEach(itemDoc => {
+                        batch.update(itemDoc.ref, { customerName: upperNewName });
+                    });
+                    await batch.commit();
+                } catch(error) {
+                   console.error("Müşteri adı güncellenirken hata:", error);
+                   showSimpleMessageModal("Hata", "Müşteri adı güncellenirken bir sorun oluştu.");
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            // Veri Yönetimi Fonksiyonları (İçe/Dışa Aktarma, Sıfırlama)
+            async function importDataFromJSON(data) {
+                if (!data.allItems || !data.allCustomers) {
+                    showSimpleMessageModal('Hata', 'Geçersiz yedek dosyası formatı.'); return;
+                }
+                showLoading('Mevcut veriler siliniyor...');
+                const itemsCollectionRef = collection(db, 'users', userId, 'items');
+                const customersCollectionRef = collection(db, 'users', userId, 'customers');
+                const personnelCollectionRef = collection(db, 'users', userId, 'deliveryPersonnel');
+                
+                const deleteBatch = writeBatch(db);
+                allItems.forEach(item => deleteBatch.delete(doc(itemsCollectionRef, item.id)));
+                allCustomers.forEach(customer => deleteBatch.delete(doc(customersCollectionRef, customer.id)));
+                deliveryPersonnel.forEach(person => deleteBatch.delete(doc(personnelCollectionRef, person.id)));
+                await deleteBatch.commit();
+                
+                showLoading('Yeni veriler içe aktarılıyor...');
+                const importBatch = writeBatch(db);
+                data.allItems.forEach(item => {
+                    const newItemRef = doc(itemsCollectionRef);
+                    const cleanItem = { ...item };
+                    delete cleanItem.id;
+                    if (cleanItem.customerName) cleanItem.customerName = toTrUpperCase(cleanItem.customerName);
+                    if (cleanItem.note) cleanItem.note = toTrUpperCase(cleanItem.note);
+                    if (cleanItem.createdAt) cleanItem.createdAt = new Date(cleanItem.createdAt.seconds ? cleanItem.createdAt.seconds * 1000 : cleanItem.createdAt);
+                    if (cleanItem.lastModified) cleanItem.lastModified = new Date(cleanItem.lastModified.seconds ? cleanItem.lastModified.seconds * 1000 : cleanItem.lastModified);
+                    if (cleanItem.deliveredAt) cleanItem.deliveredAt = new Date(cleanItem.deliveredAt.seconds ? cleanItem.deliveredAt.seconds * 1000 : cleanItem.deliveredAt);
+                    importBatch.set(newItemRef, cleanItem);
+                });
+                 data.allCustomers.forEach(customer => {
+                    const newCustomerRef = doc(customersCollectionRef);
+                    const cleanCustomer = { ...customer };
+                    if (cleanCustomer.name) cleanCustomer.name = toTrUpperCase(cleanCustomer.name);
+                    delete cleanCustomer.id;
+                    importBatch.set(newCustomerRef, cleanCustomer);
+                });
+                if(data.deliveryPersonnel && Array.isArray(data.deliveryPersonnel)){
+                    data.deliveryPersonnel.forEach(person => {
+                        const newPersonRef = doc(personnelCollectionRef);
+                        const cleanPerson = { ...person };
+                        if(cleanPerson.name) cleanPerson.name = toTrUpperCase(cleanPerson.name);
+                        delete cleanPerson.id;
+                        importBatch.set(newPersonRef, cleanPerson);
+                    });
+                }
+                await importBatch.commit();
+
+                hideLoading();
+                showSimpleMessageModal('Başarılı', 'Veriler başarıyla geri yüklendi.');
+            }
+            
+            async function resetAllDataForUser() {
+                showLoading('Tüm verileriniz siliniyor...');
+                const collectionsToDelete = ['items', 'customers', 'deliveryPersonnel'];
+                const batch = writeBatch(db);
+
+                for (const coll of collectionsToDelete) {
+                    const snapshot = await getDocs(collection(db, 'users', userId, coll));
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                }
+                
+                await batch.commit();
+                hideLoading();
+                showSimpleMessageModal('Başarılı', 'Bu hesaptaki tüm verileriniz başarıyla silindi.');
+            }
+
+            // Olay Dinleyicileri (Event Listeners)
+            function initializeAppLogic() {
+                settings = getSettingsFromStorage();
+                seenNotifications = JSON.parse(localStorage.getItem(`seenNotifications-${userId}`)) || [];
+                applySettings();
+                updateSortButtons();
+                switchTab('anasayfa', true); // Varsayılan olarak anasayfayı göster
+                listenToData();
+                setupAppEventListeners();
+            }
+            
+            function setupAppEventListeners() {
+                dom.addItemForm.addEventListener('submit', handleAddItem);
+                dom.searchArchiveInput.addEventListener('input', () => {
+                    archiveCurrentPage = 1;
+                    renderArchive(allItems.filter(item => item.status === 'delivered'));
+                });
+                
+                document.getElementById('export-archive-pdf-btn')?.addEventListener('click', exportArchiveToPDF);
+                document.getElementById('export-reports-pdf-btn')?.addEventListener('click', exportReportsToPDF);
+
+                dom.sortAlphaBtn.addEventListener('click', () => handleSort('alpha'));
+                dom.sortBagsBtn.addEventListener('click', () => handleSort('bags'));
+                dom.sortDateBtn.addEventListener('click', () => handleSort('date'));
+                dom.mainContent.addEventListener('click', handleMainContentClick);
+                dom.notificationBell?.addEventListener('click', showNotificationsModal);
+                document.querySelector('#panel-settings').addEventListener('click', handleSettingsPanelClick);
+                dom.importFileInput.addEventListener('change', handleFileImport);
+                document.getElementById('font-size-slider')?.addEventListener('input', (e) => {
+                    settings.fontSize = e.target.value;
+                    document.getElementById('font-size-preview').textContent = `${settings.fontSize}px`;
+                    document.body.style.fontSize = `${settings.fontSize}px`;
+                });
+                document.getElementById('font-size-slider')?.addEventListener('change', (e) => {
+                    settings.fontSize = e.target.value;
+                    saveSettingsToStorage(settings);
+                });
+                document.querySelectorAll('.report-range-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
+                        btn.classList.add('accent-bg');
+                        renderPeriodicReport(btn.dataset.range);
+                    });
+                });
+                document.querySelector('nav').addEventListener('click', (e) => {
+                    const button = e.target.closest('button.tab-button');
+                    if (button && button.id && button.id.startsWith('tab-')) {
+                        switchTab(button.id.replace('tab-', ''));
+                    }
+                });
+                dom.customerNameInput.addEventListener("input", () => {
+                    const searchTerm = toTrUpperCase(dom.customerNameInput.value.trim());
+                    dom.clearCustomerNameBtn.classList.toggle('hidden', searchTerm.length === 0);
+                    const activeItems = allItems.filter(item => item.status !== 'delivered');
+                    renderItems(activeItems);
+                    dom.suggestionsBox.innerHTML = "";
+                    if (searchTerm.length === 0) {
+                        dom.suggestionsBox.classList.add("hidden"); return;
+                    }
+                    const filteredCustomers = allCustomers.filter(c => toTrUpperCase(c.name).includes(searchTerm)).map(c => c.name);
+                    if (filteredCustomers.length > 0) {
+                        filteredCustomers.forEach(name => {
+                            const div = document.createElement("div");
+                            div.textContent = name;
+                            div.className = "p-3 hover:bg-slate-600 cursor-pointer text-primary";
+                            div.addEventListener("click", () => {
+                                dom.customerNameInput.value = name;
+                                dom.suggestionsBox.classList.add("hidden");
+                                renderItems(activeItems); 
+                                dom.bagCountInput.focus();
+                            });
+                            dom.suggestionsBox.appendChild(div);
+                        });
+                        dom.suggestionsBox.classList.remove("hidden");
+                    } else {
+                        dom.suggestionsBox.classList.add("hidden");
+                    }
+                });
+                dom.clearCustomerNameBtn.addEventListener('click', () => {
+                    dom.customerNameInput.value = '';
+                    dom.clearCustomerNameBtn.classList.add('hidden');
+                    dom.customerNameInput.dispatchEvent(new Event('input'));
+                    dom.customerNameInput.focus();
+                });
+                document.addEventListener("click", (e) => {
+                    if (!e.target.closest('.relative')) {
+                        dom.suggestionsBox.classList.add("hidden");
+                    }
+                });
+            }
+
+            function listenToData() {
+                if (!userId) return;
+                if (itemsUnsubscribe) itemsUnsubscribe();
+                if (customersUnsubscribe) customersUnsubscribe();
+                if (deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
+
+                const itemsQuery = query(collection(db, "users", userId, "items"));
+                itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
+                    allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAll();
+                }, error => console.error("Error listening to items: ", error));
+
+                const customersQuery = query(collection(db, "users", userId, "customers"));
+                customersUnsubscribe = onSnapshot(customersQuery, (snapshot) => {
+                    allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const modalList = document.getElementById('modal-customers-list');
+                    if (modalList && !dom.modalContainer.classList.contains('hidden')) {
+                        const customerInput = document.getElementById('modal-customer-input');
+                        renderCustomerModalList(customerInput?.value || '');
+                    }
+                }, error => console.error("Error listening to customers: ", error));
+
+                const personnelQuery = query(collection(db, "users", userId, "deliveryPersonnel"));
+                 deliveryPersonnelUnsubscribe = onSnapshot(personnelQuery, (snapshot) => {
+                    deliveryPersonnel = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                    const modalList = document.getElementById('modal-personnel-list');
+                    if(modalList && !dom.modalContainer.classList.contains('hidden')) {
+                        renderDeliveryPersonnelModalList();
+                    }
+                }, error => console.error("Error listening to delivery personnel: ", error));
+            }
+            
+            async function handleMainContentClick(e) {
+                const button = e.target.closest('button[data-action]');
+                if (!button) return;
+                const action = button.dataset.action;
+                const itemDiv = button.closest('div[data-id]');
+                if (action === 'view-customer') {
+                    const customerName = itemDiv?.dataset.customerName;
+                    if (customerName) showCustomerDetailModal(customerName);
+                    return;
+                }
+                if (!itemDiv) return;
+                const id = itemDiv.dataset.id;
+                const item = allItems.find(i => i.id === id);
+                if (!item) return;
+                const defaultActions = itemDiv.querySelector('.default-actions');
+                const editCountActions = itemDiv.querySelector('.edit-count-actions');
+                switch (action) {
+                    case 'deliver': {
+                        const result = await showDeliverConfirmationModal(item);
+                        if (result.confirmed) {
+                            let deliveryTimestamp;
+                            if (result.deliveryDate && result.deliveryTime) {
+                                deliveryTimestamp = new Date(`${result.deliveryDate}T${result.deliveryTime}`);
+                            } else if (result.deliveryDate) {
+                                deliveryTimestamp = new Date(result.deliveryDate + 'T00:00:00');
+                            } else {
+                                deliveryTimestamp = new Date(); 
+                            }
+
+                            updateItem(id, { 
+                                status: 'delivered', 
+                                deliveredAt: deliveryTimestamp, 
+                                deliveredBy: result.deliveredBy,
+                                note: '',
+                                reminderDate: null 
+                            });
+                        }
+                        break;
+                    }
+                    case 'restore':
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kaydı bekleyenler listesine geri yüklemek istiyor musunuz?`, "Geri Yükle")) {
+                            updateItem(id, { status: 'active', deliveredAt: null, deliveredBy: null });
+                        }
+                        break;
+                    case 'delete-permanent':
+                    case 'delete-item':
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kayıt kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`, "Kaydı Sil", true)) {
+                            deleteItem(id);
+                        }
+                        break;
+                    case 'edit-note': {
+                        const result = await showNoteModal(item);
+                        if (result.confirmed) {
+                            updateItem(id, { note: result.note, reminderDate: result.reminderDate });
+                        }
+                        break;
+                    }
+                    case 'delete-note-from-tab':
+                        if (await showConfirmationModal(`'${item.customerName}' adlı kaydın notunu ve hatırlatıcısını silmek istediğinizden emin misiniz?`, "Notu Sil", true)) {
+                            updateItem(id, { note: '', reminderDate: null });
+                        }
+                        break;
+                    case 'edit-count':
+                        defaultActions.classList.add('hidden');
+                        editCountActions.classList.remove('hidden');
+                        const input = editCountActions.querySelector('input');
+                        input.focus();
+                        input.select();
+                        break;
+                    case 'cancel-edit-count':
+                        editCountActions.classList.add('hidden');
+                        defaultActions.classList.remove('hidden');
+                        break;
+                    case 'save-count': {
+                        const saveInput = editCountActions.querySelector('input');
+                        const newBagCount = parseInt(saveInput.value, 10);
+                        if (isNaN(newBagCount) || newBagCount < 1) {
+                            showSimpleMessageModal("Geçersiz Sayı", "Poşet sayısı en az 1 olmalıdır.");
+                            return;
+                        }
+                        const oldBagCount = item.bagCount;
+                        const updatePayload = { bagCount: newBagCount };
+                        const countDifference = newBagCount - oldBagCount;
+                        if (countDifference !== 0) {
+                            const currentDates = [...(item.additionalDates || [])];
+                            let newDates;
+                            if (countDifference > 0) {
+                                const datesToAdd = Array(countDifference).fill(null).map(() => new Date());
+                                newDates = [...currentDates, ...datesToAdd];
+                            } else {
+                                const numberToRemove = Math.abs(countDifference);
+                                newDates = currentDates.slice(0, -numberToRemove);
+                            }
+                            updatePayload.additionalDates = newDates;
+                        }
+                        await updateItem(id, updatePayload);
+                        break;
+                    }
+                }
+            }
+
+
+            async function handleSettingsPanelClick(e) {
+                 const button = e.target.closest('button');
+                 if (!button) return;
+                 
+                 if(button.dataset.theme){
+                    settings.theme = button.dataset.theme;
+                    saveSettingsToStorage(settings);
+                    applySettings();
+                    return;
+                 }
+                 
+                 switch(button.id) {
+                    case 'settings-logout-btn':
+                        signOut(auth);
+                        break;
+                    case 'change-password-btn':
+                        showChangePasswordModal();
+                        break;
+                    case 'manage-customers-btn':
+                         showCustomerManagementModal();
+                         break;
+                    case 'manage-delivery-personnel-btn':
+                         showDeliveryPersonnelManagementModal();
+                         break;
+                    case 'save-custom-text-btn': {
+                        settings.customTitle = dom.customText.titleInput.value.trim();
+                        settings.customContent = dom.customText.contentInput.value.trim();
+                        saveSettingsToStorage(settings);
+                        renderDashboard(allItems.filter(i=>i.status!=='delivered'), allItems.filter(i=>i.status==='delivered'));
+                        showSimpleMessageModal('Başarılı', 'Ana sayfa notu kaydedildi.', true);
+                        break;
+                    }
+                    case 'export-json-btn': exportDataToJSON(); break;
+                    case 'import-json-btn': dom.importFileInput.click(); break;
+                    case 'export-active-pdf-btn': exportActiveItemsToPDF(); break;
+                    case 'export-csv-btn': exportToCSV(); break;
+                    case 'reset-items-btn':
+                    case 'reset-all-btn': {
+                        const isResetAll = button.id === 'reset-all-btn';
+                        const title = isResetAll ? "Tüm Verileri Sıfırla" : "Poşet Listesini Sıfırla";
+                        const message = isResetAll ? "Bu hesaptaki TÜM müşteri ve poşet verilerini kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz." : "Tüm bekleyen ve teslim edilen poşet kayıtlarınızı kalıcı olarak silmek üzeresiniz. Müşteri listeniz etkilenmeyecektir.";
+                        const confirmText = isResetAll ? "Evet, Tüm Verilerimi Sil" : "Evet, Poşetleri Sil";
+
+                        const password = await showPasswordConfirmationModal(title, `${message} Devam etmek için lütfen hesap şifrenizi girin.`, confirmText, true);
+                        if (password) {
+                            showLoading('Kimlik doğrulanıyor...');
+                            const credential = EmailAuthProvider.credential(currentUser.email, password);
+                            try {
+                                await reauthenticateWithCredential(currentUser, credential);
+                                if (isResetAll) {
+                                    await resetAllDataForUser();
+                                } else {
+                                    showLoading('Poşetler siliniyor...');
+                                    const itemsCollectionRef = collection(db, 'users', userId, 'items');
+                                    const batch = writeBatch(db);
+                                    allItems.forEach(item => batch.delete(doc(itemsCollectionRef, item.id)));
+                                    await batch.commit();
+                                    hideLoading();
+                                    showSimpleMessageModal('Başarılı', 'Poşet listesi başarıyla sıfırlandı.');
+                                }
+                            } catch (error) {
+                                hideLoading();
+                                console.error("Re-authentication failed: ", error);
+                                showSimpleMessageModal("Hata", "Şifre yanlış. İşlem iptal edildi.");
+                            }
+                        }
+                        break;
+                      }
+                 }
+            }
+
+            // Uygulama Başlatma
+            function initialize() {
+                try {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    setupAuthEventListeners();
+                    
+                    showLoading("Kimlik durumu kontrol ediliyor...");
+                    onAuthStateChanged(auth, user => {
+                        if (user) {
+                            userId = user.uid;
+                            showAppUI(user);
+                            initializeAppLogic();
+                        } else {
+                            userId = null;
+                            currentUser = null;
+                            if(itemsUnsubscribe) itemsUnsubscribe();
+                            if(customersUnsubscribe) customersUnsubscribe();
+                            if(deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
+                            allItems = [];
+                            allCustomers = [];
+                            deliveryPersonnel = [];
+                            showAuthUI();
+                        }
+                    });
+                } catch(e) {
+                    console.error("Firebase initialization error:", e);
+                    dom.loadingText.innerHTML = '<span class="text-red-400 font-semibold">Uygulama başlatılamadı.</span><br><span class="text-xs">İnternet bağlantınızı kontrol edin.</span>';
+                }
+            }
+             async function handleFileImport(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (await showConfirmationModal("Mevcut tüm verileriniz bu yedeklemedeki verilerle değiştirilecektir. Bu işlem geri alınamaz. Emin misiniz?", "Onayla ve Yükle", true)) {
+                           await importDataFromJSON(data);
+                        }
+                    } catch (error) {
+                        console.error("Import error:", error);
+                        showSimpleMessageModal('Hata', 'Yedek dosyası okunurken hata oluştu.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = null;
+            }
+            
+            // Sekme ve Sıralama Fonksiyonları
+            function switchTab(target, instant = false) {
+                const tabs = document.querySelectorAll('nav button[id^="tab-"]');
+                const panels = document.querySelectorAll('.panel[id^="panel-"]');
+                tabs.forEach(tab => tab.classList.remove('tab-active'));
+                document.getElementById(`tab-${target}`).classList.add('tab-active');
+                panels.forEach(panel => {
+                    const isTargetPanel = panel.id === `panel-${target}`;
+                    if (instant) {
+                        panel.style.transition = 'none';
+                        panel.classList.toggle('hidden', !isTargetPanel);
+                        requestAnimationFrame(() => panel.style.transition = '');
+                    } else {
+                        panel.classList.toggle('hidden', !isTargetPanel);
+                    }
+                });
+            }
+
+            function handleSort(type) {
+                if (sortState.type === type) {
+                    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortState.type = type;
+                    sortState.direction = (type === 'alpha') ? 'asc' : 'desc';
+                }
+                updateSortButtons();
+                renderItems(allItems.filter(item => item.status !== 'delivered'));
+            }
+
+            function updateSortButtons() {
+                [dom.sortAlphaBtn, dom.sortBagsBtn, dom.sortDateBtn].forEach(btn => btn.classList.remove('sort-active'));
+                const activeBtn = document.getElementById(`sort-${sortState.type}`);
+                if (activeBtn) activeBtn.classList.add('sort-active');
+                dom.sortAlphaBtn.innerHTML = icons[`alpha_${sortState.type === 'alpha' ? sortState.direction : 'asc'}`];
+                dom.sortBagsBtn.innerHTML = icons[`bags_${sortState.type === 'bags' ? sortState.direction : 'desc'}`];
+                dom.sortDateBtn.innerHTML = icons[`date_${sortState.type === 'date' ? sortState.direction : 'desc'}`];
+            }
+            
+            function renderArchivePagination(totalPages) {
+                dom.archivePagination.innerHTML = '';
+                if(totalPages <= 1) return;
+                const createBtn = (text, onClick, disabled = false) => {
+                    const btn = document.createElement('button');
+                    btn.innerHTML = text;
+                    btn.className = 'pagination-btn p-2 bg-tertiary rounded-lg hover:accent-bg transition disabled:opacity-50 disabled:cursor-not-allowed';
+                    btn.disabled = disabled;
+                    btn.onclick = onClick;
+                    return btn;
+                }
+                dom.archivePagination.appendChild(createBtn('&laquo;', () => { archiveCurrentPage--; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === 1));
+                for(let i = 1; i <= totalPages; i++) {
+                    const pageBtn = createBtn(i, () => { archiveCurrentPage = i; renderArchive(allItems.filter(i => i.status === 'delivered')) });
+                    if (i === archiveCurrentPage) pageBtn.classList.add('active');
+                    dom.archivePagination.appendChild(pageBtn);
+                }
+                dom.archivePagination.appendChild(createBtn('&raquo;', () => { archiveCurrentPage++; renderArchive(allItems.filter(i => i.status === 'delivered')) }, archiveCurrentPage === totalPages));
+            }
+
+            // Modal (Popup) Fonksiyonları
+            function showModalUI() {
+                dom.modalContainer.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    dom.modalContainer.style.opacity = '1';
+                    dom.modalContentWrapper.classList.remove('scale-95', 'opacity-0');
+                });
+            }
+
+            function hideModalUI() {
+                dom.modalContainer.style.opacity = '0';
+                dom.modalContentWrapper.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    dom.modalContainer.classList.add('hidden');
+                    dom.modalContent.innerHTML = '';
+                }, 300);
+            }
+            
+            function showSimpleMessageModal(title, message, isSuccess = false) {
+                 const titleColor = isSuccess ? 'text-green-400' : 'text-primary';
+                 return new Promise(resolve => {
+                      const modalHtml =`<h3 class="text-xl font-semibold mb-2 ${titleColor}">${title}</h3><p class="text-secondary mb-4">${message}</p><div class="flex justify-end gap-3"><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button></div>`;
+                       dom.modalContent.innerHTML = modalHtml;
+                       const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                       const close = () => { hideModalUI(); resolve(true); }
+                       confirmBtn.addEventListener('click', close, {once: true});
+                       showModalUI();
+                 });
+            }
+
+            function showConfirmationModal(message, confirmText = "Onayla", isDestructive = false) {
+                 return new Promise(resolve => {
+                    const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
+                    const modalHtml = `<h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">Onay</h3><p class="text-secondary mb-6">${message}</p><div class="flex justify-end gap-3"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button></div>`;
+                    dom.modalContent.innerHTML = modalHtml;
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const close = (confirmed) => { hideModalUI(); resolve(confirmed); }
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+                    showModalUI();
+                 });
+            }
+
+            async function showDeliverConfirmationModal(item) {
+                 return new Promise(resolve => {
+                    let optionsHtml = '';
+                    if (deliveryPersonnel.length > 0) {
+                        optionsHtml = deliveryPersonnel.map(person => `<option value="${person.name}">${person.name}</option>`).join('');
+                    } else {
+                        optionsHtml = '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
+                    }
+                    
+                    const now = new Date();
+                    const today = now.toISOString().split('T')[0];
+                    const currentTime = now.toTimeString().slice(0, 5);
+
+                    const modalHtml =`
+                        <h3 class="text-xl font-semibold mb-2 text-primary">Teslimatı Onayla</h3>
+                        <p class="text-secondary mb-4">'${item.customerName}' adlı müşterinin poşetini teslim etmek istediğinizden emin misiniz?</p>
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label for="delivered-by-select" class="block text-sm font-medium text-secondary mb-1">Teslim Eden Kişi:</label>
+                                <select id="delivered-by-select" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">${optionsHtml}</select>
+                            </div>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="delivery-date-input" class="block text-sm font-medium text-secondary mb-1">Teslim Tarihi:</label>
+                                    <input type="date" id="delivery-date-input" value="${today}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                                </div>
+                                <div>
+                                    <label for="delivery-time-input" class="block text-sm font-medium text-secondary mb-1">Teslim Saati:</label>
+                                    <input type="time" id="delivery-time-input" value="${currentTime}" class="w-full p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition disabled:opacity-50" ${deliveryPersonnel.length === 0 ? 'disabled' : ''}>Teslim Et</button>
+                        </div>`;
+                    
+                    dom.modalContent.innerHTML = modalHtml;
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const select = dom.modalContent.querySelector('#delivered-by-select');
+                    const dateInput = dom.modalContent.querySelector('#delivery-date-input');
+                    const timeInput = dom.modalContent.querySelector('#delivery-time-input');
+                    
+                    const close = (confirmed) => { 
+                        hideModalUI(); 
+                        resolve({ 
+                            confirmed, 
+                            deliveredBy: confirmed ? select.value : null,
+                            deliveryDate: confirmed ? dateInput.value : null,
+                            deliveryTime: confirmed ? timeInput.value : null
+                        }); 
+                    };
+                    
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+                    showModalUI();
+                 });
+            }
+            
+            async function showNoteModal(item) {
+                return new Promise(resolve => {
+                    const modalHtml = `<h3 class="text-xl font-semibold mb-2 text-primary">Not ve Hatırlatıcı</h3><p class="text-secondary mb-4">'${item.customerName}' için notu ve hatırlatıcıyı düzenleyin.</p><div class="space-y-4"><div><label for="note-textarea" class="block text-sm font-medium text-secondary mb-1">Not:</label><textarea id="note-textarea" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition h-24">${item.note || ''}</textarea></div><div><label for="reminder-date" class="block text-sm font-medium text-secondary mb-1">Hatırlatma Tarihi (Opsiyonel):</label><input type="date" id="reminder-date" value="${item.reminderDate || ''}" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition"></div></div><div class="flex justify-end gap-3 mt-6"><button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button><button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Kaydet</button></div>`;
+                    dom.modalContent.innerHTML = modalHtml;
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const noteTextarea = dom.modalContent.querySelector('#note-textarea');
+                    const reminderDateInput = dom.modalContent.querySelector('#reminder-date');
+                    const close = (confirmed) => { hideModalUI(); resolve({ confirmed, note: noteTextarea.value, reminderDate: reminderDateInput.value || null }); };
+                    confirmBtn.addEventListener('click', () => close(true), { once: true });
+                    cancelBtn.addEventListener('click', () => close(false), { once: true });
+                    showModalUI();
+                });
+            }
+
+            async function showPasswordConfirmationModal(title, message, confirmText, isDestructive = false) {
+                return new Promise(resolve => {
+                    const confirmClass = isDestructive ? 'bg-red-600 hover:bg-red-700' : 'accent-bg accent-bg-hover';
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-2 ${isDestructive ? 'text-red-400' : 'text-primary'}">${title}</h3>
+                        <p class="text-secondary mb-4">${message}</p>
+                        <div>
+                            <label for="password-input" class="block text-sm font-medium text-secondary mb-1">Hesap Şifreniz:</label>
+                            <input id="password-input" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" autofocus>
+                            <p id="password-error" class="text-red-400 text-sm mt-2 hidden">Hatalı şifre.</p>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="${confirmClass} text-white px-4 py-2 rounded-lg transition">${confirmText}</button>
+                        </div>`;
+                    
+                    dom.modalContent.innerHTML = modalHtml;
+                    showModalUI();
+                    
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const passwordInput = dom.modalContent.querySelector('#password-input');
+                    const errorMsg = dom.modalContent.querySelector('#password-error');
+                    
+                    const close = (password) => {
+                        hideModalUI();
+                        resolve(password);
+                    };
+
+                    const handleConfirm = () => {
+                        const password = passwordInput.value;
+                        if (!password) {
+                            errorMsg.textContent = "Şifre boş olamaz.";
+                            errorMsg.classList.remove('hidden');
+                        } else {
+                           close(password);
+                        }
+                    };
+                    
+                    const handleCancel = () => close(null);
+                    const handleKeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleConfirm();
+                        } else if (e.key === 'Escape'){
+                            handleCancel();
+                        }
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm, { once: true });
+                    cancelBtn.addEventListener('click', handleCancel, { once: true });
+                    passwordInput.addEventListener('keydown', handleKeydown);
+                });
+            }
+            
+            async function showChangePasswordModal() {
+                 return new Promise((resolve, reject) => {
+                    const modalHtml = `
+                        <h3 class="text-xl font-semibold mb-4 text-primary">Şifre Değiştir</h3>
+                        <div id="change-pass-error" class="hidden text-center p-2 mb-4 bg-red-500/20 text-red-300 rounded-md text-sm"></div>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="current-password" class="block text-sm font-medium text-secondary mb-1">Mevcut Şifre:</label>
+                                <input id="current-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                            <div>
+                                <label for="new-password" class="block text-sm font-medium text-secondary mb-1">Yeni Şifre:</label>
+                                <input id="new-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                            <div>
+                                <label for="confirm-password" class="block text-sm font-medium text-secondary mb-1">Yeni Şifre (Tekrar):</label>
+                                <input id="confirm-password" type="password" class="w-full p-2 bg-secondary border border-dynamic rounded-lg focus:ring-2 ring-accent transition" required>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button id="modal-cancel" class="bg-tertiary px-4 py-2 rounded-lg hover:bg-slate-500 transition">İptal</button>
+                            <button id="modal-confirm" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Değiştir</button>
+                        </div>`;
+
+                    dom.modalContent.innerHTML = modalHtml;
+                    showModalUI();
+
+                    const confirmBtn = dom.modalContent.querySelector('#modal-confirm');
+                    const cancelBtn = dom.modalContent.querySelector('#modal-cancel');
+                    const errorDiv = dom.modalContent.querySelector('#change-pass-error');
+                    const currentPass = dom.modalContent.querySelector('#current-password');
+                    const newPass = dom.modalContent.querySelector('#new-password');
+                    const confirmPass = dom.modalContent.querySelector('#confirm-password');
+
+                    const handleConfirm = async () => {
+                        errorDiv.classList.add('hidden');
+                        if (newPass.value !== confirmPass.value) {
+                            errorDiv.textContent = 'Yeni şifreler eşleşmiyor.';
+                            errorDiv.classList.remove('hidden');
+                            return;
+                        }
+                        if (newPass.value.length < 6) {
+                            errorDiv.textContent = 'Yeni şifre en az 6 karakter olmalıdır.';
+                            errorDiv.classList.remove('hidden');
+                            return;
+                        }
+                        
+                        showLoading('Şifre değiştiriliyor...');
+                        try {
+                            const credential = EmailAuthProvider.credential(currentUser.email, currentPass.value);
+                            await reauthenticateWithCredential(currentUser, credential);
+                            await updatePassword(currentUser, newPass.value);
+                            hideLoading();
+                            hideModalUI();
+                            showSimpleMessageModal('Başarılı', 'Şifreniz başarıyla değiştirildi.', true);
+                            resolve();
+                        } catch (error) {
+                            hideLoading();
+                            console.error("Password change error:", error);
+                            errorDiv.textContent = 'Mevcut şifre hatalı veya bir sorun oluştu.';
+                            errorDiv.classList.remove('hidden');
+                            reject(error);
+                        }
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    cancelBtn.addEventListener('click', () => { hideModalUI(); resolve(); }, { once: true });
+                 });
+            }
+
+            // Bildirim Fonksiyonları
+             function getUnseenOverdueItems() {
+                const OVERDUE_DAYS = 20;
+                const now = new Date();
+                return allItems.filter(item => {
+                    if (item.status !== 'active') return false;
+                    const itemDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt);
+                    const diffDays = Math.floor((now - itemDate) / (1000 * 60 * 60 * 24));
+                    return diffDays >= OVERDUE_DAYS && !seenNotifications.includes(item.id);
+                });
+            }
+            
+            function getUnseenReminders() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return allItems.filter(item => {
+                    if (item.status !== 'active' || !item.reminderDate) return false;
+                    const [year, month, day] = item.reminderDate.split('-').map(Number);
+                    const reminderDate = new Date(year, month - 1, day);
+                    return reminderDate <= today && !seenNotifications.includes(item.id);
+                });
+            }
+
+            function checkAndDisplayNotifications() {
+                const unseenReminders = getUnseenReminders();
+                const unseenOverdue = getUnseenOverdueItems();
+                const totalUnseen = new Set([...unseenReminders.map(i => i.id), ...unseenOverdue.map(i => i.id)]).size;
+                dom.notificationBadge.textContent = totalUnseen;
+                dom.notificationBadge.classList.toggle('hidden', totalUnseen === 0);
+            }
+
+            function showNotificationsModal() {
+                 const unseenReminders = getUnseenReminders();
+                const unseenOverdue = getUnseenOverdueItems();
+                let modalHtml = `<div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-primary">Bildirimler</h3><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">`;
+                if (unseenReminders.length > 0) {
+                    modalHtml += `<div><h4 class="text-lg font-semibold text-cyan-300 mb-2">Bugünün Hatırlatmaları</h4><div class="space-y-2">`;
+                    unseenReminders.forEach(item => {
+                        modalHtml += `<div class="bg-tertiary/50 p-3 rounded-md flex justify-between items-center"><div><p class="text-primary font-medium">${item.customerName}</p><p class="text-sm text-cyan-200">${item.note || 'Hatırlatıcı'}</p></div><button data-notif-id="${item.id}" class="mark-as-read-btn text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button></div>`;
+                    });
+                    modalHtml += `</div></div>`;
+                }
+                if (unseenOverdue.length > 0) {
+                     modalHtml += `<div><h4 class="text-lg font-semibold text-yellow-400 mb-2">Geciken Poşetler (20+ gün)</h4><div class="space-y-2">`;
+                    unseenOverdue.forEach(item => {
+                         modalHtml += `<div class="bg-tertiary/50 p-3 rounded-md flex justify-between items-center"><div><p class="text-primary font-medium">${item.customerName}</p><p class="text-sm text-yellow-300">${formatRelativeTime(item.createdAt)}</p></div><button data-notif-id="${item.id}" class="mark-as-read-btn text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button></div>`;
+                    });
+                     modalHtml += `</div></div>`;
+                }
+                if (unseenReminders.length === 0 && unseenOverdue.length === 0) modalHtml += `<p class="text-center text-secondary py-4">Okunmamış bildirim bulunmuyor.</p>`;
+                modalHtml += `</div>`;
+                if (unseenReminders.length > 0 || unseenOverdue.length > 0) modalHtml += `<div class="mt-4 pt-4 border-t border-dynamic"><button id="mark-all-as-read" class="w-full bg-tertiary p-2 rounded-lg hover:bg-slate-600 transition">Tümünü Okundu İşaretle</button></div>`;
+                dom.modalContent.innerHTML = modalHtml;
+                showModalUI();
+                dom.modalContent.querySelector('#modal-close')?.addEventListener('click', hideModalUI, {once: true});
+                dom.modalContent.querySelector('#mark-all-as-read')?.addEventListener('click', () => {
+                    const allUnseenIds = [...unseenReminders.map(i => i.id), ...unseenOverdue.map(i => i.id)];
+                    seenNotifications.push(...allUnseenIds);
+                    localStorage.setItem(`seenNotifications-${userId}`, JSON.stringify([...new Set(seenNotifications)]));
+                    checkAndDisplayNotifications();
+                    hideModalUI();
+                });
+                dom.modalContent.querySelectorAll('.mark-as-read-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const itemId = e.target.dataset.notifId;
+                        if (!seenNotifications.includes(itemId)) seenNotifications.push(itemId);
+                        localStorage.setItem(`seenNotifications-${userId}`, JSON.stringify(seenNotifications));
+                        checkAndDisplayNotifications();
+                        showNotificationsModal();
+                    });
+                });
+            }
+
+            // Müşteri Detay ve Yönetim Modalları
+            function showCustomerDetailModal(customerName) {
+                const customerItems = allItems.filter(item => item.customerName === customerName);
+                const activeItem = customerItems.find(item => item.status === 'active');
+                const deliveredItems = customerItems.filter(item => item.status === 'delivered').sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                let modalHtml = `<div class="flex justify-between items-start mb-4"><h3 class="text-2xl font-bold accent-text">${customerName}</h3><div class="flex items-center gap-2"><button id="export-customer-pdf-btn" class="p-2 text-secondary hover:text-rose-400 transition" title="Bu Müşterinin Geçmişini PDF Aktar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></button><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div></div><div class="space-y-6 max-h-[70vh] overflow-y-auto pr-2">`;
+                if (activeItem) modalHtml += `<div><h4 class="text-lg font-semibold text-primary mb-2 border-b border-dynamic pb-1">Bekleyen Poşetler</h4><div class="bg-tertiary/50 p-3 rounded-md"><p><span class="font-semibold">${activeItem.bagCount}</span> adet poşet</p><p class="text-sm text-secondary mt-1">İlk Eklenme: ${formatDate(activeItem.createdAt)}</p>${(activeItem.additionalDates && activeItem.additionalDates.length > 0) ? activeItem.additionalDates.map(d => `<p class="text-xs text-secondary/80 pl-2">+ Eklenme: ${formatDate(d)}</p>`).join('') : ''}</div></div>`;
+                if (deliveredItems.length > 0) modalHtml += `<div><h4 class="text-lg font-semibold text-primary mb-2 border-b border-dynamic pb-1">Teslim Edilenler</h4><div id="customer-delivered-list" class="space-y-2"></div><div id="customer-delivered-pagination" class="flex justify-center items-center mt-4 space-x-2"></div></div>`;
+                if (activeItem && (activeItem.note || activeItem.reminderDate)) modalHtml += `<div><h4 class="text-lg font-semibold text-primary mb-2 border-b border-dynamic pb-1">Not ve Hatırlatıcı</h4><div class="bg-tertiary/50 p-3 rounded-md"><p class="whitespace-pre-wrap">${activeItem.note || '<i>Not girilmemiş.</i>'}</p>${activeItem.reminderDate ? `<p class="text-sm mt-2 text-cyan-300"><strong>Hatırlatıcı:</strong> ${activeItem.reminderDate}</p>`: ''}</div></div>`;
+                if (!activeItem && deliveredItems.length === 0) modalHtml += `<p class="text-center text-secondary py-4">Bu müşteri için kayıt bulunamadı.</p>`;
+                modalHtml += `</div>`;
+                dom.modalContent.innerHTML = modalHtml;
+                showModalUI();
+                if (deliveredItems.length > 0) renderCustomerDeliveredHistory(deliveredItems, 1);
+                dom.modalContent.querySelector('#modal-close')?.addEventListener('click', hideModalUI, { once: true });
+                dom.modalContent.querySelector('#export-customer-pdf-btn')?.addEventListener('click', () => exportCustomerHistoryToPDF(customerName));
+            }
+            
+            function renderCustomerDeliveredHistory(deliveredItems, page) {
+                const listContainer = document.getElementById('customer-delivered-list');
+                const paginationContainer = document.getElementById('customer-delivered-pagination');
+                if (!listContainer || !paginationContainer) return;
+                customerDetailCurrentPage = page;
+                listContainer.innerHTML = '';
+                paginationContainer.innerHTML = '';
+                const totalPages = Math.ceil(deliveredItems.length / customerDetailItemsPerPage);
+                const startIndex = (page - 1) * customerDetailItemsPerPage;
+                const paginatedItems = deliveredItems.slice(startIndex, startIndex + customerDetailItemsPerPage);
+                paginatedItems.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-tertiary/50 p-3 rounded-md';
+                    div.innerHTML = `<p><span class="font-semibold">${item.bagCount}</span> adet poşet</p><p class="text-sm text-secondary mt-1">Teslim Tarihi: ${formatDate(item.deliveredAt)}</p><p class="text-xs text-secondary/80">Teslim Eden: ${item.deliveredBy || '-'}</p>`;
+                    listContainer.appendChild(div);
+                });
+                if (totalPages > 1) {
+                     for(let i = 1; i <= totalPages; i++) {
+                        const pageBtn = document.createElement('button');
+                        pageBtn.textContent = i;
+                        pageBtn.className = 'pagination-btn p-2';
+                        if (i === page) pageBtn.classList.add('active');
+                        pageBtn.onclick = () => renderCustomerDeliveredHistory(deliveredItems, i);
+                        paginationContainer.appendChild(pageBtn);
+                    }
+                }
+            }
+
+            function renderCustomerModalList(filter = '') {
+                const listContainer = document.getElementById('modal-customers-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '';
+                const ucFilter = toTrUpperCase(filter);
+                const filtered = allCustomers.filter(c => toTrUpperCase(c.name).includes(ucFilter)).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+                if(filtered.length === 0) { listContainer.innerHTML = '<p class="text-center text-secondary py-4">Filtreyle eşleşen müşteri bulunamadı.</p>'; return; }
+                filtered.forEach(customer => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.customerId = customer.id;
+                    div.dataset.customerName = customer.name;
+                    div.innerHTML = `<div class="customer-display flex justify-between items-center"><span class="customer-name-text text-primary text-sm">${customer.name}</span><div class="flex items-center gap-2"><button data-cust-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button><button data-cust-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button></div></div><div class="customer-edit hidden flex items-center gap-2"><input type="text" value="${customer.name}" class="customer-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button data-cust-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button><button data-cust-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button></div></div><div class="customer-delete-confirm hidden flex justify-between items-center"><span class="text-red-300 text-sm">Silinsin mi?</span><div class="flex items-center gap-2"><button data-cust-action="confirm-delete" class="text-sm bg-red-600 text-white px-2 py-1 rounded-md hover:bg-red-700">Evet</button><button data-cust-action="cancel-delete" class="text-sm bg-tertiary px-2 py-1 rounded-md hover:bg-slate-500">Hayır</button></div></div>`;
+                    listContainer.appendChild(div);
+                });
+            }
+
+            function renderDeliveryPersonnelModalList() {
+                const listContainer = document.getElementById('modal-personnel-list');
+                if (!listContainer) return;
+                listContainer.innerHTML = '';
+                
+                if(deliveryPersonnel.length === 0) { listContainer.innerHTML = '<p class="text-center text-secondary py-4">Henüz teslim eden kişi eklenmemiş.</p>'; return; }
+
+                deliveryPersonnel.forEach(person => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-tertiary/50 rounded-md';
+                    div.dataset.personId = person.id;
+                    div.dataset.personName = person.name;
+                    div.innerHTML = `<div class="person-display flex justify-between items-center"><span class="person-name-text text-primary text-sm">${person.name}</span><div class="flex items-center gap-2"><button data-person-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${icons.edit}</button><button data-person-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${icons.delete}</button></div></div><div class="person-edit hidden flex items-center gap-2"><input type="text" value="${person.name}" class="person-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button data-person-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${icons.save}</button><button data-person-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${icons.cancel}</button></div></div>`;
+                    listContainer.appendChild(div);
+                });
+            }
+            
+            async function showCustomerManagementModal() {
+                 showModalUI();
+                 dom.modalContent.innerHTML =`<div class="flex flex-col h-[70vh]"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-primary">Müşteri Yönetimi</h3><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div id="modal-customer-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div><form id="modal-customer-form" class="flex gap-2 mb-4"><input type="text" id="modal-customer-input" placeholder="Müşteri Ara veya Yeni Müşteri Ekle..." class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required><button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button></form><div id="modal-customers-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div></div>`;
+                const listContainer = document.getElementById('modal-customers-list');
+                const customerForm = document.getElementById('modal-customer-form');
+                const customerInput = document.getElementById('modal-customer-input');
+                const errorDiv = document.getElementById('modal-customer-error');
+                const closeBtn = document.getElementById('modal-close');
+                closeBtn.addEventListener('click', hideModalUI, {once: true});
+                function showModalError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); setTimeout(() => errorDiv.classList.add('hidden'), 3000); }
+                customerInput.addEventListener('input', () => renderCustomerModalList(customerInput.value));
+                listContainer.addEventListener('click', async e => {
+                    const button = e.target.closest('button[data-cust-action]');
+                    if (!button) return;
+                    const action = button.dataset.custAction;
+                    const customerDiv = button.closest('div[data-customer-id]');
+                    const customerId = customerDiv.dataset.customerId;
+                    const displayView = customerDiv.querySelector('.customer-display');
+                    const editView = customerDiv.querySelector('.customer-edit');
+                    const deleteConfirmView = customerDiv.querySelector('.customer-delete-confirm');
+                    switch (action) {
+                        case 'delete': displayView.classList.add('hidden'); deleteConfirmView.classList.remove('hidden'); break;
+                        case 'cancel-delete': deleteConfirmView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
+                        case 'confirm-delete': if (await showConfirmationModal("Bu müşteriyi silmek, müşteriye ait TÜM poşet kayıtlarını da kalıcı olarak silecektir. Emin misiniz?", "Evet, Sil", true)) {
+                                showLoading('Müşteri ve ilişkili poşetler siliniyor...');
+                                const oldName = customerDiv.dataset.customerName;
+                                const batch = writeBatch(db);
+                                const itemsQuery = query(collection(db, 'users', userId, 'items'), where("customerName", "==", oldName));
+                                const itemsSnapshot = await getDocs(itemsQuery);
+                                itemsSnapshot.forEach(itemDoc => batch.delete(itemDoc.ref));
+                                batch.delete(doc(db, 'users', userId, 'customers', customerId));
+                                await batch.commit();
+                                hideLoading();
+                            }
+                            break;
+                        case 'edit': displayView.classList.add('hidden'); editView.classList.remove('hidden'); editView.querySelector('input').focus(); break;
+                        case 'cancel-edit': editView.classList.add('hidden'); displayView.classList.remove('hidden'); break;
+                        case 'save-edit':
+                            const input = editView.querySelector('.customer-name-input');
+                            const newName = input.value.trim();
+                            const oldName = customerDiv.dataset.customerName;
+                            if (!newName) { showModalError("Müşteri adı boş olamaz."); return; }
+                            if (toTrUpperCase(newName) === toTrUpperCase(oldName)) { editView.classList.add('hidden'); displayView.classList.remove('hidden'); return; }
+                            const isDuplicate = allCustomers.some(c => toTrUpperCase(c.name) === toTrUpperCase(newName) && c.id !== customerId);
+                            if (isDuplicate) { showModalError("Bu isimde başka bir müşteri zaten var."); return; }
+                            if (await showConfirmationModal(`'${oldName}' ismini '${newName}' olarak değiştirmek istediğinizden emin misiniz? Bu işlem müşterinin tüm geçmiş kayıtlarını da güncelleyecektir.`, "Evet, Değiştir")) await updateCustomerNameAndItems(customerId, oldName, newName);
+                            break;
+                    }
+                });
+                customerForm.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = toTrUpperCase(customerInput.value.trim());
+                    const customersCollectionRef = collection(db, 'users', userId, 'customers');
+                    if (name && !allCustomers.some(c => toTrUpperCase(c.name) === name)) { await addDoc(customersCollectionRef, { name }); customerInput.value = ''; customerInput.dispatchEvent(new Event('input')); } else if (name) { showModalError('Bu müşteri zaten mevcut.'); }
+                });
+                renderCustomerModalList();
+            }
+
+            async function showDeliveryPersonnelManagementModal() {
+                 showModalUI();
+                 dom.modalContent.innerHTML =`<div class="flex flex-col h-[70vh]"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-primary">Teslim Eden Kişi Yönetimi</h3><button id="modal-close" class="p-1 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div id="modal-personnel-error" class="hidden text-center p-2 mb-2 bg-red-500/20 text-red-300 rounded-md text-sm"></div><form id="modal-personnel-form" class="flex gap-2 mb-4"><input type="text" id="modal-personnel-input" placeholder="Yeni Kişi Ekle..." class="flex-grow p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required><button type="submit" class="accent-bg text-white font-semibold px-4 rounded-lg accent-bg-hover transition">Ekle</button></form><div id="modal-personnel-list" class="flex-grow overflow-y-auto space-y-2 pr-2"></div></div>`;
+                const listContainer = document.getElementById('modal-personnel-list');
+                const form = document.getElementById('modal-personnel-form');
+                const input = document.getElementById('modal-personnel-input');
+                const errorDiv = document.getElementById('modal-personnel-error');
+                const closeBtn = document.getElementById('modal-close');
+                
+                closeBtn.addEventListener('click', hideModalUI, {once: true});
+                function showModalError(message) { errorDiv.textContent = message; errorDiv.classList.remove('hidden'); setTimeout(() => errorDiv.classList.add('hidden'), 3000); }
+
+                listContainer.addEventListener('click', async e => {
+                    const button = e.target.closest('button[data-person-action]');
+                    if (!button) return;
+                    const action = button.dataset.personAction;
+                    const personDiv = button.closest('div[data-person-id]');
+                    const personId = personDiv.dataset.personId;
+                    const displayView = personDiv.querySelector('.person-display');
+                    const editView = personDiv.querySelector('.person-edit');
+
+                    switch (action) {
+                        case 'delete':
+                            if (await showConfirmationModal("Bu kişiyi silmek istediğinizden emin misiniz?", "Evet, Sil", true)) {
+                                await deleteDeliveryPerson(personId);
+                            }
+                            break;
+                        case 'edit': 
+                            displayView.classList.add('hidden'); 
+                            editView.classList.remove('hidden'); 
+                            editView.querySelector('input').focus(); 
+                            break;
+                        case 'cancel-edit': 
+                            editView.classList.add('hidden'); 
+                            displayView.classList.remove('hidden'); 
+                            break;
+                        case 'save-edit':
+                            const nameInput = editView.querySelector('.person-name-input');
+                            const newName = toTrUpperCase(nameInput.value.trim());
+                            const oldName = personDiv.dataset.personName;
+                            if (!newName) { showModalError("İsim boş olamaz."); return; }
+                            if (newName === oldName) { editView.classList.add('hidden'); displayView.classList.remove('hidden'); return; }
+                            if (deliveryPersonnel.some(p => toTrUpperCase(p.name) === newName && p.id !== personId)) { showModalError("Bu isimde başka bir kişi zaten var."); return; }
+                            
+                            await updateDoc(doc(db, 'users', userId, 'deliveryPersonnel', personId), { name: newName });
+                            break;
+                    }
+                });
+
+                form.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = toTrUpperCase(input.value.trim());
+                    if (!name) return;
+                    if (deliveryPersonnel.some(p => toTrUpperCase(p.name) === name)) {
+                        showModalError('Bu kişi zaten mevcut.');
+                        return;
+                    }
+                    const personnelCollectionRef = collection(db, 'users', userId, 'deliveryPersonnel');
+                    await addDoc(personnelCollectionRef, { name });
+                    input.value = '';
+                });
+
+                renderDeliveryPersonnelModalList();
+            }
+            
+            // PDF & CSV Aktarma Fonksiyonları
+            function exportDataToJSON() {
+                const data = { allItems, allCustomers, deliveryPersonnel, settings };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `poset-takip-yedek-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function exportToCSV() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak veri yok."); return; }
+                const headers = "Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi";
+                const rows = activeItems.map(item => `"${item.customerName.replace(/"/g, '""')}",${item.bagCount},"${(item.note || '').replace(/"/g, '""')}",${formatDate(item.lastModified)}`);
+                const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "poset_listesi.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            }
+            
+            function exportActiveItemsToPDF() {
+                const activeItems = allItems.filter(item => item.status !== 'delivered');
+                if (activeItems.length === 0) { showSimpleMessageModal("Bilgi", "Dışa aktarılacak bekleyen poşet yok."); return; }
+                const pdf = new jsPDF();
+                pdf.text("Bekleyen Poşet Listesi", 14, 16);
+                const tableColumn = ["#", "Müşteri Adı", "Poşet Sayısı", "Eklenme Tarihi"];
+                const tableRows = activeItems.map((item, index) => [ index + 1, item.customerName, item.bagCount, formatDate(item.createdAt).split(' ')[0] ]);
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`bekleyen-poset-listesi-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            function exportArchiveToPDF() {
+                const searchQuery = toTrUpperCase(dom.searchArchiveInput.value);
+                const archivedItems = allItems.filter(item => item.status === 'delivered' && toTrUpperCase(item.customerName).includes(searchQuery)).sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                if (archivedItems.length === 0) { showSimpleMessageModal("Bilgi", "Arşivde dışa aktarılacak veri yok."); return; }
+                const pdf = new jsPDF();
+                pdf.text("Teslim Edilenler Arşivi", 14, 16);
+                const tableColumn = ["#", "Müşteri Adı", "Poşet", "Teslim Eden", "Teslim Tarihi"];
+                const tableRows = archivedItems.map((item, index) => [ index + 1, item.customerName, item.bagCount, item.deliveredBy || '-', formatDate(item.deliveredAt).split(' ')[0] ]);
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`teslim-edilenler-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            function exportReportsToPDF() {
+                const deliveredItems = allItems.filter(item => item.status === 'delivered' && item.createdAt && item.deliveredAt).sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                if (deliveredItems.length === 0) { showSimpleMessageModal("Bilgi", "Rapor oluşturulacak teslim edilmiş poşet bulunmuyor."); return; }
+                const pdf = new jsPDF();
+                pdf.text("Teslim Edilen Poşet Raporu", 14, 16);
+                const tableColumn = ["Müşteri Adı", "Alınma Tarihi", "Teslim Tarihi", "Bekleme Süresi (Gün)"];
+                const tableRows = deliveredItems.map(item => [ item.customerName, formatDate(item.createdAt).split(' ')[0], formatDate(item.deliveredAt).split(' ')[0], getDayDifference(item.createdAt, item.deliveredAt) ]);
+                pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+                pdf.save(`teslim-raporu-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+
+            function exportCustomerHistoryToPDF(customerName) {
+                const customerItems = allItems.filter(item => item.customerName === customerName);
+                if (customerItems.length === 0) { showSimpleMessageModal("Bilgi", "Bu müşteri için dışa aktarılacak veri yok."); return; }
+                const pdf = new jsPDF();
+                pdf.text(`${customerName} Müşteri Geçmişi`, 14, 16);
+                const activeItem = customerItems.find(item => item.status === 'active');
+                let lastY = 22;
+                if (activeItem) {
+                    pdf.autoTable({ startY: lastY, head: [['Bekleyen Poşetler']], body: [[`Poşet Sayısı: ${activeItem.bagCount}`], [`İlk Eklenme: ${formatDate(activeItem.createdAt)}`]], theme: 'striped', headStyles: { fillColor: [96, 70, 200] } });
+                    lastY = pdf.autoTable.previous.finalY;
+                    if (activeItem.additionalDates && activeItem.additionalDates.length > 0) {
+                        const additionalRows = activeItem.additionalDates.map(d => [`+ Eklenme: ${formatDate(d)}`]);
+                        pdf.autoTable({ startY: lastY, body: additionalRows, theme: 'plain', styles: { fontSize: 9, cellPadding: {top: 0.5, left: 2}} });
+                        lastY = pdf.autoTable.previous.finalY;
+                    }
+                }
+                const deliveredItems = customerItems.filter(item => item.status === 'delivered').sort((a,b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+                if (deliveredItems.length > 0) {
+                     pdf.autoTable({ startY: lastY + 10, head: [['Teslim Edilenler Geçmişi']], theme: 'striped', headStyles: { fillColor: [45, 55, 72] } });
+                     const deliveredRows = deliveredItems.map(item => [`Poşet: ${item.bagCount} | Teslim: ${formatDate(item.deliveredAt)} | Teslim Eden: ${item.deliveredBy || '-'}`]);
+                     pdf.autoTable({ startY: pdf.autoTable.previous.finalY, body: deliveredRows, theme: 'plain', styles: { fontSize: 9, cellPadding: 1 } });
+                }
+                pdf.save(`${customerName}-gecmisi-${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+
+            // Uygulamayı başlat
+            initialize();
+        });
+    </script>
+    
     <script>
+        // Service Worker kaydını yapıyoruz. Bu, uygulamanın çevrimdışı çalışmasını sağlar.
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(registration => {
@@ -355,4 +2228,3 @@
     </script>
 </body>
 </html>
-
