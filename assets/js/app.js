@@ -704,6 +704,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         i.id !== item.id
                     );
 
+                    let restoreMsg = "";
+
                     if (existingActiveItem) {
                         const totalBags = Number(existingActiveItem.bagCount) + Number(item.bagCount);
                         const mergedDates = [
@@ -719,6 +721,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         await dataManager.deleteItem(db, userId, id);
                         ui.showSimpleMessageModal(dom, "Birleştirildi", `Bu müşterinin bekleyen bir kaydı bulundu. Poşetler birleştirildi. (Toplam: ${totalBags})`, true);
+                        
+                        restoreMsg = `🔄 *Kayıt Geri Yüklendi (Birleştirildi)*\n\n👤 Müşteri: ${item.customerName}\n➕ Geri Gelen: ${item.bagCount} Adet\n🔢 Yeni Toplam: ${totalBags}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`;
+
                     } else {
                         await updateItem(id, { 
                             status: 'active', 
@@ -726,7 +731,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             deliveredBy: null,
                             lastModified: new Date()
                         });
+                        
+                        restoreMsg = `🔄 *Kayıt Geri Yüklendi*\n\n👤 Müşteri: ${item.customerName}\n🔢 Adet: ${item.bagCount}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`;
                     }
+
+                    // Telegram Bildirimi
+                    sendTelegramNotification(restoreMsg);
                 }
                 break;
             case 'delete-permanent':
