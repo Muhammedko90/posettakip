@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (toDeliver >= totalBags) {
                             await updateItem(item.id, { status: 'delivered', deliveredAt: new Date(), deliveredBy: deliveryPerson, note: '', reminderDate: null });
-                            reply = `✅ *${customerName}* poşetlerinin TAMAMI (${toDeliver} adet) teslim edildi.`;
+                            reply = `✅ *${customerName}* poşetlerinin TAMAMI (${toDeliver} adet) teslim edildi.\n🚚 Teslim Eden: ${deliveryPerson}`;
                         } else {
                             const remaining = totalBags - toDeliver;
                             const currentDates = [...(item.additionalDates || [])];
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 reminderDate: null,
                                 additionalDates: []
                             });
-                            reply = `✅ *${customerName}* poşetlerinden ${toDeliver} adedi teslim edildi.\nKalan: ${remaining}`;
+                            reply = `✅ *${customerName}* poşetlerinden ${toDeliver} adedi teslim edildi.\n🚚 Teslim Eden: ${deliveryPerson}\nKalan: ${remaining}`;
                         }
                     }
                     break;
