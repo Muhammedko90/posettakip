@@ -1,17 +1,18 @@
 // Önbellek (cache) adı ve versiyonu.
-const CACHE_NAME = 'emre-bebe-takip-cache-v22'; // Versiyonu v22 olarak güncelledim
+// Versiyonu yükselterek tarayıcının yeni dosyaları almasını sağlıyoruz.
+const CACHE_NAME = 'emre-bebe-takip-cache-v24'; 
 
 // Uygulama ilk yüklendiğinde veya çevrimdışıyken çalışması için
 // önbelleğe alınacak temel dosyaların ve kaynakların listesi.
 const urlsToCache = [
-  '/', // Ana dizini temsil eder.
-  'index.html', // Ana HTML dosyası.
-  'manifest.json', // PWA manifest dosyası.
-  'https://cdn.tailwindcss.com', // Stil için kullanılan TailwindCSS.
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', // PDF oluşturma kütüphanesi.
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', // PDF tablo eklentisi.
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', // Google Fonts.
-  'https://cdn.jsdelivr.net/npm/apexcharts' // ApexCharts grafik kütüphanesi
+  '/', 
+  'index.html', 
+  'manifest.json', 
+  'https://cdn.tailwindcss.com', 
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', 
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', 
+  'https://cdn.jsdelivr.net/npm/apexcharts'
 ];
 
 // 'install' olayı: Service Worker yüklendiğinde tetiklenir.
@@ -20,12 +21,14 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache açıldı ve temel dosyalar önbelleğe alınıyor.');
-        const promises = urlsToCache.map(url => {
-            return cache.add(url).catch(err => {
-                console.warn(`Önbelleğe eklenemedi: ${url}`, err);
-            });
-        });
-        return Promise.all(promises);
+        // Hata oluşsa bile devam etmesi için her birini ayrı ayrı eklemeye çalışıyoruz
+        return Promise.all(
+            urlsToCache.map(url => {
+                return cache.add(url).catch(err => {
+                    console.warn(`Önbelleğe eklenemedi: ${url}`, err);
+                });
+            })
+        );
       })
   );
   self.skipWaiting();
@@ -39,7 +42,8 @@ self.addEventListener('fetch', event => {
 
   const isDynamicResource = event.request.url.includes('wttr.in') || 
                             event.request.url.includes('firebase') || 
-                            event.request.url.includes('gstatic.com');
+                            event.request.url.includes('gstatic.com') ||
+                            event.request.url.includes('api.telegram.org');
 
   if (isDynamicResource) {
       event.respondWith(
@@ -72,13 +76,14 @@ self.addEventListener('fetch', event => {
             return networkResponse;
           }
         ).catch(err => {
+             // Fetch hatası (offline durumunda custom page dönebiliriz ama şimdilik logluyoruz)
              console.error('Fetch hatası:', err);
         });
       })
     );
 });
 
-// 'activate' olayı
+// 'activate' olayı: Eski önbellekleri temizler
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME]; 
   event.waitUntil(
