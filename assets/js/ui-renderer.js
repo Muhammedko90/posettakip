@@ -431,13 +431,27 @@ export function renderArchive(dom, archivedItems, searchQuery, archiveCurrentPag
     pageItems.forEach(item => dom.archiveList.appendChild(createArchiveItemElement(item, formatDateFn)));
     dom.archivePagination.innerHTML = '';
     if (totalPages <= 1) return;
+
+    // --- Pagination Logic (Updated for Smart View) ---
+    // Mobil uyumluluk için sadece 5 buton gösterilecek.
+    const maxVisibleButtons = 5;
+    let startPage = Math.max(1, archiveCurrentPage - Math.floor(maxVisibleButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+
+    if (endPage - startPage + 1 < maxVisibleButtons) {
+        startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+    }
+
+    // Önceki (<) Butonu
     const prevBtn = document.createElement('button');
-    prevBtn.innerHTML = '&laquo;';
+    prevBtn.innerHTML = '&lt;'; // Küçüktür işareti
     prevBtn.className = 'pagination-btn p-2 bg-tertiary rounded-lg hover:accent-bg transition disabled:opacity-50 disabled:cursor-not-allowed';
     prevBtn.disabled = archiveCurrentPage === 1;
     prevBtn.onclick = () => onPageChange(archiveCurrentPage - 1);
     dom.archivePagination.appendChild(prevBtn);
-    for (let i = 1; i <= totalPages; i++) {
+
+    // Sayfa Numaraları
+    for (let i = startPage; i <= endPage; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
         btn.className = 'pagination-btn p-2 bg-tertiary rounded-lg hover:accent-bg transition';
@@ -445,8 +459,10 @@ export function renderArchive(dom, archivedItems, searchQuery, archiveCurrentPag
         btn.onclick = () => onPageChange(i);
         dom.archivePagination.appendChild(btn);
     }
+
+    // Sonraki (>) Butonu
     const nextBtn = document.createElement('button');
-    nextBtn.innerHTML = '&raquo;';
+    nextBtn.innerHTML = '&gt;'; // Büyüktür işareti
     nextBtn.className = 'pagination-btn p-2 bg-tertiary rounded-lg hover:accent-bg transition disabled:opacity-50 disabled:cursor-not-allowed';
     nextBtn.disabled = archiveCurrentPage === totalPages;
     nextBtn.onclick = () => onPageChange(archiveCurrentPage + 1);
@@ -478,17 +494,22 @@ export function renderNotes(dom, allItems, formatDateFn) {
 export function renderOverdueReport(allItems, formatRelativeTimeFn) {
     const overdueList = document.getElementById('overdue-report-list');
     const overdueMessage = document.getElementById('empty-overdue-report-message');
-    const activeItems = allItems.filter(item => item.status !== 'delivered');
+    const activeItems = allItems.filter(item => item.status !== 'active'); // Assuming active implies overdue check makes sense only for active items. Correction: Code logic uses active status.
+    // Re-checking logic from original file:
+    // const activeItems = allItems.filter(item => item.status !== 'delivered');
+    // Correct logic applied below as per original file intent.
+    const pendingItems = allItems.filter(item => item.status !== 'delivered'); 
+
     if (!overdueList || !overdueMessage) return; // Hata önleme
     
-    if (activeItems.length === 0) {
+    if (pendingItems.length === 0) {
         overdueList.innerHTML = '';
         overdueMessage.classList.remove('hidden');
         return;
     }
     overdueMessage.classList.add('hidden');
-    activeItems.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-    const top10 = activeItems.slice(0, 10);
+    pendingItems.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+    const top10 = pendingItems.slice(0, 10);
     overdueList.innerHTML = top10.map((item, i) => `<div class="bg-tertiary p-3 rounded-md flex justify-between items-center"><span class="text-primary">${i + 1}. ${item.customerName}</span><span class="text-sm text-secondary">${formatRelativeTimeFn(item.createdAt)}</span></div>`).join('');
 }
 
