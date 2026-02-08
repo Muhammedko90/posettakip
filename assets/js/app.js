@@ -20,9 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let settings = {};
     let sortState = { type: 'alpha', direction: 'asc' };
     
-    // Varsayılan görünüm 'grid' olarak ayarlandı
     let viewMode = 'grid'; 
-    let isFullWidth = false; // Tam ekran durumu
+    let isFullWidth = false;
 
     let archiveCurrentPage = 1;
     const itemsPerPage = 10;
@@ -31,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let deliveryPersonnelUnsubscribe = null;
     let settingsUnsubscribe = null;
     let seenNotifications = [];
-    const customerDetailItemsPerPage = 5;
     let appLogicInitialized = false;
     
     // Telegram Bot Değişkenleri
@@ -54,14 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
     }
 
-    // Tam ekran geçiş fonksiyonu
     function toggleFullWidth(enable) {
         isFullWidth = enable;
         settings.isFullWidth = enable;
         
         if (enable) {
             dom.appContainer.classList.remove('container', 'mx-auto', 'max-w-5xl');
-            dom.appContainer.classList.add('w-full', 'px-4'); // Kenarlara yapışmaması için padding
+            dom.appContainer.classList.add('w-full', 'px-4');
             if (dom.toggleWidthBtn) dom.toggleWidthBtn.innerHTML = ui.icons.collapse;
         } else {
             dom.appContainer.classList.add('container', 'mx-auto', 'max-w-5xl');
@@ -69,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dom.toggleWidthBtn) dom.toggleWidthBtn.innerHTML = ui.icons.expand;
         }
         
-        // Raporlar sekmesindeysek grafikleri yeniden çiz (genişlik değiştiği için)
         const activeTab = document.querySelector('.tab-active');
         if (activeTab && activeTab.id === 'tab-reports') {
             const activeBtn = document.querySelector('.report-range-btn.accent-bg');
@@ -78,15 +74,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 requestAnimationFrame(() => {
                     ui.renderPeriodicReport(allItems, range, ui.formatDate);
                 });
-            }, 300); // Transition süresi kadar bekle
+            }, 300);
         }
     }
 
-    // Telegram Bildirim Fonksiyonu (Çoklu Gönderim)
-    async function sendTelegramNotification(message, chatId = null) {
+    async function sendTelegramNotification(message, chatId = null, replyMarkup = null) {
         if (!settings.telegramBotToken) return;
         
-        // Eğer özel bir chat ID verilmediyse ayarlardakileri kullan
         let targets = [];
         if (chatId) {
             targets = [chatId];
@@ -96,13 +90,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (targets.length === 0) return;
         
-        for (const targetId of targets) {
+        const uniqueTargets = [...new Set(targets)];
+
+        for (const targetId of uniqueTargets) {
             const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`;
+            const body = { 
+                chat_id: targetId, 
+                text: message, 
+                parse_mode: 'Markdown' 
+            };
+            
+            if (replyMarkup) {
+                body.reply_markup = replyMarkup;
+            }
+
             try {
                 await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ chat_id: targetId, text: message, parse_mode: 'Markdown' })
+                    body: JSON.stringify(body)
                 });
             } catch (error) {
                 console.error("Telegram hatası:", error);
@@ -110,9 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- YENİ TELEGRAM DOSYA GÖNDERME FONKSİYONU ---
     async function sendTelegramDocument(chatId, blob, filename, caption = '') {
         if (!settings.telegramBotToken) return;
+        
+        if (!chatId && settings.telegramChatId) {
+             const ids = settings.telegramChatId.split(',').map(id => id.trim()).filter(id => id);
+             if (ids.length > 0) chatId = ids[0];
+        }
+
+        if (!chatId) return;
         
         const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendDocument`;
         const formData = new FormData();
@@ -130,10 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- TELEGRAM BOT KOMUT DİNLEME MANTIĞI ---
     function startTelegramBotListener() {
         if (telegramPollTimeout) clearTimeout(telegramPollTimeout);
-        // Eğer token değişmediyse ve çalışıyorsa dokunma
         if (isTelegramPolling && settings.telegramBotToken === lastKnownBotToken) return;
         
         lastKnownBotToken = settings.telegramBotToken;
@@ -143,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function pollTelegram() {
-        // Döngü koşulları
         if (!userId || !settings.telegramBotToken || !isTelegramPolling) {
             isTelegramPolling = false;
             return;
@@ -162,8 +171,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     for (const update of data.result) {
                         if (update.update_id > maxId) maxId = update.update_id;
+                        
+                        // 1. Normal Mesajlar
                         if (update.message && update.message.text) {
                             await processTelegramCommand(update.message);
+                            hasUpdates = true;
+                        }
+
+                        // 2. Kanal Mesajları
+                        if (update.channel_post && update.channel_post.text) {
+                            await processTelegramCommand(update.channel_post);
+                            hasUpdates = true;
+                        }
+                        
+                        // 3. Buton Tıklamaları
+                        if (update.callback_query) {
+                            await processCallbackQuery(update.callback_query);
                             hasUpdates = true;
                         }
                     }
@@ -175,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (err) {
-            // Hata durumunda bekle
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
 
@@ -184,34 +206,170 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function processCallbackQuery(callbackQuery) {
+        const data = callbackQuery.data;
+        const message = callbackQuery.message;
+        if (!message) return;
+
+        const chatId = message.chat.id;
+        const messageId = message.message_id;
+
+        const allowedIds = (settings.telegramChatId || '').split(',').map(id => id.trim());
+        if (!allowedIds.includes(String(chatId))) {
+             try {
+                await fetch(`https://api.telegram.org/bot${settings.telegramBotToken}/answerCallbackQuery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "⛔ Yetkiniz yok!", show_alert: true })
+                });
+             } catch(e) {}
+             return;
+        }
+
+        try {
+            await fetch(`https://api.telegram.org/bot${settings.telegramBotToken}/answerCallbackQuery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "İşlem yapılıyor..." })
+            });
+        } catch (e) { console.error(e); }
+
+        const parts = data.split('_');
+        const action = parts[0];
+        const itemId = parts.slice(1).join('_');
+
+        if (action === 'dlv') {
+             const item = allItems.find(i => i.id === itemId);
+
+             if (item && item.status === 'active') {
+                 const deliveryPerson = "Bot (Buton)";
+                 await updateItem(item.id, { status: 'delivered', deliveredAt: new Date(), deliveredBy: deliveryPerson, note: '', reminderDate: null });
+                 
+                 const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
+                 await fetch(editUrl, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         chat_id: chatId,
+                         message_id: messageId,
+                         text: `✅ *${item.customerName}* teslim edildi.`,
+                         parse_mode: 'Markdown'
+                     })
+                 });
+             } else {
+                 const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
+                 await fetch(editUrl, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         chat_id: chatId,
+                         message_id: messageId,
+                         text: `❌ Bu kayıt artık aktif değil.`,
+                         parse_mode: 'Markdown'
+                     })
+                 });
+             }
+        }
+    }
+
     async function processTelegramCommand(message) {
+        if (!message || !message.text) return;
+        
         const text = message.text.trim();
         const chatId = message.chat.id;
+        
+        const user = message.from || { first_name: 'Kanal', last_name: 'Yöneticisi' };
+        const senderName = message.chat.title ? `Kanal: ${message.chat.title}` : (user.first_name + ' ' + (user.last_name || '')).trim();
+        
         const parts = text.split(' ');
         const command = parts[0].toLowerCase();
         
-        // Yetkili Chat ID kontrolü
-        const allowedIds = (settings.telegramChatId || '').split(',').map(id => id.trim());
-        if (!allowedIds.includes(String(chatId)) && command !== '/id') {
-            return; 
-        }
+        const adminIds = (settings.telegramChatId || '').split(',').map(id => id.trim());
+        const isAdmin = adminIds.includes(String(chatId));
 
         let reply = "";
+        let shouldBroadcast = false;
 
         try {
             switch (command) {
+                case '/start':
+                case '/basla': {
+                    if (message.chat.type === 'channel') {
+                        reply = `👋 Merhaba! Bu kanalın ID'si: \`${chatId}\`\nBu ID'yi sisteme ekleyerek bildirimleri buraya yönlendirebilirsiniz.`;
+                        break;
+                    }
+
+                    let subscribers = settings.telegramSubscribers || [];
+                    if (!subscribers.some(s => String(s.id) === String(chatId))) {
+                        subscribers.push({ id: chatId, name: senderName, joinedAt: new Date().toISOString() });
+                        settings.telegramSubscribers = subscribers;
+                        await dataManager.saveSettings(db, userId, settings);
+                        reply = `👋 Merhaba ${senderName}!\nDuyuru listesine başarıyla eklendiniz.`;
+                    } else {
+                        reply = `👋 Tekrar merhaba ${senderName}! Zaten listedesiniz.`;
+                    }
+
+                    if (isAdmin) {
+                        reply += "\n👑 Yetkili girişi doğrulandı. Komutları kullanabilirsiniz.";
+                    } else {
+                        reply += `\nℹ️ Şu an sadece duyuruları alabilirsiniz. İşlem yetkiniz yok.\n\nYetkili olmak için aşağıdaki ID'yi uygulama ayarlarına ekleyin:\n🆔 \`${chatId}\``;
+                    }
+                    break;
+                }
+
+                case '/id': {
+                    reply = `🆔 *Hesap/Kanal Bilgileri*\n\n🔢 Chat ID: \`${chatId}\`\n👤 İsim/Başlık: ${senderName}`;
+                    if (isAdmin) {
+                        reply += "\n\n✅ *DURUM: YETKİLİ (Mesaj Alabilir)*";
+                    } else {
+                        reply += "\n\n❌ *DURUM: KAYITSIZ*\n(Bu kanala bildirim gelmesi için yukarıdaki Chat ID'yi Ayarlar > Telegram Chat ID kutusuna ekleyin)";
+                    }
+                    break;
+                }
+
+                case '/ping': {
+                    reply = "🏓 Pong! Bot çevrimiçi.";
+                    break;
+                }
+
+                case '/duyuru': {
+                    if (!isAdmin) { 
+                        reply = `⛔ Bu komutu kullanmaya yetkiniz yok.\n\nDuyuru göndermek için ID'nizi web panelindeki Ayarlar kısmına eklemelisiniz.\n🆔 ID'niz: \`${chatId}\``; 
+                        break; 
+                    }
+
+                    const announcement = parts.slice(1).join(' ');
+                    if (!announcement) { reply = "⚠️ Mesaj yazmadınız. Örn: `/duyuru Yarın kapalıyız`"; break; }
+                    
+                    const subscribers = settings.telegramSubscribers || [];
+                    const subIds = subscribers.map(s => String(s.id));
+                    const allTargetIds = [...new Set([...adminIds, ...subIds])];
+                    
+                    if (allTargetIds.length === 0) {
+                        reply = "⚠️ Gönderilecek kimse bulunamadı.";
+                    } else {
+                        let successCount = 0;
+                        for (const targetId of allTargetIds) {
+                            if (!targetId) continue;
+                            await sendTelegramNotification(`📢 *DUYURU*\n\n${announcement}`, targetId);
+                            successCount++;
+                        }
+                        reply = `✅ Duyuru ${successCount} kişiye gönderildi.`;
+                    }
+                    break; 
+                }
+
                 case '/ekle': {
-                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/ekle [Müşteri Adı] [Adet (Opsiyonel)]`\nÖrn: `/ekle Ahmet 2`"; break; }
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/ekle [Müşteri Adı] [Adet]`"; break; }
                     
                     let bagCount = 1;
                     let nameParts = parts.slice(1);
                     const lastPart = nameParts[nameParts.length - 1];
-                    
                     if (!isNaN(lastPart) && nameParts.length > 1) {
                         bagCount = parseInt(lastPart);
                         nameParts.pop(); 
                     }
-                    
                     const customerName = ui.toTrUpperCase(nameParts.join(' '));
                     const activeItems = allItems.filter(item => item.status === 'active');
                     const existingItem = activeItems.find(item => ui.toTrUpperCase(item.customerName) === customerName);
@@ -219,246 +377,187 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (existingItem) {
                         const datesToAdd = Array(bagCount).fill(null).map(() => new Date());
                         await dataManager.addBagsToExistingItem(db, userId, existingItem.id, { bagCount: existingItem.bagCount + bagCount }, datesToAdd);
-                        reply = `✅ *${customerName}* müşterisine ${bagCount} poşet eklendi.\n🔢 Yeni Toplam: ${existingItem.bagCount + bagCount}`;
+                        // DETAYLI MESAJ (MEVCUT MÜŞTERİ)
+                        reply = `📦 *Poşet Eklendi (Mevcut Müşteri)*\n\n👤 Müşteri: ${customerName}\n➕ Eklenen: ${bagCount} Adet\n🔢 Toplam: ${existingItem.bagCount + bagCount} Adet\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`;
                     } else {
-                        const customerExists = allCustomers.some(c => ui.toTrUpperCase(c.name) === customerName);
-                        if (!customerExists) {
-                            await dataManager.addCustomer(db, userId, customerName);
-                        }
-                        await dataManager.addItem(db, userId, {
-                            customerName, bagCount, note: '', status: 'active',
-                            deliveredAt: null, deliveredBy: null, additionalDates: [], reminderDate: null
-                        });
-                        reply = `🆕 *${customerName}* adına ${bagCount} poşet ile yeni kayıt açıldı.`;
+                        if (!allCustomers.some(c => ui.toTrUpperCase(c.name) === customerName)) await dataManager.addCustomer(db, userId, customerName);
+                        await dataManager.addItem(db, userId, { customerName, bagCount, note: '', status: 'active', deliveredAt: null, deliveredBy: null, additionalDates: [], reminderDate: null });
+                        // DETAYLI MESAJ (YENİ MÜŞTERİ)
+                        reply = `🆕 *Yeni Müşteri Kaydı*\n\n👤 Müşteri: ${customerName}\n🛍️ Adet: ${bagCount}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`;
                     }
+                    shouldBroadcast = true;
                     break;
                 }
 
                 case '/teslim':
                 case '/tset': {
-                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/teslim [Müşteri Adı] [Adet]`\nÖrn: `/teslim Ahmet 1`"; break; }
-
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/teslim [Müşteri Adı]`"; break; }
                     let count = 1;
                     let nameParts = parts.slice(1);
                     const lastPart = nameParts[nameParts.length - 1];
-                    
-                    if (!isNaN(lastPart) && nameParts.length > 1) {
-                        count = parseInt(lastPart);
-                        nameParts.pop();
-                    }
-
+                    if (!isNaN(lastPart) && nameParts.length > 1) { count = parseInt(lastPart); nameParts.pop(); }
                     const customerName = ui.toTrUpperCase(nameParts.join(' '));
                     const item = allItems.find(i => i.status === 'active' && ui.toTrUpperCase(i.customerName) === customerName);
 
-                    if (!item) {
-                        reply = `❌ *${customerName}* adında bekleyen poşet bulunamadı.`;
-                    } else {
-                        const totalBags = Number(item.bagCount);
-                        const toDeliver = Math.min(count, totalBags);
-                        const deliveryPerson = "Bot Uzaktan"; 
-
-                        if (toDeliver >= totalBags) {
-                            await updateItem(item.id, { status: 'delivered', deliveredAt: new Date(), deliveredBy: deliveryPerson, note: '', reminderDate: null });
-                            reply = `✅ *${customerName}* poşetlerinin TAMAMI (${toDeliver} adet) teslim edildi.\n🚚 Teslim Eden: ${deliveryPerson}`;
-                        } else {
-                            const remaining = totalBags - toDeliver;
-                            const currentDates = [...(item.additionalDates || [])];
-                            const newAdditionalDates = currentDates.slice(0, Math.max(0, currentDates.length - toDeliver));
-                            await updateItem(item.id, { bagCount: remaining, additionalDates: newAdditionalDates });
-                            await dataManager.addItem(db, userId, {
-                                customerName: item.customerName,
-                                bagCount: toDeliver,
-                                status: 'delivered',
-                                deliveredAt: new Date(),
-                                deliveredBy: deliveryPerson,
-                                note: '',
-                                reminderDate: null,
-                                additionalDates: []
-                            });
-                            reply = `✅ *${customerName}* poşetlerinden ${toDeliver} adedi teslim edildi.\n🚚 Teslim Eden: ${deliveryPerson}\nKalan: ${remaining}`;
+                    if (!item) { reply = `❌ Bulunamadı: ${customerName}`; } else {
+                        const total = Number(item.bagCount);
+                        const toDel = Math.min(count, total);
+                        const rem = total - toDel;
+                        if (toDel >= total) await updateItem(item.id, { status: 'delivered', deliveredAt: new Date(), deliveredBy: `Bot (${senderName})`, note: '', reminderDate: null });
+                        else {
+                            const curDates = [...(item.additionalDates || [])];
+                            await updateItem(item.id, { bagCount: rem, additionalDates: curDates.slice(0, Math.max(0, curDates.length - toDel)) });
+                            await dataManager.addItem(db, userId, { customerName: item.customerName, bagCount: toDel, status: 'delivered', deliveredAt: new Date(), deliveredBy: `Bot (${senderName})`, note: '', reminderDate: null, additionalDates: [] });
                         }
+                        reply = `✅ ${customerName}: ${toDel} teslim edildi.${rem > 0 ? ` (Kalan: ${rem})` : ' (Tamamı bitti)'}`;
+                        shouldBroadcast = true;
+                    }
+                    break;
+                }
+
+                case '/sms': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (parts.length < 2) { reply = "⚠️ Örn: `/sms Ahmet`"; break; }
+                    const cName = ui.toTrUpperCase(parts.slice(1).join(' '));
+                    const item = allItems.find(i => i.status === 'active' && ui.toTrUpperCase(i.customerName) === cName);
+                    if (!item) { reply = "❌ Müşteri bulunamadı."; } else {
+                        const days = Math.floor((new Date() - (item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt))) / 86400000);
+                        const tmpl = settings.shareTemplate || 'Merhaba [Müşteri Adı], [Poşet Sayısı] poşetiniz hazır.';
+                        reply = `📱 *Hazır Mesaj:*\n\`${tmpl.replace(/\[Müşteri Adı\]/gi, item.customerName).replace(/\[Poşet Sayısı\]/gi, item.bagCount).replace(/\[Bekleme Süresi\]/gi, days)}\``;
+                    }
+                    break;
+                }
+
+                case '/not': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (parts.length < 3) { reply = "⚠️ Örn: `/not Ahmet Notunuz`"; break; }
+                    const targetName = ui.toTrUpperCase(parts[1]); 
+                    const activeItems = allItems.filter(i => i.status === 'active');
+                    let matchedItem = activeItems.find(i => ui.toTrUpperCase(i.customerName) === targetName) || activeItems.find(i => ui.toTrUpperCase(i.customerName).startsWith(targetName));
+                    
+                    if (matchedItem) {
+                        const note = parts.slice(2).join(' ');
+                        await updateItem(matchedItem.id, { note: ui.toTrUpperCase(note) });
+                        reply = `📝 *${matchedItem.customerName}* notu güncellendi.`;
+                        shouldBroadcast = true;
+                    } else {
+                        reply = "❌ Müşteri bulunamadı.";
                     }
                     break;
                 }
 
                 case '/sil': {
-                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/sil [Müşteri Adı]`"; break; }
-                    
-                    const customerName = ui.toTrUpperCase(parts.slice(1).join(' '));
-                    const item = allItems.find(i => i.status === 'active' && ui.toTrUpperCase(i.customerName) === customerName);
-
-                    if (!item) {
-                        reply = `❌ Silinecek kayıt bulunamadı: ${customerName}`;
-                    } else {
-                        await dataManager.deleteItem(db, userId, item.id);
-                        reply = `🗑️ *${customerName}* kaydı silindi.`;
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    const cName = ui.toTrUpperCase(parts.slice(1).join(' '));
+                    const item = allItems.find(i => i.status === 'active' && ui.toTrUpperCase(i.customerName) === cName);
+                    if (item) { 
+                        await dataManager.deleteItem(db, userId, item.id); 
+                        reply = `🗑️ Silindi: ${cName}`; 
+                        shouldBroadcast = true;
                     }
+                    else reply = "❌ Bulunamadı.";
                     break;
                 }
 
                 case '/bekleyen': {
-                    const activeItems = allItems.filter(i => i.status === 'active');
-                    if (activeItems.length === 0) {
-                        reply = "📂 Bekleyen poşet yok.";
-                    } else {
-                        let msg = "📋 *Bekleyen Müşteriler:*\n";
-                        activeItems.forEach(i => {
-                            msg += `▪️ ${i.customerName}: ${i.bagCount} adet\n`;
-                        });
-                        reply = msg;
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    const active = allItems.filter(i => i.status === 'active');
+                    if (active.length === 0) reply = "📂 Bekleyen yok.";
+                    else {
+                        const inlineKeyboard = { inline_keyboard: active.map(i => [{ text: `✅ ${i.customerName} (${i.bagCount}) Teslim`, callback_data: `dlv_${i.id}` }]) };
+                        await sendTelegramNotification("📋 *Hızlı Teslimat Menüsü*", chatId, inlineKeyboard);
+                        return;
                     }
                     break;
                 }
 
                 case '/iade': {
-                    if (parts.length < 2) { reply = "⚠️ Kullanım: `/iade [Müşteri Adı] [Adet]`"; break; }
-                    
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (parts.length < 2) { reply = "⚠️ Örn: `/iade Ahmet 1`"; break; }
                     let count = 1;
-                    let nameParts = parts.slice(1);
-                    const lastPart = nameParts[nameParts.length - 1];
-                    
-                    if (!isNaN(lastPart) && nameParts.length > 1) {
-                        count = parseInt(lastPart);
-                        nameParts.pop();
-                    }
-                    
-                    const customerName = ui.toTrUpperCase(nameParts.join(' '));
-                    
-                    await dataManager.addItem(db, userId, {
-                        customerName, 
-                        bagCount: count, 
-                        note: 'İADE İŞLEMİ', 
-                        status: 'active',
-                        deliveredAt: null, 
-                        deliveredBy: null, 
-                        additionalDates: [], 
-                        reminderDate: null
-                    });
-                    
-                    reply = `🔄 *${customerName}* için ${count} adet poşet İADE alındı ve listeye eklendi.`;
-                    break;
-                }
-
-                case '/id': {
-                    reply = `🆔 Sizin Chat ID'niz: \`${chatId}\``;
-                    break;
-                }
-
-                case '/ping': {
-                    reply = "🏓 Pong! Bot çevrimiçi ve dinliyor.";
+                    if (!isNaN(parts[parts.length-1])) { count = parseInt(parts.pop()); }
+                    const cName = ui.toTrUpperCase(parts.slice(1).join(' '));
+                    await dataManager.addItem(db, userId, { customerName: cName, bagCount: count, note: 'İADE', status: 'active', deliveredAt: null, deliveredBy: null, additionalDates: [], reminderDate: null });
+                    reply = `🔄 İade alındı: ${cName} (${count} ad)`;
+                    shouldBroadcast = true;
                     break;
                 }
 
                 case '/yenile': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     isTelegramPolling = false;
                     setTimeout(startTelegramBotListener, 1000);
-                    reply = "🔄 Bot bağlantısı yenilendi.";
+                    reply = "🔄 Bağlantı yenilendi.";
                     break;
                 }
 
                 case '/yedekal': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     const data = { allItems, allCustomers, deliveryPersonnel, settings };
-                    const jsonString = JSON.stringify(data, null, 2);
-                    const blob = new Blob([jsonString], { type: 'application/json' });
-                    const filename = `yedek-${new Date().toISOString().slice(0, 10)}.json`;
-                    
-                    await sendTelegramDocument(chatId, blob, filename, "📦 Sistem Yedeği");
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    await sendTelegramDocument(chatId, blob, `yedek-${new Date().toISOString().slice(0, 10)}.json`, "📦 Manuel Yedek");
                     return; 
                 }
 
                 case '/pdf': {
-                    const activeItems = allItems.filter(i => i.status === 'active');
-                    if (activeItems.length === 0) {
-                        reply = "📂 Listede bekleyen poşet yok, PDF oluşturulamadı.";
-                    } else if (jsPDF) {
-                        const blob = ui.getActiveItemsPDFBlob(activeItems, ui.formatDate, jsPDF);
-                        if (blob) {
-                            const filename = `bekleyenler-${new Date().toISOString().slice(0, 10)}.pdf`;
-                            await sendTelegramDocument(chatId, blob, filename, "📄 Bekleyen Poşet Listesi");
-                            return;
-                        } else {
-                            reply = "⚠️ PDF oluşturulurken hata oluştu.";
-                        }
-                    } else {
-                         reply = "⚠️ PDF kütüphanesi yüklenemedi.";
-                    }
-                    break;
-                }
-
-                case '/duyuru': {
-                    const announcement = parts.slice(1).join(' ');
-                    if (!announcement) { reply = "⚠️ Mesaj yazmadınız. Örn: `/duyuru Yarın kapalıyız`"; break; }
-                    
-                    await sendTelegramNotification(`📢 *DUYURU*\n\n${announcement}`);
-                    return; 
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    if (jsPDF) {
+                        const blob = ui.getActiveItemsPDFBlob(allItems.filter(i => i.status === 'active'), ui.formatDate, jsPDF);
+                        if (blob) await sendTelegramDocument(chatId, blob, `liste-${new Date().toISOString().slice(0, 10)}.pdf`, "📄 Liste");
+                        else reply = "⚠️ PDF boş.";
+                    } else reply = "⚠️ PDF motoru yok.";
+                    return;
                 }
 
                 case '/ozet': {
-                    const activeCount = allItems.filter(i => i.status === 'active').length;
-                    const activeBags = allItems.filter(i => i.status === 'active').reduce((sum, i) => sum + i.bagCount, 0);
-                    
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    const active = allItems.filter(i => i.status === 'active');
                     const todayStr = new Date().toISOString().slice(0, 10);
-                    const todayDelivered = allItems.filter(i => {
-                        if (i.status !== 'delivered' || !i.deliveredAt) return false;
-                        const d = i.deliveredAt.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt);
-                        return d.toISOString().slice(0, 10) === todayStr;
-                    });
-                    const todayDeliveredBags = todayDelivered.reduce((sum, i) => sum + i.bagCount, 0);
-
-                    reply = `📊 *Günlük Özet*\n\n📦 Bekleyen Poşet: ${activeBags}\n👥 Bekleyen Müşteri: ${activeCount}\n✅ Bugün Teslim Edilen: ${todayDeliveredBags}`;
+                    const todayDel = allItems.filter(i => i.status === 'delivered' && i.deliveredAt && (i.deliveredAt.seconds ? new Date(i.deliveredAt.seconds*1000) : new Date(i.deliveredAt)).toISOString().slice(0,10) === todayStr);
+                    reply = `📊 *Özet*\n📦 Bekleyen: ${active.reduce((a,b)=>a+b.bagCount,0)}\n✅ Bugün Teslim: ${todayDel.reduce((a,b)=>a+b.bagCount,0)}`;
                     break;
                 }
 
                 case '/gunsonu': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     const todayStr = new Date().toISOString().slice(0, 10);
-                    
-                    const todayAdded = allItems.filter(i => {
-                        const d = i.createdAt?.seconds ? new Date(i.createdAt.seconds * 1000) : new Date(i.createdAt);
-                        return d.toISOString().slice(0, 10) === todayStr;
-                    });
-                    const addedCount = todayAdded.reduce((sum, i) => sum + i.bagCount, 0);
-
-                    const todayDelivered = allItems.filter(i => {
-                        if (i.status !== 'delivered' || !i.deliveredAt) return false;
-                        const d = i.deliveredAt.seconds ? new Date(i.deliveredAt.seconds * 1000) : new Date(i.deliveredAt);
-                        return d.toISOString().slice(0, 10) === todayStr;
-                    });
-                    const deliveredCount = todayDelivered.reduce((sum, i) => sum + i.bagCount, 0);
-
-                    const waitingCount = allItems.filter(i => i.status === 'active').reduce((sum, i) => sum + i.bagCount, 0);
-
-                    reply = `🌙 *Gün Sonu Raporu* (${todayStr})\n\n➕ Eklenen Poşet: ${addedCount}\n✅ Teslim Edilen: ${deliveredCount}\n📦 Kalan (Devir): ${waitingCount}\n\nİyi akşamlar!`;
+                    const added = allItems.filter(i => (i.createdAt?.seconds ? new Date(i.createdAt.seconds*1000) : new Date(i.createdAt)).toISOString().slice(0,10) === todayStr).reduce((a,b)=>a+b.bagCount,0);
+                    const del = allItems.filter(i => i.status === 'delivered' && (i.deliveredAt?.seconds ? new Date(i.deliveredAt.seconds*1000) : new Date(i.deliveredAt)).toISOString().slice(0,10) === todayStr).reduce((a,b)=>a+b.bagCount,0);
+                    reply = `🌙 *Gün Sonu (${todayStr})*\n➕ Eklenen: ${added}\n✅ Teslim: ${del}\n📦 Devir: ${allItems.filter(i=>i.status==='active').reduce((a,b)=>a+b.bagCount,0)}`;
                     break;
                 }
 
                 case '/help':
                 case '/yardim': {
                     reply = "🤖 *Bot Komutları:*\n\n" +
+                            "📢 `/duyuru [Mesaj]` - Herkese mesaj at\n" +
+                            "👋 `/basla` - Duyuru listesine abone ol\n" +
+                            "📋 `/bekleyen` - Listeyi gör ve yönet\n" +
                             "➕ `/ekle [İsim] [Adet]`\n" +
-                            "✅ `/teslim [İsim] [Adet]`\n" +
-                            "🔄 `/iade [İsim] [Adet]`\n" +
-                            "🗑️ `/sil [İsim]`\n" +
-                            "📋 `/bekleyen` - Listeyi gör\n" +
-                            "📄 `/pdf` - Listeyi indir\n" +
-                            "📊 `/ozet` - Anlık durum\n" +
-                            "🌙 `/gunsonu` - Detaylı rapor\n" +
-                            "📢 `/duyuru [Mesaj]` - Herkese mesaj\n" +
-                            "💾 `/yedekal` - Veri yedeği\n" +
-                            "🆔 `/id` - ID öğren\n" +
-                            "❓ `/help` - Bu menü";
+                            "✅ `/teslim [İsim]`\n" +
+                            "📝 `/not [İsim] [Not]`\n" +
+                            "📱 `/sms [İsim]`\n" +
+                            "💾 `/yedekal` & `/pdf`\n" +
+                            "🆔 `/id` - ID öğren";
                     break;
                 }
 
                 default:
-                    // Bilinmeyen komut
                     return;
             }
             
-            if (reply) sendTelegramNotification(reply, chatId);
+            if (reply) {
+                if (shouldBroadcast) {
+                    await sendTelegramNotification(reply); 
+                } else {
+                    await sendTelegramNotification(reply, chatId);
+                }
+            }
 
         } catch (err) {
             console.error("Bot komut hatası:", err);
-            sendTelegramNotification("⚠️ İşlem sırasında bir hata oluştu.", chatId);
+            if (isAdmin) sendTelegramNotification("⚠️ Hata: " + err.message, chatId);
         }
     }
 
@@ -493,7 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const settingsRef = { current: null };
         settingsUnsubscribe = dataManager.listenToSettings(db, userId, (newSettings) => {
-            // Ayarlar güncellendiğinde botu etkilememesi için flag'leri kontrol et
             const oldBotToken = settings.telegramBotToken;
             settings = newSettings;
             
@@ -502,18 +600,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 dataManager.saveSettings(db, userId, settings);
             }
             
-            // Genişlik ayarı
             if (settings.hasOwnProperty('isFullWidth')) {
                 toggleFullWidth(settings.isFullWidth);
             } else {
                 toggleFullWidth(false);
             }
             
-            // Eğer bot token değiştiyse veya bot durmuşsa başlat
             if (settings.telegramBotToken) {
                 if (settings.telegramBotToken !== oldBotToken) {
-                    isTelegramPolling = false; // Eski döngüyü durdur
-                    setTimeout(() => startTelegramBotListener(), 1000); // Yenisini başlat
+                    isTelegramPolling = false; 
+                    setTimeout(() => startTelegramBotListener(), 1000); 
                 } else if (!isTelegramPolling) {
                     startTelegramBotListener();
                 }
@@ -526,23 +622,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Otomatik Raporlama (Cron benzeri yapı) ---
     setInterval(() => {
-        if (!settings.telegramReportTime || !userId) return;
+        if (!userId) return;
 
         const now = new Date();
-        const day = now.getDay(); // 0: Pazar
-        
-        if (day === 0) return;
-
         const currentTime = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         const todayStr = now.toISOString().slice(0, 10);
+        const day = now.getDay(); 
 
-        if (currentTime === settings.telegramReportTime && settings.lastReportDate !== todayStr) {
+        if (day !== 0 && settings.telegramReportTime && currentTime === settings.telegramReportTime && settings.lastReportDate !== todayStr) {
             
             const realActiveItems = allItems.filter(item => item.status === 'active');
-            
             let message = "";
+            
             if (realActiveItems.length === 0) {
                 message = "Günaydın! ☀️\n\nŞu anda bekleyen poşet bulunmamaktadır. İyi çalışmalar!";
             } else {
@@ -552,10 +644,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             sendTelegramNotification(message);
-
             settings.lastReportDate = todayStr;
             dataManager.saveSettings(db, userId, settings);
         }
+
+        if (currentTime === "23:00" && settings.lastBackupDate !== todayStr && settings.telegramBotToken) {
+            const data = { allItems, allCustomers, deliveryPersonnel, settings };
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const filename = `oto-yedek-${todayStr}.json`;
+            
+            sendTelegramDocument(null, blob, filename, `🌙 *Otomatik Gece Yedeği* (${todayStr})`);
+            
+            settings.lastBackupDate = todayStr;
+            dataManager.saveSettings(db, userId, settings);
+        }
+
     }, 60000); 
 
     function initializeAppLogic() {
@@ -692,7 +796,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                     
-                    // Telegram Bildirimi (Teslimat) - Kalan bilgisini ekle
                     const remainingText = remaining > 0 ? `\n📦 Kalan: ${remaining} Adet` : '';
                     sendTelegramNotification(`✅ *Teslimat Yapıldı*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet${remainingText}\n🚚 Teslim Eden: ${result.deliveredBy}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
                 }
@@ -842,9 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await dataManager.saveSettings(db, userId, settings);
                 await ui.showSimpleMessageModal(dom, 'Başarılı', 'Paylaşım şablonu kaydedildi.', true);
                 break;
-            // YENİ: Telegram ayarlarını kaydederken şifre iste
             case 'save-telegram-settings-btn': {
-                // DOM elementlerini kontrol et (Hata önleyici)
                 if (!dom.telegram || !dom.telegram.botTokenInput || !dom.telegram.chatIdInput) {
                     ui.showSimpleMessageModal(dom, "Hata", "Ayar alanları yüklenemedi. Lütfen sayfayı yenileyin.");
                     return;
@@ -867,7 +968,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         hideLoadingMsg();
                         await ui.showSimpleMessageModal(dom, 'Başarılı', 'Telegram ayarları güvenle kaydedildi.', true);
                         
-                        // Ayarlar değişince botu (tekrar) başlat/kontrol et
                         if (settings.telegramBotToken) {
                              if (!isTelegramPolling) startTelegramBotListener();
                         } else {
