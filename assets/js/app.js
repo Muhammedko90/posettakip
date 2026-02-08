@@ -670,10 +670,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const totalBags = Number(item.bagCount) || 1;
                     const requested = parseInt(result.deliveredCount, 10);
                     const toDeliver = isNaN(requested) || requested < 1 ? totalBags : Math.min(requested, totalBags);
+                    
+                    const remaining = totalBags - toDeliver;
+
                     if (toDeliver >= totalBags) {
                         await updateItem(id, { status: 'delivered', deliveredAt: deliveryTimestamp, deliveredBy: result.deliveredBy, note: '', reminderDate: null });
                     } else {
-                        const remaining = totalBags - toDeliver;
                         const currentDates = [...(item.additionalDates || [])];
                         currentDates.sort((a, b) => (a.seconds ?? a.getTime?.() / 1000 ?? 0) - (b.seconds ?? b.getTime?.() / 1000 ?? 0));
                         const newAdditionalDates = currentDates.slice(0, Math.max(0, currentDates.length - toDeliver));
@@ -690,8 +692,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                     
-                    // Telegram Bildirimi (Teslimat)
-                    sendTelegramNotification(`✅ *Teslimat Yapıldı*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet\n🚚 Teslim Eden: ${result.deliveredBy}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
+                    // Telegram Bildirimi (Teslimat) - Kalan bilgisini ekle
+                    const remainingText = remaining > 0 ? `\n📦 Kalan: ${remaining} Adet` : '';
+                    sendTelegramNotification(`✅ *Teslimat Yapıldı*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet${remainingText}\n🚚 Teslim Eden: ${result.deliveredBy}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
                 }
                 break;
             }
