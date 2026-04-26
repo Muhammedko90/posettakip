@@ -974,3 +974,245 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     background: rgba(51, 65, 85, 0.4);
 }
 
+/* ============================================================
+   Gradient Border Effect (cursor follows the border)
+   - Tek bir document-level pointermove dinleyicisi (gradient-border.js),
+     her kartta --gb-x / --gb-y CSS değişkenlerini günceller.
+   - .gradient-border sınıfı eklenmiş herhangi bir elemanda çalışır.
+   ============================================================ */
+.gradient-border {
+    --gb-x: 50%;
+    --gb-y: 50%;
+    --gb-size: 320px;
+    --gb-color: var(--accent-color, #a78bfa);
+    --gb-thickness: 1.5px;
+    --gb-opacity: 0;
+    position: relative;
+    isolation: isolate;
+}
+
+.gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: var(--gb-thickness);
+    background: radial-gradient(
+        var(--gb-size) circle at var(--gb-x) var(--gb-y),
+        var(--gb-color) 0%,
+        rgba(255, 255, 255, 0.18) 35%,
+        transparent 70%
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    opacity: var(--gb-opacity);
+    transition: opacity 0.25s ease;
+    /* isolation: isolate ile sınırlandırılmış stacking context içinde
+       z-index: -1 → akış içeriğinin altında kalır, dolayısıyla
+       çocuklar için ek position/z-index gerekmiyor (action menu vb. bozulmuyor). */
+    z-index: -1;
+}
+
+.gradient-border::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+        calc(var(--gb-size) * 0.85) circle at var(--gb-x) var(--gb-y),
+        color-mix(in srgb, var(--gb-color) 14%, transparent) 0%,
+        transparent 60%
+    );
+    pointer-events: none;
+    opacity: calc(var(--gb-opacity) * 0.85);
+    transition: opacity 0.25s ease;
+    mix-blend-mode: screen;
+    z-index: -1;
+}
+
+/* Kart bazlı renk varyasyonları */
+#panel-anasayfa .dashboard-kpi.gradient-border { --gb-size: 260px; --gb-thickness: 1.25px; }
+#panel-anasayfa .dashboard-kpi--customers.gradient-border { --gb-color: #38bdf8; }
+#panel-anasayfa .dashboard-kpi--bags.gradient-border      { --gb-color: #a78bfa; }
+#panel-anasayfa .dashboard-kpi--week.gradient-border      { --gb-color: #34d399; }
+#panel-anasayfa .dashboard-kpi--alert.gradient-border     { --gb-color: #fca5a5; --gb-thickness: 1.5px; }
+
+#panel-anasayfa .dashboard-panel-card.gradient-border { --gb-color: #a78bfa; --gb-size: 380px; }
+
+.settings-accordion.gradient-border { --gb-color: #60a5fa; --gb-size: 360px; --gb-thickness: 1px; }
+
+/* Müşteriler paneli — hızlı ekle kartı + müşteri kartları */
+.customers-quick.gradient-border { --gb-color: #a78bfa; --gb-size: 380px; --gb-thickness: 1.25px; }
+
+.customer-card.gradient-border {
+    --gb-color: var(--accent-color, #a78bfa);
+    --gb-size: 280px;
+    --gb-thickness: 1.25px;
+}
+
+/* Arşiv satırları — yatay/küçük olduklarından gradient gloomy küçük */
+.archive-item-card.gradient-border {
+    --gb-color: #60a5fa;
+    --gb-size: 240px;
+    --gb-thickness: 1px;
+}
+
+/* Raporlar paneli */
+.reports-card.gradient-border { --gb-color: #38bdf8; --gb-size: 420px; --gb-thickness: 1.25px; }
+.reports-stat-card.gradient-border { --gb-size: 260px; --gb-thickness: 1.25px; }
+.reports-stat-card--blue.gradient-border    { --gb-color: #38bdf8; }
+.reports-stat-card--emerald.gradient-border { --gb-color: #34d399; }
+.reports-stat-card--amber.gradient-border   { --gb-color: #fbbf24; }
+.reports-stat-card--violet.gradient-border  { --gb-color: #a78bfa; }
+.report-chart-box.gradient-border { --gb-color: #a78bfa; --gb-size: 380px; --gb-thickness: 1px; }
+
+/* Auth (giriş/kayıt) kartı */
+.auth-card.gradient-border { --gb-color: var(--accent-color, #a78bfa); --gb-size: 360px; --gb-thickness: 1.25px; }
+
+/* Mobil/dokunmatik cihazlarda performans için kapatma */
+@media (hover: none) {
+    .gradient-border::before,
+    .gradient-border::after {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gradient-border::before,
+    .gradient-border::after {
+        transition: none;
+    }
+}
+
+/* ============================================================
+   Glowing Animated Search Bar
+   - Sarmalayıcıya .glow-search ekleyince input'un arkasında
+     dönen mor/menekşe konik gradient bir aura belirir.
+   - Yalnızca odakta (focus-within) görünür, normalde tamamen sönüktür.
+   - Aura, blur + opacity ile dağıtılarak yumuşak parlama hissi verir.
+   ============================================================ */
+
+@property --glow-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes glow-search-spin {
+    to { --glow-angle: 360deg; }
+}
+
+.glow-search {
+    --glow-radius: 0.75rem;
+    --glow-aura-spread: 22px;
+    --glow-ring-spread: 4px;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Pseudo-element'ler varsayılan durumda TAMAMEN gizli (opacity: 0).
+   Dönen `glow-search-spin` animasyonu sadece `--glow-angle` değişkenini
+   güncellediği için opacity'e dokunmaz; bu yüzden odakta değilken
+   parlama tamamen kapalı kalır. (Eski `glow-search-pulse` animasyonu
+   opacity'i 0.85↔1 arasında değiştirip base `opacity: 0`'ı ezdiğinden
+   kaldırıldı.) */
+.glow-search::before,
+.glow-search::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    /* Açılış/kapanış için yumuşak geçiş — iki yönde de smooth fade. */
+    transition: opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Dış geniş aura (büyük blur, dönen konik gradient → animasyonlu glow) */
+.glow-search::before {
+    inset: calc(var(--glow-aura-spread) * -1);
+    background: conic-gradient(
+        from var(--glow-angle, 0deg),
+        #c4b5fd 0%,
+        #8b5cf6 12%,
+        transparent 22%,
+        #a855f7 42%,
+        #d8b4fe 52%,
+        transparent 62%,
+        #7c3aed 78%,
+        #c4b5fd 92%,
+        transparent 100%
+    );
+    filter: blur(20px) saturate(1.2);
+    border-radius: calc(var(--glow-radius) + var(--glow-aura-spread));
+    will-change: opacity, --glow-angle;
+}
+
+/* İç ince renkli kenarlık halkası (input'un sınırını çizen halo) */
+.glow-search::after {
+    inset: calc(var(--glow-ring-spread) * -1);
+    background: conic-gradient(
+        from calc(var(--glow-angle, 0deg) * -1),
+        #a78bfa,
+        #d8b4fe,
+        #c084fc,
+        #8b5cf6,
+        #6366f1,
+        #a78bfa
+    );
+    filter: blur(3px) saturate(1.15);
+    border-radius: calc(var(--glow-radius) + var(--glow-ring-spread));
+}
+
+/* Sadece odaktayken görünür hâle gel ve dönen spin animasyonunu başlat.
+   Animasyon opacity'e dokunmadığı için transition smooth fade'i yönetir. */
+.glow-search:focus-within::before {
+    opacity: 1;
+    animation: glow-search-spin 6s linear infinite;
+}
+.glow-search:focus-within::after {
+    opacity: 1;
+    animation: glow-search-spin 6s linear infinite reverse;
+}
+
+/* Input'un kendisi: idle'da TAMAMEN sade kalsın, hover'da değişmesin.
+   Geçişi her durumda smooth tutmak için input'a kalıcı bir transition
+   bırakıyoruz; böylece focus → blur (kapanış) da yumuşak akar. */
+.glow-search > input,
+.glow-search > .glow-search__input {
+    position: relative;
+    z-index: 0;
+    transition:
+        box-shadow 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+        border-color 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Aktif (focus) input — "bastığında renklendi" hissi: net mor halka. */
+.glow-search:focus-within > input,
+.glow-search:focus-within > .glow-search__input {
+    border-color: #a78bfa !important;
+    box-shadow:
+        0 0 0 1px rgba(167, 139, 250, 0.85),
+        0 0 18px rgba(168, 85, 247, 0.55),
+        0 0 38px rgba(139, 92, 246, 0.35) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .glow-search:focus-within::before,
+    .glow-search:focus-within::after {
+        animation: none;
+    }
+}
+
+/* Müşteriler paneli — ana arama (.customers-quick__input border-radius: 0.5rem) */
+#panel-list .glow-search {
+    --glow-radius: 0.5rem;
+}
+
+/* Arşiv paneli — search input (rounded-xl ≈ 0.75rem) */
+#panel-archive .glow-search {
+    --glow-radius: 0.75rem;
+}

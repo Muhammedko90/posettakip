@@ -2,6 +2,7 @@
  * DOM manipülasyonu ve render işlemleri
  */
 import { mountKargoCalculator } from './kargo-desi.js';
+import { saveOrShareText, saveOrSharePdf } from './native-share.js';
 
 export const toTrUpperCase = (str) => str ? str.toLocaleUpperCase('tr-TR') : '';
 
@@ -292,6 +293,8 @@ export function getDomRefs() {
         itemList: document.getElementById('item-list'),
         itemGrid: document.getElementById('item-grid'),
         emptyItemListMessage: document.getElementById('empty-item-list-message'),
+        loadMoreContainer: document.getElementById('load-more-container'),
+        toastContainer: document.getElementById('toast-container'),
         totalBagsCounter: document.getElementById('total-bags-counter'),
         totalCustomersCounter: document.getElementById('total-customers-counter'),
         sortAlphaBtn: document.getElementById('sort-alpha'),
@@ -470,7 +473,7 @@ function createItemElement(item, formatDateFn, formatRelativeTimeFn) {
         : '';
     const lastAct = lastActivityForItem(item);
     const sonIslem = lastAct ? formatDateFn(lastAct) : '—';
-    div.className = 'customer-card customer-card--list';
+    div.className = 'customer-card customer-card--list gradient-border';
     div.dataset.id = item.id;
     div.dataset.customerName = item.customerName;
     div.innerHTML = `
@@ -524,7 +527,7 @@ function createItemCardElement(item, formatDateFn, formatRelativeTimeFn) {
         : '';
     const lastAct = lastActivityForItem(item);
     const sonIslem = lastAct ? formatDateFn(lastAct) : '—';
-    div.className = 'customer-card customer-card--grid';
+    div.className = 'customer-card customer-card--grid gradient-border';
     div.dataset.id = item.id;
     div.dataset.customerName = item.customerName;
     div.innerHTML = `
@@ -742,7 +745,7 @@ export function renderDashboard(dom, allItems, formatDateFn, formatRelativeTimeF
     }
 }
 
-export function renderItems(dom, items, sortState, viewMode, searchQuery, formatDateFn, formatRelativeTimeFn) {
+export function renderItems(dom, items, sortState, viewMode, searchQuery, formatDateFn, formatRelativeTimeFn, visibleCount, onLoadMore) {
     const direction = sortState.direction === 'asc' ? 1 : -1;
     const filtered = items.filter(item => toTrUpperCase(item.customerName).includes(searchQuery));
     const sorted = [...filtered].sort((a, b) => {
@@ -758,15 +761,40 @@ export function renderItems(dom, items, sortState, viewMode, searchQuery, format
     dom.itemGrid.innerHTML = '';
     dom.emptyItemListMessage.style.display = sorted.length === 0 ? 'block' : 'none';
     dom.emptyItemListMessage.textContent = searchQuery ? `"${searchQuery}" İLE EŞLEŞEN SONUÇ BULUNAMADI.` : 'HENÜZ BEKLEYEN POŞET BULUNMUYOR.';
+
+    const totalCount = sorted.length;
+    const hasLimit = typeof visibleCount === 'number' && visibleCount > 0;
+    const limit = hasLimit ? Math.min(visibleCount, totalCount) : totalCount;
+    const pageItems = sorted.slice(0, limit);
+
     if (viewMode === 'list') {
         dom.itemList.classList.remove('hidden');
         dom.itemGrid.classList.add('hidden');
-        sorted.forEach(item => dom.itemList.appendChild(createItemElement(item, formatDateFn, formatRelativeTimeFn)));
+        pageItems.forEach(item => dom.itemList.appendChild(createItemElement(item, formatDateFn, formatRelativeTimeFn)));
     } else {
         dom.itemList.classList.add('hidden');
         dom.itemGrid.classList.remove('hidden');
-        sorted.forEach(item => dom.itemGrid.appendChild(createItemCardElement(item, formatDateFn, formatRelativeTimeFn)));
+        pageItems.forEach(item => dom.itemGrid.appendChild(createItemCardElement(item, formatDateFn, formatRelativeTimeFn)));
     }
+
+    const loadMoreContainer = dom.loadMoreContainer || document.getElementById('load-more-container');
+    if (!loadMoreContainer) return;
+    loadMoreContainer.innerHTML = '';
+    if (!hasLimit || limit >= totalCount) return;
+
+    const remaining = totalCount - limit;
+    const info = document.createElement('span');
+    info.className = 'text-xs text-secondary';
+    info.textContent = `${limit} / ${totalCount} kayıt gösteriliyor`;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl accent-bg accent-bg-hover text-white text-sm font-semibold transition shadow-md';
+    btn.innerHTML = `<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg><span>Daha Fazla Göster (+${remaining})</span>`;
+    btn.addEventListener('click', () => { if (typeof onLoadMore === 'function') onLoadMore(); }, { once: true });
+
+    loadMoreContainer.appendChild(btn);
+    loadMoreContainer.appendChild(info);
 }
 
 const ARCHIVE_ICONS = {
@@ -777,7 +805,7 @@ const ARCHIVE_ICONS = {
 function createArchiveItemElement(item, formatDateFn) {
     const div = document.createElement('div');
     div.className =
-        'archive-item-card group flex items-center justify-between gap-2 rounded-xl border border-gray-700/35 bg-gray-900/25 p-3 shadow-sm transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-800/50 sm:gap-3 sm:p-4';
+        'archive-item-card gradient-border group flex items-center justify-between gap-2 rounded-xl border border-gray-700/35 bg-gray-900/25 p-3 shadow-sm transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-800/50 sm:gap-3 sm:p-4';
     div.dataset.id = item.id;
     const tgDeliver = isDeliveredViaTelegram(item);
     const deliveredByHtml = item.deliveredBy
@@ -1158,7 +1186,7 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
 
     contentDiv.innerHTML = `
         <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
+            <div class="reports-stat-card reports-stat-card--blue gradient-border relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
                 <div class="mb-3 flex items-start justify-between gap-2">
                     <span class="text-sm font-medium text-slate-400">Toplam Poşet</span>
                     <span class="inline-flex shrink-0 rounded-lg bg-blue-500/25 p-2 text-blue-400 ring-1 ring-blue-400/30">
@@ -1168,7 +1196,7 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
                 <div class="text-3xl font-bold tabular-nums tracking-tight text-slate-50">${totalBagsInRange}</div>
                 <div class="mt-1.5 text-xs text-slate-500">Bu dönemde eklenen</div>
             </div>
-            <div class="relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
+            <div class="reports-stat-card reports-stat-card--emerald gradient-border relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
                 <div class="mb-3 flex items-start justify-between gap-2">
                     <span class="text-sm font-medium text-slate-400">Teslim Edildi</span>
                     <span class="inline-flex shrink-0 rounded-lg bg-emerald-500/25 p-2 text-emerald-400 ring-1 ring-emerald-400/30">
@@ -1178,7 +1206,7 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
                 <div class="text-3xl font-bold tabular-nums tracking-tight text-slate-50">${deliveredBagsInRange}</div>
                 <div class="mt-1.5 text-xs text-slate-500">Bu dönemde teslim edilen</div>
             </div>
-            <div class="relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
+            <div class="reports-stat-card reports-stat-card--amber gradient-border relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
                 <div class="mb-3 flex items-start justify-between gap-2">
                     <span class="text-sm font-medium text-slate-400">Ort. Bekleme</span>
                     <span class="inline-flex shrink-0 rounded-lg bg-amber-500/25 p-2 text-amber-300 ring-1 ring-amber-400/35">
@@ -1188,7 +1216,7 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
                 <div class="text-3xl font-bold tabular-nums tracking-tight text-slate-50">${avgWaitTime}</div>
                 <div class="mt-1.5 text-xs text-slate-500">Ortalama gün</div>
             </div>
-            <div class="relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
+            <div class="reports-stat-card reports-stat-card--violet gradient-border relative overflow-hidden rounded-2xl border border-gray-700/45 bg-gray-900/40 p-5 shadow-lg ring-1 ring-white/[0.04] backdrop-blur-sm">
                 <div class="mb-3 flex items-start justify-between gap-2">
                     <span class="text-sm font-medium text-slate-400">Bekleyen</span>
                     <span class="inline-flex shrink-0 rounded-lg bg-violet-500/25 p-2 text-violet-300 ring-1 ring-violet-400/35">
@@ -1201,18 +1229,18 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
         </div>
 
         <div class="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
-            <div class="report-chart-box rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 shadow-inner">
+            <div class="report-chart-box gradient-border rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 shadow-inner">
                 <h3 class="mb-3 font-semibold text-primary">Günlük Aktivite Trendi</h3>
                 <div id="chart-trend" class="relative h-64 w-full min-w-0 max-w-full"></div>
             </div>
 
-            <div class="report-chart-box rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 shadow-inner">
+            <div class="report-chart-box gradient-border rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 shadow-inner">
                 <h3 class="mb-3 font-semibold text-primary">Poşet Durum Dağılımı</h3>
                 <div id="chart-distribution" class="relative h-64 w-full min-w-0 max-w-full"></div>
             </div>
         </div>
 
-        <div class="report-chart-box mt-6 rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 pb-6 shadow-inner">
+        <div class="report-chart-box gradient-border mt-6 rounded-xl border border-gray-700/40 bg-tertiary/80 p-4 pb-6 shadow-inner">
             <h3 class="mb-3 font-semibold text-primary">En Çok İşlem Yapan 10 Müşteri</h3>
             <div id="chart-top-customers" class="relative h-80 w-full min-w-0 max-w-full"></div>
         </div>
@@ -1510,6 +1538,65 @@ export function hideModalUI(dom) {
         dom.modalContainer.classList.add('hidden');
         dom.modalContent.innerHTML = '';
     }, 300);
+}
+
+/**
+ * Hızlı, işlem akışını durdurmayan bildirim. 3 saniye sonra otomatik kapanır.
+ * type: 'success' | 'error' | 'info' | 'warning'
+ */
+export function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed bottom-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none';
+        container.setAttribute('aria-live', 'polite');
+        container.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(container);
+    }
+
+    const palette = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500',
+        warning: 'bg-amber-500',
+    };
+    const bgClass = palette[type] || palette.success;
+
+    const icons = {
+        success: '<svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>',
+        error: '<svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>',
+        info: '<svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        warning: '<svg class="h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+    };
+    const iconHtml = icons[type] || icons.success;
+
+    const toast = document.createElement('div');
+    toast.className = `pointer-events-auto flex items-center gap-3 min-w-[240px] max-w-sm ${bgClass} text-white px-4 py-3 rounded-lg shadow-lg opacity-0 translate-y-2 transition-all duration-300 ease-out`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.innerHTML = `
+        ${iconHtml}
+        <span class="flex-1 text-sm font-medium leading-snug break-words">${escapeHtmlText(String(message ?? ''))}</span>
+        <button type="button" class="opacity-80 hover:opacity-100 text-white text-lg leading-none px-1 -mr-1 transition" aria-label="Kapat">&times;</button>
+    `;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+        toast.classList.add('opacity-100', 'translate-y-0');
+    });
+
+    let removalTimer = null;
+    const dismiss = () => {
+        if (removalTimer) clearTimeout(removalTimer);
+        removalTimer = null;
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    toast.querySelector('button').addEventListener('click', dismiss, { once: true });
+    removalTimer = setTimeout(dismiss, 3000);
 }
 
 export function showSimpleMessageModal(dom, title, message, isSuccess = false) {
@@ -2180,13 +2267,11 @@ export function showCustomerDetailModal(dom, customerName, allItems, formatDateF
 
 export function exportDataToJSON(allItems, allCustomers, deliveryPersonnel, settings) {
     const data = { allItems, allCustomers, deliveryPersonnel, settings };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `poset-takip-yedek-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `poset-takip-yedek-${new Date().toISOString().slice(0, 10)}.json`;
+    saveOrShareText(JSON.stringify(data, null, 2), filename, 'application/json', {
+        title: 'Poşet Takip Yedeği',
+        dialogTitle: 'Yedek dosyasını kaydet',
+    }).catch((err) => console.error('JSON yedek aktarılamadı:', err));
 }
 
 export function exportToCSV(allItems, formatDateFn) {
@@ -2195,12 +2280,10 @@ export function exportToCSV(allItems, formatDateFn) {
     const headers = 'Musteri Adi,Poset Sayisi,Not,Son Degisiklik Tarihi';
     const rows = activeItems.map(item => `"${item.customerName.replace(/"/g, '""')}",${item.bagCount},"${(item.note || '').replace(/"/g, '""')}",${formatDateFn(item.lastModified)}`);
     const csvContent = '\uFEFF' + [headers, ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'poset_listesi.csv';
-    link.click();
-    URL.revokeObjectURL(link.href);
+    saveOrShareText(csvContent, 'poset_listesi.csv', 'text/csv;charset=utf-8;', {
+        title: 'Poşet Listesi (CSV)',
+        dialogTitle: 'CSV dosyasını kaydet',
+    }).catch((err) => console.error('CSV aktarılamadı:', err));
     return true;
 }
 
@@ -2211,7 +2294,10 @@ export function exportActiveItemsToPDF(activeItems, formatDateFn, jsPDF) {
     const tableColumn = ['#', 'Musteri Adi', 'Poset Sayisi', 'Eklenme Tarihi'];
     const tableRows = activeItems.map((item, i) => [i + 1, toPdfAscii(item.customerName), item.bagCount, formatDateFn(item.createdAt).split(' ')[0]]);
     pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    pdf.save(`bekleyen-poset-listesi-${new Date().toISOString().slice(0, 10)}.pdf`);
+    saveOrSharePdf(pdf, `bekleyen-poset-listesi-${new Date().toISOString().slice(0, 10)}.pdf`, {
+        title: 'Bekleyen Poşet Listesi',
+        dialogTitle: 'PDF dosyasını kaydet',
+    }).catch((err) => console.error('PDF aktarılamadı:', err));
     return true;
 }
 
@@ -2222,7 +2308,10 @@ export function exportArchiveToPDF(archivedItems, formatDateFn, jsPDF) {
     const tableColumn = ['#', 'Musteri Adi', 'Poset', 'Teslim Eden', 'Teslim Tarihi'];
     const tableRows = archivedItems.map((item, i) => [i + 1, toPdfAscii(item.customerName), item.bagCount, toPdfAscii(item.deliveredBy || '-'), formatDateFn(item.deliveredAt).split(' ')[0]]);
     pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    pdf.save(`teslim-edilenler-${new Date().toISOString().slice(0, 10)}.pdf`);
+    saveOrSharePdf(pdf, `teslim-edilenler-${new Date().toISOString().slice(0, 10)}.pdf`, {
+        title: 'Teslim Edilenler Arşivi',
+        dialogTitle: 'PDF dosyasını kaydet',
+    }).catch((err) => console.error('Arşiv PDF aktarılamadı:', err));
     return true;
 }
 
@@ -2259,7 +2348,10 @@ export function exportCustomerHistoryToPDF(customerName, allItems, formatDateFn,
         }
         pdf.autoTable({ head: [tableColumn], body: tableRows, startY });
         const safe = toPdfAscii(customerName).replace(/[^\w.-]+/g, '_').slice(0, 48);
-        pdf.save(`musteri-ekstre-${safe}-${new Date().toISOString().slice(0, 10)}.pdf`);
+        saveOrSharePdf(pdf, `musteri-ekstre-${safe}-${new Date().toISOString().slice(0, 10)}.pdf`, {
+            title: `Müşteri Ekstresi: ${customerName}`,
+            dialogTitle: 'PDF dosyasını kaydet',
+        }).catch((err) => console.error('Müşteri ekstre PDF aktarılamadı:', err));
         return true;
     } catch (err) {
         console.error('exportCustomerHistoryToPDF', err);
@@ -2290,7 +2382,10 @@ export function exportReportsToPDF(allItems, formatDateFn, getDayDifferenceFn, j
             return false;
         }
         pdf.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-        pdf.save(`teslim-raporu-${new Date().toISOString().slice(0, 10)}.pdf`);
+        saveOrSharePdf(pdf, `teslim-raporu-${new Date().toISOString().slice(0, 10)}.pdf`, {
+            title: 'Teslim Edilen Poşet Raporu',
+            dialogTitle: 'PDF dosyasını kaydet',
+        }).catch((err) => console.error('Rapor PDF aktarılamadı:', err));
         return true;
     } catch (err) {
         console.error('exportReportsToPDF', err);

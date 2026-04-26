@@ -1,6 +1,7 @@
 /**
- * @capacitor/core ve @capacitor/app ESM dosyalarını assets/vendor altına kopyalar.
- * @capacitor/app içindeki '@capacitor/core' importlarını göreli yola çevirir (Android WebView / import map olmadan çalışsın).
+ * @capacitor/core, @capacitor/app, @capacitor/filesystem ve @capacitor/share ESM dosyalarını
+ * assets/vendor altına kopyalar. ESM içindeki '@capacitor/core' importlarını göreli yola çevirir
+ * ve uzantısız ./web, ./definitions importlarına .js ekler (Android WebView / import map yok).
  * copy-www ve postinstall tarafından çağrılır.
  */
 const fs = require('fs');
@@ -12,31 +13,54 @@ function rmrf(dir) {
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
 }
 
-function patchAppEsmImports(appEsmDest) {
-  for (const f of ['index.js', 'web.js']) {
-    const p = path.join(appEsmDest, f);
-    if (!fs.existsSync(p)) continue;
+function patchEsmImports(esmDir, coreRelativePath) {
+  if (!fs.existsSync(esmDir)) return;
+  const entries = fs.readdirSync(esmDir);
+  for (const f of entries) {
+    if (!f.endsWith('.js')) continue;
+    const p = path.join(esmDir, f);
     let s = fs.readFileSync(p, 'utf8');
-    s = s.replace(/from\s+['"]@capacitor\/core['"]/g, "from '../capacitor-core.js'");
+    s = s.replace(/from\s+['"]@capacitor\/core['"]/g, `from '${coreRelativePath}'`);
+    s = s.replace(/import\(\s*['"]@capacitor\/core['"]\s*\)/g, `import('${coreRelativePath}')`);
+    s = s.replace(/from\s+['"](\.\.?\/[^'"]+?)['"]/g, (m, p1) => {
+      if (/\.[a-zA-Z0-9]+$/.test(p1)) return m;
+      return `from '${p1}.js'`;
+    });
+    s = s.replace(/import\(\s*['"](\.\.?\/[^'"]+?)['"]\s*\)/g, (m, p1) => {
+      if (/\.[a-zA-Z0-9]+$/.test(p1)) return m;
+      return `import('${p1}.js')`;
+    });
     fs.writeFileSync(p, s);
   }
+}
+
+function copyPluginEsm(pkgName, destFolderName, coreRelativePath) {
+  const vendorRoot = path.join(root, 'assets', 'vendor');
+  const src = path.join(root, 'node_modules', '@capacitor', pkgName, 'dist', 'esm');
+  const dest = path.join(vendorRoot, destFolderName);
+  if (!fs.existsSync(src)) {
+    console.warn(`Capacitor ${pkgName} vendor atlandı (node_modules eksik).`);
+    return;
+  }
+  rmrf(dest);
+  fs.cpSync(src, dest, { recursive: true });
+  patchEsmImports(dest, coreRelativePath);
 }
 
 function ensureCapacitorVendor() {
   const vendorRoot = path.join(root, 'assets', 'vendor');
   const coreSrc = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'index.js');
   const coreDest = path.join(vendorRoot, 'capacitor-core.js');
-  const appEsmSrc = path.join(root, 'node_modules', '@capacitor', 'app', 'dist', 'esm');
-  const appEsmDest = path.join(vendorRoot, 'capacitor-app');
-  if (!fs.existsSync(coreSrc) || !fs.existsSync(appEsmSrc)) {
-    console.warn('Capacitor vendor atlandı (node_modules eksik). npm install çalıştırın.');
+  if (!fs.existsSync(coreSrc)) {
+    console.warn('Capacitor core vendor atlandı (node_modules eksik). npm install çalıştırın.');
     return;
   }
   fs.mkdirSync(vendorRoot, { recursive: true });
   fs.copyFileSync(coreSrc, coreDest);
-  rmrf(appEsmDest);
-  fs.cpSync(appEsmSrc, appEsmDest, { recursive: true });
-  patchAppEsmImports(appEsmDest);
+
+  copyPluginEsm('app', 'capacitor-app', '../capacitor-core.js');
+  copyPluginEsm('filesystem', 'capacitor-filesystem', '../capacitor-core.js');
+  copyPluginEsm('share', 'capacitor-share', '../capacitor-core.js');
 }
 
 ensureCapacitorVendor();

@@ -1,7 +1,7 @@
 import { registerPlugin } from '../capacitor-core.js';
-const App = registerPlugin('App', {
-    web: () => import('./web.js').then(m => new m.AppWeb()),
+const Share = registerPlugin('Share', {
+    web: () => import('./web.js').then(m => new m.ShareWeb()),
 });
 export * from './definitions.js';
-export { App };
+export { Share };
 //# sourceMappingURL=index.js.map
