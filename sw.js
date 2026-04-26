@@ -1,18 +1,14 @@
 // Önbellek (cache) adı ve versiyonu.
 // Versiyonu yükselterek tarayıcının yeni dosyaları almasını sağlıyoruz.
-const CACHE_NAME = 'emre-bebe-takip-cache-v24'; 
+const CACHE_NAME = 'emre-bebe-takip-cache-v34';
 
-// Uygulama ilk yüklendiğinde veya çevrimdışıyken çalışması için
-// önbelleğe alınacak temel dosyaların ve kaynakların listesi.
+// Sadece aynı kaynak (origin) dosyaları önbelleğe alınır.
+// Harici CDN'ler CORS vermediği için cache.add ile eklenemez; index.html zaten script ile yükler.
 const urlsToCache = [
-  '/', 
-  'index.html', 
-  'manifest.json', 
-  'https://cdn.tailwindcss.com', 
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', 
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', 
-  'https://cdn.jsdelivr.net/npm/apexcharts'
+  '/',
+  'index.html',
+  'manifest.json',
+  'assets/css/styles.css?v=34'
 ];
 
 // 'install' olayı: Service Worker yüklendiğinde tetiklenir.

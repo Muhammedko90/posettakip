@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Poşet Takip</string>
+    <string name="title_activity_main">Poşet Takip</string>
+    <string name="package_name">com.emrebebe.posettakip</string>
+    <string name="custom_url_scheme">com.emrebebe.posettakip</string>
+</resources>

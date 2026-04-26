@@ -24,8 +24,6 @@ export function getDefaultSettings() {
         fontSize: 16,
         viewMode: 'grid',
         isFullWidth: false, 
-        customTitle: 'GÜNÜN NOTU',
-        customContent: 'Ayarlar menüsünden bu notu düzenleyebilirsiniz.',
         shareTemplate: 'Merhaba, [Müşteri Adı] adına ayrılan [Poşet Sayısı] poşetiniz [Bekleme Süresi] gündür beklemektedir.',
         telegramBotToken: '', 
         telegramChatId: '',
@@ -116,11 +114,34 @@ export async function addBagsToExistingItem(db, userId, itemId, extraBags, addit
 }
 
 /**
- * Müşteri ekle
+ * Müşteri ekle (isteğe bağlı ek alanlar: phoneNumber vb.)
  */
-export async function addCustomer(db, userId, name) {
+export async function addCustomer(db, userId, name, extras = {}) {
     const colRef = collection(db, 'users', userId, 'customers');
-    return addDoc(colRef, { name });
+    const ref = await addDoc(colRef, { name, ...extras });
+    return ref.id;
+}
+
+/**
+ * Müşteri belgesini güncelle (ör. phoneNumber)
+ */
+export async function updateCustomer(db, userId, customerId, data) {
+    const ref = doc(db, 'users', userId, 'customers', customerId);
+    await updateDoc(ref, data);
+}
+
+/**
+ * customers kaydı yokken sadece tüm item'larda müşteri adını güncelle
+ */
+export async function updateItemsCustomerName(db, userId, oldName, newName) {
+    const itemsRef = collection(db, 'users', userId, 'items');
+    const q = query(itemsRef, where('customerName', '==', oldName));
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(d => {
+        batch.update(d.ref, { customerName: newName, lastModified: serverTimestamp() });
+    });
+    await batch.commit();
 }
 
 /**

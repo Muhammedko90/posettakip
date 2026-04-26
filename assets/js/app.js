@@ -3,15 +3,54 @@
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { firebaseConfig } from './firebase-config.js';
 import * as auth from './auth.js';
 import * as dataManager from './data-manager.js';
 import * as ui from './ui-renderer.js';
 
+function resolveJsPDFConstructor() {
+    const j = window.jspdf;
+    if (!j) return null;
+    if (typeof j.jsPDF === 'function') return j.jsPDF;
+    if (j.default && typeof j.default.jsPDF === 'function') return j.default.jsPDF;
+    if (typeof j.default === 'function') return j.default;
+    return null;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const dom = ui.getDomRefs();
-    const { jsPDF } = window.jspdf || {};
+
+    /** Android: göreli import (import map / bazı WebView sorunları yok); dinleyici yoksa geri tuşu tepkisiz kalıyordu */
+    void (async () => {
+        try {
+            const { Capacitor } = await import('../vendor/capacitor-core.js');
+            const { App } = await import('../vendor/capacitor-app/index.js');
+            if (!Capacitor.isNativePlatform()) return;
+            const onBack = async ({ canGoBack }) => {
+                if (dom.modalContainer && !dom.modalContainer.classList.contains('hidden')) {
+                    ui.hideModalUI(dom);
+                    return;
+                }
+                if (canGoBack) {
+                    window.history.back();
+                    return;
+                }
+                try {
+                    await App.exitApp();
+                } catch {
+                    try {
+                        await App.minimizeApp();
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            };
+            await App.addListener('backButton', onBack);
+        } catch {
+            /* Tarayıcı veya assets/vendor yok */
+        }
+    })();
 
     let app, authInstance, db, userId, currentUser;
     let allItems = [];
@@ -24,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isFullWidth = false;
 
     let archiveCurrentPage = 1;
+    let archiveFilters = { customer: '', deliverer: '', shipment: '' };
     const itemsPerPage = 10;
     let itemsUnsubscribe = null;
     let customersUnsubscribe = null;
@@ -43,10 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAll() {
         const activeItems = allItems.filter(item => item.status !== 'delivered');
         const archivedItems = allItems.filter(item => item.status === 'delivered');
-        ui.renderDashboard(dom, allItems, settings, ui.formatDate, ui.formatRelativeTime);
+        ui.renderDashboard(dom, allItems, ui.formatDate, ui.formatRelativeTime);
         ui.renderItems(dom, activeItems, sortState, viewMode, ui.toTrUpperCase(dom.customerNameInput?.value || ''), ui.formatDate, ui.formatRelativeTime);
-        ui.renderArchive(dom, archivedItems, ui.toTrUpperCase(dom.searchArchiveInput?.value || ''), archiveCurrentPage, itemsPerPage, ui.formatDate, (page) => { archiveCurrentPage = page; renderAll(); });
-        ui.renderNotes(dom, allItems, ui.formatDate);
+        ui.renderArchive(dom, archivedItems, ui.toTrUpperCase(dom.searchArchiveInput?.value || ''), archiveCurrentPage, itemsPerPage, ui.formatDate, (page) => { archiveCurrentPage = page; renderAll(); }, archiveFilters);
+        const mNotes = document.getElementById('modal-notes-list');
+        const mEmpty = document.getElementById('modal-empty-notes');
+        if (mNotes && mEmpty) ui.renderNotes({ notesList: mNotes, emptyNotesMessage: mEmpty }, allItems, ui.formatDate);
         ui.renderOverdueReport(allItems, ui.formatRelativeTime);
         ui.renderPeriodicReport(allItems, null, ui.formatDate);
         ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
@@ -78,9 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function sendTelegramNotification(message, chatId = null, replyMarkup = null) {
+    function isSundayLocal() {
+        return new Date().getDay() === 0;
+    }
+
+    async function sendTelegramNotification(message, chatId = null, replyMarkup = null, options = {}) {
         if (!settings.telegramBotToken) return;
-        
+        if (!options.bypassSundayCheck && isSundayLocal()) return;
+
         let targets = [];
         if (chatId) {
             targets = [chatId];
@@ -116,9 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function sendTelegramDocument(chatId, blob, filename, caption = '') {
+    async function sendTelegramDocument(chatId, blob, filename, caption = '', options = {}) {
         if (!settings.telegramBotToken) return;
-        
+        if (!options.bypassSundayCheck && isSundayLocal()) return;
+
         if (!chatId && settings.telegramChatId) {
              const ids = settings.telegramChatId.split(',').map(id => id.trim()).filter(id => id);
              if (ids.length > 0) chatId = ids[0];
@@ -142,13 +190,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function startTelegramBotListener() {
+    /** Webhook açıksa getUpdates 409 döner; long polling öncesi webhook kaldırılmalı. */
+    async function clearTelegramWebhookForLongPolling() {
+        if (!settings.telegramBotToken) return;
+        try {
+            const res = await fetch(
+                `https://api.telegram.org/bot${settings.telegramBotToken}/deleteWebhook`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ drop_pending_updates: false })
+                }
+            );
+            const data = await res.json().catch(() => ({}));
+            if (data.ok) {
+                console.info('Telegram: Webhook kaldırıldı (long polling kullanılıyor).');
+            }
+        } catch (e) {
+            console.warn('Telegram deleteWebhook:', e);
+        }
+    }
+
+    async function startTelegramBotListener() {
         if (telegramPollTimeout) clearTimeout(telegramPollTimeout);
         if (isTelegramPolling && settings.telegramBotToken === lastKnownBotToken) return;
         
         lastKnownBotToken = settings.telegramBotToken;
         isTelegramPolling = true;
         console.log("Telegram Bot: Dinleme başlatıldı (Long Polling)...");
+        await clearTelegramWebhookForLongPolling();
         pollTelegram();
     }
 
@@ -163,6 +233,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(url);
+            if (response.status === 409) {
+                console.warn('Telegram 409: Webhook ile long polling çakışıyor — webhook siliniyor...');
+                await clearTelegramWebhookForLongPolling();
+                if (isTelegramPolling) {
+                    telegramPollTimeout = setTimeout(pollTelegram, 500);
+                }
+                return;
+            }
             if (response.ok) {
                 const data = await response.json();
                 if (data.ok && data.result.length > 0) {
@@ -242,9 +320,22 @@ document.addEventListener('DOMContentLoaded', () => {
              const item = allItems.find(i => i.id === itemId);
 
              if (item && item.status === 'active') {
-                 const deliveryPerson = "Bot (Buton)";
-                 await updateItem(item.id, { status: 'delivered', deliveredAt: new Date(), deliveredBy: deliveryPerson, note: '', reminderDate: null });
-                 
+                 await updateItem(item.id, {
+                     status: 'delivered',
+                     deliveredAt: new Date(),
+                     deliveredBy: 'Telegram',
+                     note: '',
+                     reminderDate: null,
+                 });
+
+                 const dateStr = new Date().toLocaleString('tr-TR');
+                 sendTelegramNotification(
+                     `✅ *Teslimat Yapıldı (Telegram)*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${item.bagCount} Adet\n📱 *Kaynak:* Telegram hızlı teslim\n📅 Tarih: ${dateStr}`,
+                     null,
+                     null,
+                     { bypassSundayCheck: true }
+                 );
+
                  const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
                  await fetch(editUrl, {
                      method: 'POST',
@@ -252,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      body: JSON.stringify({
                          chat_id: chatId,
                          message_id: messageId,
-                         text: `✅ *${item.customerName}* teslim edildi.`,
+                         text: `✅ *${item.customerName}* teslim edildi.\n📱 _Telegram üzerinden kaydedildi._`,
                          parse_mode: 'Markdown'
                      })
                  });
@@ -340,7 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const announcement = parts.slice(1).join(' ');
                     if (!announcement) { reply = "⚠️ Mesaj yazmadınız. Örn: `/duyuru Yarın kapalıyız`"; break; }
-                    
+                    if (isSundayLocal()) { reply = "⛔ Pazar günleri duyuru gönderilemez."; break; }
+
                     const subscribers = settings.telegramSubscribers || [];
                     const subIds = subscribers.map(s => String(s.id));
                     const allTargetIds = [...new Set([...adminIds, ...subIds])];
@@ -466,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (active.length === 0) reply = "📂 Bekleyen yok.";
                     else {
                         const inlineKeyboard = { inline_keyboard: active.map(i => [{ text: `✅ ${i.customerName} (${i.bagCount}) Teslim`, callback_data: `dlv_${i.id}` }]) };
-                        await sendTelegramNotification("📋 *Hızlı Teslimat Menüsü*", chatId, inlineKeyboard);
+                        await sendTelegramNotification("📋 *Hızlı Teslimat Menüsü*", chatId, inlineKeyboard, { bypassSundayCheck: true });
                         return;
                     }
                     break;
@@ -496,18 +588,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     const data = { allItems, allCustomers, deliveryPersonnel, settings };
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    await sendTelegramDocument(chatId, blob, `yedek-${new Date().toISOString().slice(0, 10)}.json`, "📦 Manuel Yedek");
+                    await sendTelegramDocument(chatId, blob, `yedek-${new Date().toISOString().slice(0, 10)}.json`, "📦 Manuel Yedek", { bypassSundayCheck: true });
                     return; 
                 }
 
                 case '/pdf': {
                     if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
-                    if (jsPDF) {
-                        const blob = ui.getActiveItemsPDFBlob(allItems.filter(i => i.status === 'active'), ui.formatDate, jsPDF);
-                        if (blob) await sendTelegramDocument(chatId, blob, `liste-${new Date().toISOString().slice(0, 10)}.pdf`, "📄 Liste");
+                    const PDF = resolveJsPDFConstructor();
+                    if (PDF) {
+                        const blob = ui.getActiveItemsPDFBlob(allItems.filter(i => i.status === 'active'), ui.formatDate, PDF);
+                        if (blob) await sendTelegramDocument(chatId, blob, `liste-${new Date().toISOString().slice(0, 10)}.pdf`, "📄 Liste", { bypassSundayCheck: true });
                         else reply = "⚠️ PDF boş.";
                     } else reply = "⚠️ PDF motoru yok.";
                     return;
+                }
+
+                case '/yoklama': {
+                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
+                    const active = allItems.filter(i => i.status === 'active').sort((a, b) =>
+                        ui.toTrUpperCase(a.customerName).localeCompare(ui.toTrUpperCase(b.customerName), 'tr'));
+                    if (active.length === 0) {
+                        reply = "📋 *Poşet Yoklaması*\n\nBekleyen kayıt yok.";
+                    } else {
+                        const lines = active.map((item, idx) => {
+                            const n = item.note ? ` _(${item.note})_` : '';
+                            return `${idx + 1}. ${item.customerName} — *${item.bagCount}* poşet${n}`;
+                        });
+                        const totalBags = active.reduce((a, b) => a + b.bagCount, 0);
+                        reply = `📋 *Poşet Yoklaması*\n\n${lines.join('\n')}\n\n👥 Müşteri: ${active.length}\n🛍️ Toplam poşet: ${totalBags}`;
+                    }
+                    break;
                 }
 
                 case '/ozet': {
@@ -530,16 +640,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 case '/help':
                 case '/yardim': {
-                    reply = "🤖 *Bot Komutları:*\n\n" +
-                            "📢 `/duyuru [Mesaj]` - Herkese mesaj at\n" +
-                            "👋 `/basla` - Duyuru listesine abone ol\n" +
-                            "📋 `/bekleyen` - Listeyi gör ve yönet\n" +
-                            "➕ `/ekle [İsim] [Adet]`\n" +
-                            "✅ `/teslim [İsim]`\n" +
-                            "📝 `/not [İsim] [Not]`\n" +
-                            "📱 `/sms [İsim]`\n" +
-                            "💾 `/yedekal` & `/pdf`\n" +
-                            "🆔 `/id` - ID öğren";
+                    reply = "🤖 *Bot Komutları*\n\n" +
+                            "➕ `/ekle` — Yeni poşet ekle\nÖrn: `/ekle Ahmet 2`\n\n" +
+                            "✅ `/teslim` — Poşet teslim et\nÖrn: `/teslim Ahmet 1`\n\n" +
+                            "📋 `/bekleyen` — Bekleyenleri listele, butonla teslim et\n\n" +
+                            "📋 `/yoklama` — Poşet yoklaması (sıralı liste)\n\n" +
+                            "📊 `/ozet` — Anlık durum ve sayısal özet\n\n" +
+                            "🌙 `/gunsonu` — Detaylı gün sonu işlem raporu\n\n" +
+                            "📱 `/sms` — Müşteri için hazır bilgilendirme mesajı\nÖrn: `/sms Ahmet`\n\n" +
+                            "📝 `/not` — Müşteriye not ekle\nÖrn: `/not Ahmet Notunuz`\n\n" +
+                            "📄 `/pdf` — Bekleyen listesini PDF indir\n\n" +
+                            "💾 `/yedekal` — Veritabanı yedeğini dosya olarak al\n\n" +
+                            "🔄 `/iade` — İade poşet işlemi\nÖrn: `/iade Ahmet 1`\n\n" +
+                            "📢 `/duyuru` — Duyuru mesajı yayınla\nÖrn: `/duyuru Yarın kapalıyız`\n\n" +
+                            "🗑️ `/sil` — Kaydı sil\nÖrn: `/sil Ahmet`\n\n" +
+                            "🆔 `/id` — Kendi Chat ID numaranı öğren\n\n" +
+                            "❓ `/yardim` — Bu listeyi göster\n\n" +
+                            "🔁 `/yenile` — Bot bağlantısını yenile\n\n" +
+                            "🏓 `/ping` — Botun çalışıp çalışmadığını kontrol et\n\n" +
+                            "👋 `/basla` — Duyuru listesine abone ol";
                     break;
                 }
 
@@ -549,15 +668,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (reply) {
                 if (shouldBroadcast) {
-                    await sendTelegramNotification(reply); 
+                    await sendTelegramNotification(reply, null, null, { bypassSundayCheck: true }); 
                 } else {
-                    await sendTelegramNotification(reply, chatId);
+                    await sendTelegramNotification(reply, chatId, null, { bypassSundayCheck: true });
                 }
             }
 
         } catch (err) {
             console.error("Bot komut hatası:", err);
-            if (isAdmin) sendTelegramNotification("⚠️ Hata: " + err.message, chatId);
+            if (isAdmin) sendTelegramNotification("⚠️ Hata: " + err.message, chatId, null, { bypassSundayCheck: true });
         }
     }
 
@@ -648,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dataManager.saveSettings(db, userId, settings);
         }
 
-        if (currentTime === "23:00" && settings.lastBackupDate !== todayStr && settings.telegramBotToken) {
+        if (day !== 0 && currentTime === "23:00" && settings.lastBackupDate !== todayStr && settings.telegramBotToken) {
             const data = { allItems, allCustomers, deliveryPersonnel, settings };
             const jsonString = JSON.stringify(data, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -710,7 +829,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function updateItem(id, data) {
         if (data.note !== undefined) data.note = ui.toTrUpperCase(data.note);
+        if (data.cargoDesi !== undefined && data.cargoDesi !== null) data.cargoDesi = Number(data.cargoDesi);
         await dataManager.updateItem(db, userId, id, data);
+    }
+
+    async function handleDashboardQuickNote() {
+        const custInput = dom.dashboard?.quickNoteCustomer;
+        const noteInput = dom.dashboard?.quickNoteText;
+        if (!custInput || !noteInput) return;
+        const name = ui.toTrUpperCase(custInput.value.trim());
+        const noteRaw = noteInput.value.trim();
+        if (!name) {
+            await ui.showSimpleMessageModal(dom, 'Eksik bilgi', 'Lütfen müşteri adını girin.');
+            return;
+        }
+        if (!noteRaw) {
+            await ui.showSimpleMessageModal(dom, 'Eksik bilgi', 'Lütfen not metnini girin.');
+            return;
+        }
+        const candidates = allItems.filter(
+            (i) => i.status !== 'delivered' && ui.toTrUpperCase(i.customerName) === name
+        );
+        if (candidates.length === 0) {
+            await ui.showSimpleMessageModal(
+                dom,
+                'Bulunamadı',
+                'Bu isimle bekleyen kayıt yok. Önce Müşteriler sekmesinden kayıt ekleyin.'
+            );
+            return;
+        }
+        const item = candidates[0];
+        const merged = item.note?.trim() ? `${item.note.trim()}\n${noteRaw}` : noteRaw;
+        showLoadingMsg('Kaydediliyor...');
+        try {
+            await updateItem(item.id, { note: merged });
+            noteInput.value = '';
+            hideLoadingMsg();
+            await ui.showSimpleMessageModal(dom, 'Tamam', 'Not kayda eklendi.', true);
+            renderAll();
+        } catch (err) {
+            console.error(err);
+            hideLoadingMsg();
+            await ui.showSimpleMessageModal(dom, 'Hata', 'Not kaydedilemedi.');
+        }
+    }
+
+    function openCustomerDetailModal(customerName) {
+        const cust = allCustomers.find(c => c.name === customerName);
+        ui.showCustomerDetailModal(
+            dom,
+            customerName,
+            allItems,
+            ui.formatDate,
+            ui.icons,
+            () => ui.hideModalUI(dom),
+            (name) => {
+                const PDF = resolveJsPDFConstructor();
+                if (PDF) ui.exportCustomerHistoryToPDF(name, allItems, ui.formatDate, PDF);
+            },
+            {
+                customerId: cust?.id ?? null,
+                initialPhone: cust?.phoneNumber != null ? String(cust.phoneNumber) : '',
+                onRename: async (oldName, newName) => {
+                    const u = ui.toTrUpperCase(String(newName).trim());
+                    if (!u) throw new Error('empty');
+                    const existing = allCustomers.find(c => c.name === oldName);
+                    if (existing?.id) {
+                        await dataManager.updateCustomerNameAndItems(db, userId, existing.id, oldName, u);
+                    } else {
+                        await dataManager.updateItemsCustomerName(db, userId, oldName, u);
+                        if (!allCustomers.some(c => c.name === u)) {
+                            await dataManager.addCustomer(db, userId, u);
+                        }
+                    }
+                },
+                onAfterRenameSuccess: (newName) => {
+                    ui.hideModalUI(dom);
+                    setTimeout(() => openCustomerDetailModal(newName), 320);
+                },
+                onPhoneSave: async ({ customerName: cn, phone }) => {
+                    const t = String(phone ?? '').trim();
+                    const c = allCustomers.find(x => x.name === cn);
+                    if (c?.id) {
+                        await dataManager.updateCustomer(db, userId, c.id, { phoneNumber: t || null });
+                    } else {
+                        await dataManager.addCustomer(db, userId, cn, { phoneNumber: t || null });
+                    }
+                }
+            }
+        );
     }
 
     async function handleMainContentClick(e) {
@@ -725,13 +932,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (action === 'view-customer') {
             const customerName = itemDiv?.dataset.customerName;
-            if (customerName) ui.showCustomerDetailModal(dom, customerName, allItems, ui.formatDate, ui.icons, () => ui.hideModalUI(dom), (name) => { if (jsPDF) ui.exportCustomerHistoryToPDF(name, allItems, ui.formatDate, jsPDF); });
+            if (customerName) openCustomerDetailModal(customerName);
             return;
         }
 
         if (action === 'toggle-menu') {
             const allMenus = document.querySelectorAll('.action-menu');
-            const currentMenu = button.nextElementSibling;
+            const currentMenu = button.closest('.default-actions')?.querySelector('.action-menu');
+            if (!currentMenu) return;
             allMenus.forEach(menu => { if (menu !== currentMenu) menu.classList.add('hidden'); });
             currentMenu.classList.toggle('hidden');
             return;
@@ -745,30 +953,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const editCountActions = itemDiv.querySelector('.edit-count-actions');
 
         switch (action) {
-            case 'increment-bag':
-                await updateItem(id, { bagCount: item.bagCount + 1, additionalDates: arrayUnion(new Date()) });
-                break;
-            case 'decrement-bag':
-                if (item.bagCount > 1) {
-                    const currentDates = [...(item.additionalDates || [])];
-                    currentDates.sort((a, b) => (a.seconds || a.getTime() / 1000) - (b.seconds || b.getTime() / 1000));
-                    currentDates.pop();
-                    await updateItem(id, { bagCount: item.bagCount - 1, additionalDates: currentDates });
-                }
-                break;
             case 'share': {
-                const date = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt || new Date());
-                const diffDays = Math.max(0, Math.floor((new Date() - date) / (1000 * 60 * 60 * 24)));
-                const message = (settings.shareTemplate || '').replace(/\[Müşteri Adı\]/gi, item.customerName).replace(/\[Poşet Sayısı\]/gi, item.bagCount).replace(/\[Bekleme Süresi\]/gi, diffDays);
-                if (navigator.share) {
-                    try { await navigator.share({ text: message }); } catch (err) { console.error('Share failed:', err); }
-                } else {
-                    ui.showSimpleMessageModal(dom, 'Paylaşım Desteklenmiyor', 'Cihazınız bu özelliği desteklemiyor. Mesajı kopyalayarak paylaşabilirsiniz: <br><br><code class="bg-tertiary p-2 rounded-md block break-words">' + message + '</code>');
+                const cust = allCustomers.find(c => c.name === item.customerName);
+                let phone = (cust?.phoneNumber && String(cust.phoneNumber).trim()) || '';
+                if (!phone) {
+                    const entered = await ui.showWhatsAppPhonePromptModal(dom);
+                    if (entered === null) break;
+                    const trimmed = String(entered).trim();
+                    if (!trimmed) {
+                        await ui.showSimpleMessageModal(dom, 'Eksik bilgi', 'Lütfen telefon numarasını girin.');
+                        break;
+                    }
+                    const digits = ui.formatPhoneDigitsForWhatsAppTR(trimmed);
+                    if (digits.length < 10) {
+                        await ui.showSimpleMessageModal(dom, 'Geçersiz numara', 'WhatsApp için en az 10 haneli bir numara girin (örn. 5XX XXX XX XX).');
+                        break;
+                    }
+                    try {
+                        if (cust?.id) {
+                            await dataManager.updateCustomer(db, userId, cust.id, { phoneNumber: trimmed });
+                        } else {
+                            await dataManager.addCustomer(db, userId, item.customerName, { phoneNumber: trimmed });
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        await ui.showSimpleMessageModal(dom, 'Hata', 'Telefon kaydedilirken bir sorun oluştu.');
+                        break;
+                    }
+                    phone = trimmed;
+                }
+                const shareBody = ui.applyShareTemplate(settings.shareTemplate, item);
+                if (!ui.openWhatsAppWaMe90FromRawPhone(phone, shareBody)) {
+                    await ui.showSimpleMessageModal(dom, 'Geçersiz numara', 'Kayıtlı numara WhatsApp bağlantısı için uygun değil. Müşteri detayından telefonu düzenleyebilirsiniz.');
                 }
                 break;
             }
             case 'deliver': {
-                const result = await ui.showDeliverConfirmationModal(dom, item, deliveryPersonnel, ui.formatDate);
+                const result = await ui.showDeliverConfirmationModal(dom, item, deliveryPersonnel, ui.formatDate, allCustomers);
                 if (result.confirmed && result.deliveredBy) {
                     const deliveryTimestamp = result.deliveryDate ? new Date(`${result.deliveryDate}T${result.deliveryTime || '00:00:00'}`) : new Date();
                     const totalBags = Number(item.bagCount) || 1;
@@ -777,8 +998,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const remaining = totalBags - toDeliver;
 
+                    const isAmbarDeliver = result.shipmentMethod === 'ambar';
+                    const desiVal = result.cargoDesi != null && !isNaN(Number(result.cargoDesi)) ? Number(result.cargoDesi) : null;
+                    const hasDesi = desiVal != null && desiVal > 0;
+
+                    let cargoPayload;
+                    if (isAmbarDeliver) {
+                        cargoPayload = {
+                            ambarIleGonderildi: true,
+                            kargoIleGonderildi: false,
+                            cargoDesi: hasDesi ? desiVal : null,
+                        };
+                    } else if (hasDesi) {
+                        cargoPayload = {
+                            kargoIleGonderildi: true,
+                            ambarIleGonderildi: false,
+                            cargoDesi: desiVal,
+                        };
+                    } else {
+                        cargoPayload = {};
+                    }
+
                     if (toDeliver >= totalBags) {
-                        await updateItem(id, { status: 'delivered', deliveredAt: deliveryTimestamp, deliveredBy: result.deliveredBy, note: '', reminderDate: null });
+                        await updateItem(id, { status: 'delivered', deliveredAt: deliveryTimestamp, deliveredBy: result.deliveredBy, reminderDate: null, ...cargoPayload });
                     } else {
                         const currentDates = [...(item.additionalDates || [])];
                         currentDates.sort((a, b) => (a.seconds ?? a.getTime?.() / 1000 ?? 0) - (b.seconds ?? b.getTime?.() / 1000 ?? 0));
@@ -790,14 +1032,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             status: 'delivered',
                             deliveredAt: deliveryTimestamp,
                             deliveredBy: result.deliveredBy,
-                            note: '',
                             reminderDate: null,
-                            additionalDates: []
+                            additionalDates: [],
+                            ...cargoPayload,
                         });
                     }
                     
                     const remainingText = remaining > 0 ? `\n📦 Kalan: ${remaining} Adet` : '';
-                    sendTelegramNotification(`✅ *Teslimat Yapıldı*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet${remainingText}\n🚚 Teslim Eden: ${result.deliveredBy}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
+                    let cargoText = '';
+                    if (isAmbarDeliver) {
+                        cargoText = hasDesi ? `\n📮 Ambar: ${desiVal.toFixed(2)} desi` : '\n📮 Ambarla teslim';
+                    } else if (hasDesi) {
+                        cargoText = `\n📮 Kargo: ${desiVal.toFixed(2)} desi`;
+                    }
+                    sendTelegramNotification(`✅ *Teslimat Yapıldı*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet${remainingText}\n🚚 Teslim Eden: ${result.deliveredBy}${cargoText}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
                 }
                 break;
             }
@@ -867,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 break;
             case 'edit-count':
-                if (defaultActions) defaultActions.parentElement.classList.add('hidden');
+                itemDiv.querySelectorAll('.customer-card__actions-default').forEach((el) => el.classList.add('hidden'));
                 editCountActions.classList.remove('hidden');
                 const input = editCountActions.querySelector('input');
                 input.focus();
@@ -875,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'cancel-edit-count':
                 editCountActions.classList.add('hidden');
-                if (defaultActions) defaultActions.parentElement.classList.remove('hidden');
+                itemDiv.querySelectorAll('.customer-card__actions-default').forEach((el) => el.classList.remove('hidden'));
                 break;
             case 'save-count': {
                 const saveInput = editCountActions.querySelector('input');
@@ -899,13 +1147,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 await updateItem(id, updatePayload);
                 editCountActions.classList.add('hidden');
-                if (defaultActions) defaultActions.parentElement.classList.remove('hidden');
+                itemDiv.querySelectorAll('.customer-card__actions-default').forEach((el) => el.classList.remove('hidden'));
                 break;
             }
         }
     }
 
     async function handleSettingsPanelClick(e) {
+        const accBtn = e.target.closest('.settings-accordion-toggle');
+        if (accBtn) {
+            e.preventDefault();
+            const body = accBtn.nextElementSibling;
+            if (body && body.classList.contains('settings-accordion-body')) {
+                body.classList.toggle('hidden');
+                const open = !body.classList.contains('hidden');
+                accBtn.setAttribute('aria-expanded', String(open));
+                accBtn.querySelector('.settings-accordion-chevron')?.classList.toggle('rotate-180', open);
+                accBtn.closest('.settings-accordion')?.classList.toggle('settings-accordion--open', open);
+            }
+            return;
+        }
         const button = e.target.closest('button');
         if (!button) return;
         if (button.dataset.theme) {
@@ -933,12 +1194,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'manage-delivery-personnel-btn':
                 await showDeliveryPersonnelManagementModal();
-                break;
-            case 'save-custom-text-btn':
-                settings.customTitle = dom.customText.titleInput.value.trim();
-                settings.customContent = dom.customText.contentInput.value.trim();
-                await dataManager.saveSettings(db, userId, settings);
-                await ui.showSimpleMessageModal(dom, 'Başarılı', 'Ana sayfa notu kaydedildi.', true);
                 break;
             case 'save-share-template-btn':
                 settings.shareTemplate = dom.shareTemplate.input.value.trim();
@@ -988,9 +1243,12 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'import-json-btn':
                 dom.importFileInput.click();
                 break;
-            case 'export-active-pdf-btn':
-                if (jsPDF) { if (!ui.exportActiveItemsToPDF(allItems.filter(i => i.status !== 'delivered'), ui.formatDate, jsPDF)) ui.showSimpleMessageModal(dom, "Bilgi", "Dışa aktarılacak bekleyen poşet yok."); }
+            case 'export-active-pdf-btn': {
+                const PDF = resolveJsPDFConstructor();
+                if (!PDF) { ui.showSimpleMessageModal(dom, 'PDF', 'PDF kütüphanesi yüklenemedi.'); break; }
+                if (!ui.exportActiveItemsToPDF(allItems.filter(i => i.status !== 'delivered'), ui.formatDate, PDF)) ui.showSimpleMessageModal(dom, "Bilgi", "Dışa aktarılacak bekleyen poşet yok.");
                 break;
+            }
             case 'export-csv-btn':
                 if (!ui.exportToCSV(allItems, ui.formatDate)) ui.showSimpleMessageModal(dom, "Bilgi", "Dışa aktarılacak veri yok.");
                 break;
@@ -1154,16 +1412,175 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupAppEventListeners() {
         dom.addItemForm?.addEventListener('submit', handleAddItem);
+        dom.dashboard?.quickNoteBtn?.addEventListener('click', handleDashboardQuickNote);
+        const qnText = dom.dashboard?.quickNoteText;
+        const qnCust = dom.dashboard?.quickNoteCustomer;
+        const qnSuggest = dom.dashboard?.quickNoteSuggestions;
+        const setQuickNoteListboxOpen = (open) => {
+            qnCust?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        const renderDashboardQuickNoteSuggestions = () => {
+            if (!qnSuggest || !qnCust) return;
+            const searchTerm = ui.toTrUpperCase(qnCust.value.trim());
+            qnSuggest.innerHTML = '';
+            if (searchTerm.length === 0) {
+                qnSuggest.classList.add('hidden');
+                setQuickNoteListboxOpen(false);
+                return;
+            }
+            const filteredCustomers = [...new Set(
+                allCustomers
+                    .filter((c) => ui.toTrUpperCase(c.name).includes(searchTerm))
+                    .map((c) => c.name)
+            )].sort((a, b) => a.localeCompare(b, 'tr'));
+            if (filteredCustomers.length > 0) {
+                filteredCustomers.forEach((name) => {
+                    const div = document.createElement('div');
+                    div.textContent = name;
+                    div.setAttribute('role', 'option');
+                    div.className = 'customers-quick__suggest-item cursor-pointer p-3 text-primary';
+                    div.addEventListener('click', () => {
+                        qnCust.value = name;
+                        qnSuggest.classList.add('hidden');
+                        setQuickNoteListboxOpen(false);
+                        qnText?.focus();
+                    });
+                    qnSuggest.appendChild(div);
+                });
+                qnSuggest.classList.remove('hidden');
+                setQuickNoteListboxOpen(true);
+            } else {
+                qnSuggest.classList.add('hidden');
+                setQuickNoteListboxOpen(false);
+            }
+        };
+        qnCust?.addEventListener('input', renderDashboardQuickNoteSuggestions);
+        const submitOnEnter = (e) => {
+            if (e.key === 'Enter') {
+                if (qnSuggest && !qnSuggest.classList.contains('hidden')) {
+                    const first = qnSuggest.querySelector('.customers-quick__suggest-item');
+                    if (first) {
+                        e.preventDefault();
+                        first.click();
+                        return;
+                    }
+                }
+                e.preventDefault();
+                handleDashboardQuickNote();
+            }
+        };
+        qnText?.addEventListener('keydown', submitOnEnter);
+        qnCust?.addEventListener('keydown', submitOnEnter);
         dom.searchArchiveInput?.addEventListener('input', () => {
             archiveCurrentPage = 1;
             renderAll();
         });
-        document.getElementById('export-archive-pdf-btn')?.addEventListener('click', () => {
-            const archived = allItems.filter(item => item.status === 'delivered' && ui.toTrUpperCase(item.customerName).includes(ui.toTrUpperCase(dom.searchArchiveInput.value))).sort((a, b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
-            if (jsPDF) { if (!ui.exportArchiveToPDF(archived, ui.formatDate, jsPDF)) ui.showSimpleMessageModal(dom, "Bilgi", "Arşivde dışa aktarılacak veri yok."); }
+
+        const archiveFilterChanged = () => {
+            archiveFilters = {
+                customer: dom.archiveFilterCustomer?.value || '',
+                deliverer: dom.archiveFilterDeliverer?.value || '',
+                shipment: dom.archiveFilterShipment?.value || '',
+            };
+            archiveCurrentPage = 1;
+            renderAll();
+        };
+        dom.archiveFilterCustomer?.addEventListener('change', archiveFilterChanged);
+        dom.archiveFilterDeliverer?.addEventListener('change', archiveFilterChanged);
+        dom.archiveFilterShipment?.addEventListener('change', archiveFilterChanged);
+        dom.archiveFilterClear?.addEventListener('click', () => {
+            archiveFilters = { customer: '', deliverer: '', shipment: '' };
+            if (dom.archiveFilterCustomer) dom.archiveFilterCustomer.value = '';
+            if (dom.archiveFilterDeliverer) dom.archiveFilterDeliverer.value = '';
+            if (dom.archiveFilterShipment) dom.archiveFilterShipment.value = '';
+            archiveCurrentPage = 1;
+            renderAll();
         });
-        document.getElementById('export-reports-pdf-btn')?.addEventListener('click', () => {
-            if (jsPDF) { if (!ui.exportReportsToPDF(allItems, ui.formatDate, ui.getDayDifference, jsPDF)) ui.showSimpleMessageModal(dom, "Bilgi", "Rapor oluşturulacak teslim edilmiş poşet bulunmuyor."); }
+
+        document.getElementById('export-archive-pdf-btn')?.addEventListener('click', () => {
+            const searchQuery = ui.toTrUpperCase(dom.searchArchiveInput.value);
+            const archived = allItems
+                .filter(item => item.status === 'delivered' && ui.toTrUpperCase(item.customerName).includes(searchQuery))
+                .filter(item => {
+                    const cf = archiveFilters;
+                    if (cf.customer && ui.toTrUpperCase(item.customerName || '') !== ui.toTrUpperCase(cf.customer)) return false;
+                    if (cf.deliverer && ui.toTrUpperCase(item.deliveredBy || '') !== ui.toTrUpperCase(cf.deliverer)) return false;
+                    if (cf.shipment === 'kargo' && !item.kargoIleGonderildi) return false;
+                    if (cf.shipment === 'ambar' && !item.ambarIleGonderildi) return false;
+                    if (cf.shipment === 'none' && (item.kargoIleGonderildi || item.ambarIleGonderildi)) return false;
+                    return true;
+                })
+                .sort((a, b) => (b.deliveredAt?.seconds || 0) - (a.deliveredAt?.seconds || 0));
+            const PDF = resolveJsPDFConstructor();
+            if (!PDF) { ui.showSimpleMessageModal(dom, 'PDF', 'PDF kütüphanesi yüklenemedi.'); return; }
+            if (!ui.exportArchiveToPDF(archived, ui.formatDate, PDF)) ui.showSimpleMessageModal(dom, "Bilgi", "Arşivde dışa aktarılacak veri yok.");
+        });
+        document.getElementById('kargo-archive-calc-btn')?.addEventListener('click', async (e) => {
+            const triggerBtn = e.currentTarget;
+            try {
+            const activeItems = allItems.filter(item => item.status !== 'delivered');
+            const result = await ui.showKargoDesiFullModal(dom, allCustomers, activeItems, deliveryPersonnel);
+            if (!result?.confirmed || !result.itemId) return;
+            if (!result.deliveredBy) return;
+
+            const cargoDesi = Number(result.cargoDesi);
+            const isAmbar = result.shipmentMethod === 'ambar';
+            if (!isAmbar && (!cargoDesi || cargoDesi <= 0)) return;
+            const selectedItem = allItems.find(i => i.id === result.itemId);
+            if (!selectedItem) return;
+            const totalBags = Number(selectedItem.bagCount) || 0;
+            let toDeliver = parseInt(result.deliverCount, 10);
+            if (isNaN(toDeliver) || toDeliver < 1) toDeliver = totalBags;
+            if (toDeliver > totalBags) toDeliver = totalBags;
+            const remaining = totalBags - toDeliver;
+
+            const payload = {
+                reminderDate: null,
+                cargoDesi: cargoDesi > 0 ? cargoDesi : null,
+                kargoIleGonderildi: !isAmbar,
+                ambarIleGonderildi: isAmbar,
+            };
+
+            if (toDeliver >= totalBags) {
+                await updateItem(result.itemId, {
+                    status: 'delivered',
+                    deliveredAt: new Date(),
+                    deliveredBy: result.deliveredBy,
+                    ...payload,
+                });
+            } else {
+                const currentDates = [...(selectedItem.additionalDates || [])];
+                currentDates.sort((a, b) => (a.seconds ?? a.getTime?.() / 1000 ?? 0) - (b.seconds ?? b.getTime?.() / 1000 ?? 0));
+                const newAdditionalDates = currentDates.slice(0, Math.max(0, currentDates.length - toDeliver));
+                await updateItem(result.itemId, { bagCount: remaining, additionalDates: newAdditionalDates });
+                await dataManager.addItem(db, userId, {
+                    customerName: selectedItem.customerName,
+                    bagCount: toDeliver,
+                    status: 'delivered',
+                    deliveredAt: new Date(),
+                    deliveredBy: result.deliveredBy,
+                    reminderDate: null,
+                    additionalDates: [],
+                    ...payload,
+                });
+            }
+
+            sendTelegramNotification(`✅ *Teslimat Yapıldı (Kargo Hesaplama)*\n\n👤 Müşteri: ${result.customerName}\n🛍️ Teslim Edilen: ${toDeliver} Adet${remaining > 0 ? `\n📦 Kalan: ${remaining} Adet` : ''}\n📮 ${isAmbar ? 'Ambar' : 'Kargo'}: ${cargoDesi > 0 ? `${cargoDesi.toFixed(2)} desi` : 'Desi girilmedi'}\n🚚 Teslim Eden: ${result.deliveredBy}\n📅 Tarih: ${new Date().toLocaleDateString('tr-TR')}`);
+            } finally {
+                if (triggerBtn && typeof triggerBtn.blur === 'function') triggerBtn.blur();
+            }
+        });
+        document.getElementById('export-reports-pdf-btn')?.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            const PDF = resolveJsPDFConstructor();
+            if (!PDF) {
+                ui.showSimpleMessageModal(dom, 'PDF', 'PDF kütüphanesi yüklenemedi. Bağlantınızı kontrol edip sayfayı yenileyin.');
+                return;
+            }
+            const ok = ui.exportReportsToPDF(allItems, ui.formatDate, ui.getDayDifference, PDF);
+            if (!ok) {
+                ui.showSimpleMessageModal(dom, 'Bilgi', 'Teslim edilmiş kayıt bulunmuyor veya PDF oluşturulamadı. Kayıtların teslim tarihi olduğundan emin olun.');
+            }
         });
         dom.sortAlphaBtn?.addEventListener('click', () => handleSort('alpha'));
         dom.sortBagsBtn?.addEventListener('click', () => handleSort('bags'));
@@ -1171,11 +1588,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.viewListBtn?.addEventListener('click', () => handleViewChange('list'));
         dom.viewGridBtn?.addEventListener('click', () => handleViewChange('grid'));
         dom.mainContent?.addEventListener('click', handleMainContentClick);
+        dom.modalContainer?.addEventListener('click', handleMainContentClick);
         const onMarkNotifAsRead = (itemId) => {
             if (!seenNotifications.includes(itemId)) seenNotifications.push(itemId);
             localStorage.setItem(`seenNotifications-${userId}`, JSON.stringify([...new Set(seenNotifications)]));
             ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
-            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, onMarkNotifAsRead, onMarkAllNotifsRead);
+            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
         };
         const onMarkAllNotifsRead = () => {
             const unseenR = ui.getUnseenReminders(allItems, seenNotifications);
@@ -1185,7 +1603,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
         };
         dom.notificationBell?.addEventListener('click', () => {
-            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, onMarkNotifAsRead, onMarkAllNotifsRead);
+            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
         });
         // Yeni buton dinleyicisi
         dom.toggleWidthBtn?.addEventListener('click', () => {
@@ -1225,9 +1643,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.querySelectorAll('.report-range-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg'));
-                btn.classList.add('accent-bg');
+                document.querySelectorAll('.report-range-btn').forEach(b => b.classList.remove('accent-bg', 'text-white'));
+                btn.classList.add('accent-bg', 'text-white');
                 ui.renderPeriodicReport(allItems, btn.dataset.range, ui.formatDate);
+            });
+        });
+        document.getElementById('toggle-daily-activity-report')?.addEventListener('click', () => {
+            const section = document.getElementById('report-charts-section');
+            const btn = document.getElementById('toggle-daily-activity-report');
+            const chevron = document.getElementById('toggle-daily-activity-chevron');
+            if (!section || !btn) return;
+            section.classList.toggle('hidden');
+            const expanded = !section.classList.contains('hidden');
+            btn.setAttribute('aria-expanded', String(expanded));
+            chevron?.classList.toggle('rotate-180', expanded);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        ui.renderPeriodicReport(allItems, null, ui.formatDate);
+                    }, 0);
+                });
             });
         });
         // Sekme butonları: document üzerinde delegation (nav her zaman hazır olmayabilir)
@@ -1236,7 +1671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (button && button.id && button.id.startsWith('tab-')) {
                 e.preventDefault();
                 const targetTab = button.id.replace('tab-', '');
-                ui.switchTab(targetTab);
+                ui.switchTab(targetTab, true);
 
                 // Raporlar sekmesine tıklandığında grafiklerin düzgün yüklenmesi için tetikleyici
                 if (targetTab === 'reports') {
@@ -1264,7 +1699,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 filteredCustomers.forEach(name => {
                     const div = document.createElement('div');
                     div.textContent = name;
-                    div.className = 'p-3 hover:bg-slate-600 cursor-pointer text-primary';
+                    div.className = 'customers-quick__suggest-item cursor-pointer p-3 text-primary';
                     div.addEventListener('click', () => {
                         dom.customerNameInput.value = name;
                         dom.suggestionsBox.classList.add('hidden');
@@ -1286,6 +1721,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.relative')) dom.suggestionsBox?.classList.add('hidden');
+            if (!e.target.closest('#dashboard-quick-note-autocomplete')) {
+                dom.dashboard?.quickNoteSuggestions?.classList.add('hidden');
+                dom.dashboard?.quickNoteCustomer?.setAttribute('aria-expanded', 'false');
+            }
             const openMenu = document.querySelector('.action-menu:not(.hidden)');
             if (openMenu && !e.target.closest('.default-actions')) openMenu.classList.add('hidden');
         });

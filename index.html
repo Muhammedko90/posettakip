@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Emre Bebe Müşteri Poşet Takibi</title>
     <meta name="description" content="Kullanıcı bazlı Müşteri Poşet Takip Uygulaması">
 
@@ -17,9 +17,13 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="assets/css/styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="assets/css/styles.css?v=34" rel="stylesheet">
 </head>
 <body class="bg-secondary text-primary">
+
+    <!-- Tailwind CDN: müşteri kartı şerit + poşet badge (customerCardWaitVisuals) -->
+    <span class="hidden bg-blue-500 bg-yellow-500 bg-red-500 shadow-lg shadow-blue-500/35 shadow-yellow-500/35 shadow-red-500/40 bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/35 ring-yellow-500/35 ring-red-500/35 text-yellow-400 text-red-400" aria-hidden="true" id="tailwind-safelist-customer-card-wait"></span>
 
     <div id="loading-overlay">
         <div id="loading-spinner">
@@ -72,343 +76,459 @@
     </div>
 
 
-    <div id="app-container" class="hidden container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 min-h-screen transition-all duration-300">
+    <div id="app-container" class="hidden container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 transition-all duration-300 pb-[calc(7rem+max(12px,env(safe-area-inset-bottom,0px)))]">
         
-        <header class="flex items-center justify-between mb-6 gap-2">
-            <div class="w-20 flex-shrink-0"></div> <!-- Sol taraf dengeleyici boşluk -->
-            <div class="flex-grow text-center">
-                <h1 class="text-3xl sm:text-4xl font-bold text-primary">Müşteri Poşet Takibi</h1>
-                <p class="mt-2 text-secondary text-sm sm:text-base">Tüm Ayrılan Poşetleri tek yerden yönetin.</p>
+        <header class="app-header flex items-center justify-between mb-4 md:mb-6 gap-2">
+            <div class="w-14 sm:w-20 flex-shrink-0"></div>
+            <div class="flex-grow text-center px-1 min-w-0 overflow-x-auto overflow-y-hidden">
+                <h1 class="app-header__title inline-block text-primary whitespace-nowrap">Müşteri Poşet Takibi</h1>
             </div>
-            <div class="w-20 flex-shrink-0 flex justify-end gap-2">
-                <!-- Genişlet/Daralt Butonu -->
-                <button id="toggle-width-btn" class="p-2 text-slate-400 hover:text-white transition rounded-full hover:bg-tertiary" title="Ekranı Genişlet/Daralt">
-                    <svg id="icon-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707m0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707m-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707"/></svg>
+            <div class="w-14 sm:w-20 flex-shrink-0 flex justify-end gap-1 sm:gap-2">
+                <button id="toggle-width-btn" type="button" class="app-header__icon-btn p-2 text-slate-400 hover:text-white transition rounded-xl hover:bg-tertiary/80" title="Ekranı Genişlet/Daralt" aria-label="Ekranı genişlet veya daralt">
+                    <svg id="icon-expand" class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                    </svg>
                 </button>
-                <!-- Bildirim Butonu -->
-                <button id="notification-bell" class="relative p-2 text-slate-400 hover:text-white transition rounded-full hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/></svg>
-                    <span id="notification-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"></span>
+                <button type="button" id="notification-bell" class="app-header__icon-btn relative p-2 text-slate-400 hover:text-white transition rounded-xl hover:bg-tertiary/80" title="Bildirimler ve notlar" aria-label="Bildirimler">
+                    <svg class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    <span id="notification-badge" class="hidden absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[0.65rem] font-semibold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center border-2 border-[var(--bg-secondary)]"></span>
                 </button>
             </div>
         </header>
 
-        <div class="mb-6 bg-primary p-1 sm:p-2 rounded-xl border border-dynamic shadow-lg">
-            <nav class="flex justify-around items-center" aria-label="Tabs">
-                <button id="tab-anasayfa" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    <span class="text-xs font-medium">Ana Sayfa</span>
-                </button>
-                <button id="tab-list" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                    </svg>
-                    <span class="text-xs font-medium">Liste</span>
-                </button>
-                <button id="tab-archive" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                    <span class="text-xs font-medium">Teslim Edilenler</span>
-                </button>
-                <button id="tab-reports" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <span class="text-xs font-medium">Raporlar</span>
-                </button>
-                <button id="tab-notes" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span class="text-xs font-medium">Notlarım</span>
-                </button>
-                <button id="tab-settings" class="tab-button flex flex-col items-center justify-center flex-1 p-2 rounded-lg text-secondary hover:bg-tertiary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span class="text-xs font-medium">Ayarlar</span>
-                </button>
-            </nav>
-        </div>
-
-
         <main id="main-content" class="relative">
-            <div id="panel-anasayfa" class="panel hidden">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
-                        <div class="bg-blue-500/20 text-blue-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a3.001 3.001 0 015.688 0M12 12a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
-                        <div>
-                            <p class="text-secondary text-sm">Bekleyen Müşteri</p>
-                            <p id="dashboard-waiting-customers" class="text-2xl font-bold text-primary">0</p>
+            <div id="panel-anasayfa" class="panel hidden dashboard-page">
+                <div class="dashboard-kpi-row grid grid-cols-2 gap-3 sm:gap-4 w-full min-w-0 shrink-0">
+                    <div class="dashboard-kpi dashboard-kpi--customers">
+                        <div class="dashboard-kpi__top">
+                            <div class="dashboard-kpi-icon-wrap bg-blue-500/25 text-sky-300 ring-1 ring-sky-400/35">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="dashboard-kpi-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            </div>
+                            <p id="dashboard-waiting-customers" class="dashboard-kpi-value tabular-nums">0</p>
                         </div>
+                        <p class="dashboard-kpi-label">Bekleyen Müşteri Sayısı</p>
                     </div>
-                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
-                        <div class="bg-purple-500/20 text-purple-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg></div>
-                        <div>
-                            <p class="text-secondary text-sm">Bekleyen Poşet</p>
-                            <p id="dashboard-waiting-bags" class="text-2xl font-bold text-primary">0</p>
+                    <div class="dashboard-kpi dashboard-kpi--bags">
+                        <div class="dashboard-kpi__top">
+                            <div class="dashboard-kpi-icon-wrap bg-violet-500/25 text-violet-300 ring-1 ring-violet-400/40">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="dashboard-kpi-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                            </div>
+                            <p id="dashboard-waiting-bags" class="dashboard-kpi-value tabular-nums">0</p>
                         </div>
+                        <p class="dashboard-kpi-label">Bekleyen Poşet Sayısı</p>
                     </div>
-                     <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex items-center gap-4">
-                        <div class="bg-green-500/20 text-green-300 p-3 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                        <div>
-                            <p class="text-secondary text-sm">Son 7 Gün Teslimat</p>
-                            <p id="dashboard-delivered-last-week" class="text-2xl font-bold text-primary">0</p>
+                    <div class="dashboard-kpi dashboard-kpi--week">
+                        <div class="dashboard-kpi__top">
+                            <div class="dashboard-kpi-icon-wrap bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-400/40">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="dashboard-kpi-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <p id="dashboard-delivered-last-week" class="dashboard-kpi-value tabular-nums">0</p>
                         </div>
+                        <p class="dashboard-kpi-label">Son 7 Günlük Teslimat</p>
                     </div>
-
-                    <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-1 lg:col-span-1">
-                        <h3 class="font-semibold text-primary mb-3">En Eski 3 Bekleyen Müşteri</h3>
-                        <div id="dashboard-oldest-customers" class="space-y-3">
-                            <p class="text-secondary text-center py-4">Veri bulunamadı.</p>
+                    <div class="dashboard-kpi dashboard-kpi--alert">
+                        <div class="dashboard-kpi__top">
+                            <div class="dashboard-kpi-icon-wrap bg-white/10 text-red-200 ring-1 ring-red-300/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="dashboard-kpi-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                            </div>
+                            <p id="dashboard-overdue-customers" class="dashboard-kpi-value dashboard-kpi-value--light tabular-nums">0</p>
                         </div>
+                        <p class="dashboard-kpi-label dashboard-kpi-label--alert">Gecikmiş Siparişler (20+ Gün)</p>
                     </div>
-                    
-                    <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic md:col-span-2 lg:col-span-2">
-                        <h3 class="font-semibold text-primary mb-3">Günün Hatırlatmaları (Notlar)</h3>
-                        <div id="dashboard-reminders" class="space-y-3 max-h-48 overflow-y-auto">
-                            <p class="text-secondary text-center py-4">Bugün için hatırlatma yok.</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-primary p-5 rounded-xl shadow-lg border border-dynamic flex flex-col justify-center items-center text-center md:col-span-2 lg:col-span-3">
-                        <h3 id="dashboard-custom-text-title" class="font-semibold text-primary mb-3">...</h3>
-                        <div id="dashboard-custom-text-content" class="text-secondary italic">
-                            <p>Yükleniyor...</p>
-                        </div>
-                    </div>
-
                 </div>
-            </div>
 
-            <div id="panel-list" class="panel hidden space-y-8">
-                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
-                    <h2 class="text-2xl font-semibold mb-4 text-primary">Yeni Poşet Ekle / Listede Ara</h2>
-                    <form id="add-item-form" class="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                        <div class="relative sm:col-span-3">
-                            <input type="text" id="customer-name" placeholder="Müşteri Adı / Listede Ara..." class="w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required autocomplete="off">
-                            <button type="button" id="clear-customer-name" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary">
-                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-                            </button>
-                            <div id="suggestions-box" class="hidden absolute top-full left-0 right-0 z-20 bg-tertiary border border-t-0 border-dynamic rounded-b-lg shadow-lg max-h-60 overflow-y-auto"></div>
+                <section class="dashboard-analysis flex flex-col gap-3 sm:gap-4 mt-1 pb-2" aria-labelledby="dashboard-analysis-heading">
+                    <div class="dashboard-analysis__head">
+                        <h2 id="dashboard-analysis-heading" class="dashboard-analysis__title">Sistem Analizi ve Son İşlemler</h2>
+                        <p class="dashboard-analysis__subtitle text-secondary">Bekleyen kayıtlar, hatırlatmalar ve son işlemler</p>
+                    </div>
+                    <div class="dashboard-analysis__grid grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:items-start">
+                        <div class="dashboard-panel-card dashboard-panel-card--fit flex h-auto w-full min-h-0 flex-col rounded-2xl border border-white/[0.07] p-4 shadow-lg">
+                            <h3 class="dashboard-section-title">En Eski 3 Bekleyen Müşteri</h3>
+                            <div id="dashboard-oldest-customers" class="dashboard-scroll dashboard-list-stack mt-1 max-h-80 min-h-0 space-y-2 overflow-y-auto">
+                                <p class="dashboard-empty text-secondary text-center py-4">Veri bulunamadı.</p>
+                            </div>
                         </div>
-                        <input type="number" id="bag-count" placeholder="Poşet Sayısı" value="1" min="1" class="sm:col-span-1 w-full p-3 bg-tertiary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition" required>
-                        <button type="submit" class="sm:col-span-1 w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-secondary ring-accent transition-all">Ekle</button>
-                    </form>
-                </div>
-                <div>
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                        <div class="flex items-center gap-3">
-                            <h2 class="text-2xl font-semibold text-primary">Bekleyen Poşetler</h2>
-                            <span id="total-customers-counter" class="text-base font-medium bg-sky-500/20 text-sky-300 py-1 px-3 rounded-full" title="Bekleyen Müşteri Sayısı"></span>
-                            <span id="total-bags-counter" class="text-base font-medium bg-purple-500/20 text-purple-300 py-1 px-3 rounded-full" title="Toplam Poşet Sayısı"></span>
+                        <div class="dashboard-panel-card dashboard-panel-card--fit flex h-auto w-full min-h-0 flex-col rounded-2xl border border-white/[0.07] p-4 shadow-lg">
+                            <h3 class="dashboard-section-title">Bugün ve Geçmiş Hatırlatmalar (Notlar)</h3>
+                            <div id="dashboard-reminders" class="dashboard-scroll dashboard-list-stack mt-1 max-h-64 min-h-0 space-y-2 overflow-y-auto">
+                                <p class="dashboard-empty text-secondary text-center py-3">Bugün veya geçmiş tarihli hatırlatma yok.</p>
+                            </div>
+                            <div class="dashboard-quick-note mt-3 border-t border-white/10 pt-3">
+                                <p class="mb-2 text-xs font-medium uppercase tracking-wide text-secondary/90">Hızlı not ekle</p>
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                                    <div id="dashboard-quick-note-autocomplete" class="relative min-w-0 w-full shrink-0 sm:max-w-[13rem]">
+                                        <input type="text" id="dashboard-quick-note-customer" autocomplete="off" placeholder="Müşteri adı" class="w-full rounded-xl border border-white/10 bg-slate-900/40 px-3 py-2.5 text-sm text-primary placeholder:text-secondary/70 focus:border-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30" aria-label="Müşteri adı" aria-autocomplete="list" aria-controls="dashboard-quick-note-suggestions" aria-expanded="false">
+                                        <div id="dashboard-quick-note-suggestions" class="customers-quick__suggestions absolute left-0 right-0 top-full z-[35] mt-1 hidden max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/98 shadow-xl backdrop-blur-sm" role="listbox"></div>
+                                    </div>
+                                    <input type="text" id="dashboard-quick-note-text" autocomplete="off" placeholder="Not metni…" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900/40 px-3 py-2.5 text-sm text-primary placeholder:text-secondary/70 focus:border-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30" aria-label="Not metni">
+                                    <button type="button" id="dashboard-quick-note-btn" class="shrink-0 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-400/60 sm:px-5">Ekle</button>
+                                </div>
+                                <p class="mt-2 text-[0.65rem] leading-snug text-secondary/80">Bekleyen kayıttaki müşteriye not eklenir; aynı isimle birden fazla satır varsa ilki kullanılır.</p>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                             <div id="view-toggle-buttons" class="flex border border-dynamic rounded-lg mr-2">
-                                <button id="view-list-btn" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Liste Görünümü">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
-                                </button>
-                                <button id="view-grid-btn" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic rounded-r-md" title="Izgara Görünümü">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/></svg>
-                                </button>
-                             </div>
-                             <div class="flex border border-dynamic rounded-lg">
-                                <button id="sort-alpha" class="p-2 text-secondary hover:bg-tertiary rounded-l-md" title="Alfabetik Sırala"></button>
-                                <button id="sort-bags" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic" title="Poşet Sayısına Göre Sırala"></button>
-                                <button id="sort-date" class="p-2 text-secondary hover:bg-tertiary border-l border-dynamic rounded-r-md" title="Tarihe Göre Sırala"></button>
+                        <div class="dashboard-panel-card dashboard-panel-card--fit flex h-auto w-full min-h-0 flex-col rounded-2xl border border-white/[0.07] p-4 shadow-lg lg:col-span-2">
+                            <h3 class="dashboard-section-title">Son Yapılan İşlemler</h3>
+                            <div id="dashboard-recent-actions" class="mt-1 space-y-2">
+                                <p class="dashboard-empty text-secondary py-4 text-center">Henüz işlem yok.</p>
                             </div>
                         </div>
                     </div>
-                    <div id="item-list" class="space-y-2"></div>
-                    <div id="item-grid" class="hidden"></div>
-                    <p id="empty-item-list-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Henüz bekleyen poşet bulunmuyor.</p>
+                </section>
+            </div>
+
+            <div id="panel-list" class="panel hidden customers-page space-y-6 customers-page--padded">
+                 <div class="customers-quick p-4 sm:p-5">
+                    <h2 class="customers-quick__title">Yeni Poşet Ekle / Listede Ara</h2>
+                    <form id="add-item-form" class="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+                        <div class="relative min-w-0 flex-1">
+                            <label for="customer-name" class="customers-quick__label">Müşteri adı / arama</label>
+                            <div class="relative mt-1.5">
+                                <input type="text" id="customer-name" placeholder="Müşteri adı / listede ara..." class="customers-quick__input customers-quick__input--with-clear w-full py-3 pl-4 pr-11" required autocomplete="off">
+                                <button type="button" id="clear-customer-name" class="customers-quick__clear-btn absolute inset-y-0 right-1.5 my-auto flex h-9 w-9 items-center justify-center rounded-lg hidden" aria-label="Temizle">
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+                            <div id="suggestions-box" class="customers-quick__suggestions absolute left-0 right-0 top-full z-20 mt-1 hidden max-h-60 overflow-y-auto"></div>
+                        </div>
+                        <div class="w-full shrink-0 sm:w-28 lg:w-32">
+                            <label for="bag-count" class="customers-quick__label">Adet</label>
+                            <input type="number" id="bag-count" placeholder="1" value="1" min="1" class="customers-quick__input customers-quick__input--qty mt-1.5 w-full px-3 py-3" required>
+                        </div>
+                        <button type="submit" class="customers-quick__submit flex w-full shrink-0 items-center justify-center gap-2 px-6 py-3 lg:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                            Ekle
+                        </button>
+                    </form>
+                </div>
+                <div class="customers-list-section">
+                    <div class="customers-toolbar flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                            <h2 class="customers-toolbar__heading text-primary">Bekleyen Poşetler</h2>
+                            <span id="total-customers-counter" class="customers-pill customers-pill--blue tabular-nums" title="Bekleyen müşteri sayısı"></span>
+                            <span id="total-bags-counter" class="customers-pill customers-pill--purple tabular-nums" title="Toplam poşet sayısı"></span>
+                        </div>
+                        <div class="customers-toolbar__tools flex flex-wrap items-center justify-end gap-2">
+                             <div id="view-toggle-buttons" class="customers-toolgroup flex rounded-xl border border-white/10 bg-tertiary/40 p-0.5">
+                                <button id="view-list-btn" type="button" class="customers-toolbtn p-2.5 rounded-lg text-secondary hover:text-primary transition" title="Liste görünümü" aria-label="Liste görünümü">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 4.5h12M3.75 6.75h.008v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.008v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 4.5h.008v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                                </button>
+                                <button id="view-grid-btn" type="button" class="customers-toolbtn p-2.5 rounded-lg text-secondary hover:text-primary transition border-l border-white/10" title="Izgara görünümü" aria-label="Izgara görünümü">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM3.75 15.75a2.25 2.25 0 012.25-2.25h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25v-2.25z" /></svg>
+                                </button>
+                             </div>
+                             <div class="customers-toolgroup flex rounded-xl border border-white/10 bg-tertiary/40 p-0.5">
+                                <button id="sort-alpha" type="button" class="customers-toolbtn p-2.5 rounded-l-lg text-secondary hover:text-primary transition" title="Alfabetik sırala"></button>
+                                <button id="sort-bags" type="button" class="customers-toolbtn p-2.5 text-secondary hover:text-primary transition border-l border-white/10" title="Poşet sayısına göre sırala"></button>
+                                <button id="sort-date" type="button" class="customers-toolbtn p-2.5 rounded-r-lg text-secondary hover:text-primary transition border-l border-white/10" title="Tarihe göre sırala"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="item-list" class="customers-item-list space-y-3"></div>
+                    <div id="item-grid" class="customers-item-grid hidden"></div>
+                    <p id="empty-item-list-message" class="hidden text-center text-secondary bg-primary border border-white/[0.08] p-8 rounded-2xl shadow-lg">Henüz bekleyen poşet bulunmuyor.</p>
                 </div>
             </div>
 
-            <div id="panel-archive" class="panel hidden space-y-4">
-                 <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-                    <h2 class="text-2xl font-semibold text-primary">Teslim Edilenler Arşivi</h2>
-                     <div class="flex items-center gap-2">
-                        <input type="search" id="search-archive-input" placeholder="Arşivde ara..." class="p-2 bg-tertiary border border-dynamic rounded-lg focus:ring-2 ring-accent transition w-full sm:w-auto">
-                        <button id="export-archive-pdf-btn" class="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition" title="Arşivi PDF Olarak Aktar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            <div id="panel-archive" class="panel hidden space-y-4 archive-page--padded">
+                 <div class="flex flex-col gap-4 mb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                    <h2 class="text-2xl font-semibold text-primary shrink-0">Teslim Edilenler Arşivi</h2>
+                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto sm:justify-end">
+                        <div class="relative w-full sm:w-72 min-w-0">
+                            <span class="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-gray-500" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </span>
+                            <input type="search" id="search-archive-input" placeholder="ARŞİVDE ARA..." autocomplete="off" class="archive-search-input w-full rounded-xl border border-gray-700 bg-[#1F2937] py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-gray-500 shadow-inner transition focus:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50">
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0 justify-end">
+                        <button type="button" id="export-archive-pdf-btn" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-700/80 bg-gray-800 text-gray-300 shadow-sm transition-all duration-200 hover:bg-gray-700 hover:text-blue-400" title="Arşivi PDF Olarak Aktar">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
                         </button>
+                        <button id="kargo-archive-calc-btn" type="button" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 whitespace-nowrap" title="Kargo desi hesaplama">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V9a1 1 0 011-1h2l3 3v5a1 1 0 01-1 1h-1"/></svg>
+                            Kargo Hesaplama
+                        </button>
+                        </div>
                     </div>
                 </div>
-                <div id="archive-list" class="space-y-2"></div>
-                <div id="archive-pagination" class="flex justify-center items-center mt-4 space-x-2"></div>
+                <div id="archive-filters" class="archive-filters grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                    <div class="archive-filter-field">
+                        <label for="archive-filter-customer" class="archive-filter-label">Müşteri</label>
+                        <select id="archive-filter-customer" class="archive-filter-select">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+                    <div class="archive-filter-field">
+                        <label for="archive-filter-deliverer" class="archive-filter-label">Teslim Eden</label>
+                        <select id="archive-filter-deliverer" class="archive-filter-select">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+                    <div class="archive-filter-field">
+                        <label for="archive-filter-shipment" class="archive-filter-label">Sevkiyat</label>
+                        <select id="archive-filter-shipment" class="archive-filter-select">
+                            <option value="">Tümü</option>
+                            <option value="kargo">Kargo</option>
+                            <option value="ambar">Ambar</option>
+                            <option value="none">Sevkiyatsız</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="archive-filter-summary" class="archive-filter-summary hidden">
+                    <span id="archive-filter-summary-text" class="archive-filter-summary__text"></span>
+                    <button type="button" id="archive-filter-clear" class="archive-filter-clear">Filtreleri Temizle</button>
+                </div>
+                <div id="archive-list" class="archive-list space-y-2.5"></div>
+                <div id="archive-pagination" class="archive-pagination flex flex-wrap justify-center items-center gap-1.5 mt-5 px-1"></div>
                 <p id="empty-archive-list-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Arşivde hiç kayıt bulunmuyor.</p>
             </div>
             
-            <div id="panel-reports" class="panel hidden space-y-8">
+            <div id="panel-reports" class="panel hidden space-y-8 reports-page--padded">
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Dönem Seçimi</h2>
-                    <div class="grid grid-cols-4 gap-2 mb-6">
-                        <button data-range="7" class="report-range-btn bg-tertiary p-3 rounded-xl hover:bg-purple-500/30 transition flex flex-col items-center justify-center h-20 text-center border border-dynamic">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                        <button data-range="7" type="button" class="report-range-btn accent-bg text-white p-3 rounded-xl transition flex flex-col items-center justify-center h-20 text-center">
                             <span class="text-sm font-semibold">Son 7</span>
                             <span class="text-xs">Gün</span>
                         </button>
-                        <button data-range="30" class="report-range-btn bg-tertiary p-3 rounded-xl hover:bg-purple-500/30 transition flex flex-col items-center justify-center h-20 text-center border border-dynamic">
+                        <button data-range="30" type="button" class="report-range-btn p-3 rounded-xl transition flex flex-col items-center justify-center h-20 text-center border border-gray-700 bg-[#1F2937] text-slate-200 hover:bg-gray-800/95">
                             <span class="text-sm font-semibold">Son 30</span>
-                            <span class="text-xs">Gün</span>
+                            <span class="text-xs opacity-90">Gün</span>
                         </button>
-                        <button data-range="90" class="report-range-btn bg-tertiary p-3 rounded-xl hover:bg-purple-500/30 transition flex flex-col items-center justify-center h-20 text-center border border-dynamic">
+                        <button data-range="90" type="button" class="report-range-btn p-3 rounded-xl transition flex flex-col items-center justify-center h-20 text-center border border-gray-700 bg-[#1F2937] text-slate-200 hover:bg-gray-800/95">
                             <span class="text-sm font-semibold">Son 90</span>
-                            <span class="text-xs">Gün</span>
+                            <span class="text-xs opacity-90">Gün</span>
                         </button>
-                        <button data-range="all" class="report-range-btn bg-tertiary p-3 rounded-xl hover:bg-purple-500/30 transition flex flex-col items-center justify-center h-20 text-center border border-dynamic">
+                        <button data-range="all" type="button" class="report-range-btn p-3 rounded-xl transition flex flex-col items-center justify-center h-20 text-center border border-gray-700 bg-[#1F2937] text-slate-200 hover:bg-gray-800/95">
                             <span class="text-sm font-semibold">Tüm</span>
-                            <span class="text-xs">Zamanlar</span>
+                            <span class="text-xs opacity-90">Zamanlar</span>
                         </button>
                     </div>
-                    <div id="periodic-report-content" class="space-y-6">
-                        <!-- İçerik ui-renderer.js tarafından doldurulacak -->
+                    <button type="button" id="toggle-daily-activity-report" class="w-full flex items-center justify-between gap-3 bg-tertiary p-4 rounded-xl border border-dynamic hover:bg-purple-500/20 transition text-left focus:outline-none focus:ring-2 ring-accent ring-offset-2 ring-offset-primary" aria-expanded="false" aria-controls="report-charts-section">
+                        <span class="font-semibold text-primary">Detaylı Özet</span>
+                        <svg id="toggle-daily-activity-chevron" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-secondary shrink-0 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <p class="text-xs text-secondary mt-2 mb-0">Özet kartları ve grafikleri görmek için yukarıdaki alana tıklayın.</p>
+                    <div id="report-charts-section" class="hidden space-y-6 mt-4 min-w-0 w-full overflow-x-hidden">
+                        <div id="periodic-report-content" class="min-w-0 space-y-6">
+                            <!-- İçerik ui-renderer.js tarafından doldurulacak -->
+                        </div>
                     </div>
                 </div>
                  
                  <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic">
                     <h2 class="text-2xl font-semibold mb-4 text-primary">Raporları Aktar</h2>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <button id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button>
+                        <button type="button" id="export-reports-pdf-btn" class="flex-1 bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Teslim Edilenler Raporu (PDF)</button>
                     </div>
                     <p class="text-xs text-secondary mt-3">Teslim edilen tüm poşetlerin alınma, teslim edilme ve bekleme sürelerini içeren detaylı bir PDF raporu oluşturur.</p>
                 </div>
             </div>
 
-            <div id="panel-notes" class="panel hidden space-y-4">
-                <h2 class="text-2xl font-semibold text-primary">Tüm Notlar</h2>
-                <div id="notes-list" class="space-y-2"></div>
-                <p id="empty-notes-message" class="hidden text-center text-secondary bg-primary border border-dynamic p-6 rounded-xl shadow-lg">Henüz not eklenmiş bir kayıt bulunmuyor.</p>
-            </div>
-
-            <div id="panel-settings" class="panel hidden space-y-8">
-                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Hesap Yönetimi</h2>
-                    <div class="space-y-3">
-                        <div>
-                           <p class="text-sm text-secondary">Giriş Yapılan Hesap:</p>
-                           <p id="settings-user-email" class="font-medium text-primary break-all"></p>
-                        </div>
-                         <button id="change-password-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Şifre Değiştir</button>
-                         <button id="settings-logout-btn" class="w-full bg-red-600/20 text-red-300 font-semibold p-3 rounded-lg hover:bg-red-600/40 transition-all">Çıkış Yap</button>
-                    </div>
-                </div>
-                
-                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Görünüm Ayarları</h2>
-                    <div>
-                        <h3 class="text-lg font-medium text-primary mb-2">Tema</h3>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
-                            <button data-theme="aurora" class="theme-btn p-2 rounded-lg border-2 border-[#30363d] bg-[#0d1117] text-[#c9d1d9]">Aurora</button>
-                            <button data-theme="sunset" class="theme-btn p-2 rounded-lg border-2 border-[#5a3c82] bg-[#2c1b3e] text-[#f3e8ff]">Sunset</button>
-                            <button data-theme="graphite" class="theme-btn p-2 rounded-lg border-2 border-[#4b5263] bg-[#282c34] text-[#abb2bf]">Graphite</button>
-                            <button data-theme="ocean" class="theme-btn p-2 rounded-lg border-2 border-[#80dfff] bg-[#e6f7ff] text-[#005f80]">Ocean</button>
-                            <button data-theme="mint" class="theme-btn p-2 rounded-lg border-2 border-[#86efac] bg-[#f0fdf4] text-[#14532d]">Mint</button>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-medium text-primary mb-2">Yazı Tipi Boyutu (<span id="font-size-preview">16px</span>)</h3>
-                        <input type="range" id="font-size-slider" min="12" max="20" step="1" value="16" class="w-full h-2 bg-tertiary rounded-lg appearance-none cursor-pointer">
-                    </div>
-                </div>
-
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Bildirim Ayarları (Telegram)</h2>
-                    <div class="space-y-3">
-                        <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-sm text-blue-300">
-                            Telegram üzerinden bildirim almak için bir Bot oluşturup Token ve Chat ID bilgilerini buraya girin.
-                        </div>
-                        <div>
-                            <label for="telegram-bot-token" class="block text-sm font-medium text-secondary mb-1">Bot Token:</label>
-                            <input type="password" id="telegram-bot-token" placeholder="123456:ABC-DEF..." class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
-                        </div>
-                        <div>
-                            <label for="telegram-chat-id" class="block text-sm font-medium text-secondary mb-1">Chat ID (Birden çok ise virgül ile ayırın):</label>
-                            <input type="text" id="telegram-chat-id" placeholder="123456, 987654..." class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
-                        </div>
-                        <div>
-                            <label for="telegram-report-time" class="block text-sm font-medium text-secondary mb-1">Günlük Rapor Saati (Pazar Hariç):</label>
-                            <input type="time" id="telegram-report-time" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
-                            <p class="text-xs text-secondary mt-1">Uygulama bu saatte açık olmalıdır.</p>
-                        </div>
-                        <button id="save-telegram-settings-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Kaydet</button>
-                    </div>
-                </div>
-
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Uygulama Yönetimi</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi</h3>
-                            <button id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
-                                Müşteri Listesini Yönet
-                            </button>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-medium text-primary mb-2">Teslim Eden Kişiler</h3>
-                            <button id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">
-                                Teslim Eden Kişileri Yönet
-                            </button>
+            <div id="panel-settings" class="panel hidden space-y-5 settings-page--padded">
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-account">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Hesap Yönetimi</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-account" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
+                        <div class="space-y-3">
+                            <div>
+                               <p class="text-sm text-secondary">Giriş Yapılan Hesap:</p>
+                               <p id="settings-user-email" class="font-medium text-primary break-all"></p>
+                            </div>
+                             <button type="button" id="change-password-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Şifre Değiştir</button>
+                             <button type="button" id="settings-logout-btn" class="w-full bg-red-600/20 text-red-300 font-semibold p-3 rounded-lg hover:bg-red-600/40 transition-all">Çıkış Yap</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Paylaşım Şablonu</h2>
-                     <div class="space-y-3">
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-appearance">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-9.75c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Görünüm Ayarları</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-appearance" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
                         <div>
-                            <label for="share-template-input" class="block text-sm font-medium text-secondary mb-1">Durum Mesajı Şablonu:</label>
-                            <textarea id="share-template-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition h-24"></textarea>
-                            <p class="text-xs text-secondary mt-2">
-                                Kullanılabilir değişkenler: <code class="bg-tertiary p-1 rounded">[Müşteri Adı]</code>, <code class="bg-tertiary p-1 rounded">[Poşet Sayısı]</code>, <code class="bg-tertiary p-1 rounded">[Bekleme Süresi]</code>
-                            </p>
-                        </div>
-                        <button id="save-share-template-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Şablonu Kaydet</button>
-                    </div>
-                </div>
-                
-                 <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Ana Sayfa Notu</h2>
-                    <div class="space-y-3">
-                        <div>
-                            <label for="custom-text-title-input" class="block text-sm font-medium text-secondary mb-1">Başlık:</label>
-                            <input type="text" id="custom-text-title-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
+                            <h3 class="text-lg font-medium text-primary mb-2">Tema</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
+                                <button type="button" data-theme="aurora" class="theme-btn p-2 rounded-lg border-2 border-[#30363d] bg-[#0d1117] text-[#c9d1d9]">Aurora</button>
+                                <button type="button" data-theme="sunset" class="theme-btn p-2 rounded-lg border-2 border-[#5a3c82] bg-[#2c1b3e] text-[#f3e8ff]">Sunset</button>
+                                <button type="button" data-theme="graphite" class="theme-btn p-2 rounded-lg border-2 border-[#4b5263] bg-[#282c34] text-[#abb2bf]">Graphite</button>
+                                <button type="button" data-theme="ocean" class="theme-btn p-2 rounded-lg border-2 border-[#80dfff] bg-[#e6f7ff] text-[#005f80]">Ocean</button>
+                                <button type="button" data-theme="mint" class="theme-btn p-2 rounded-lg border-2 border-[#86efac] bg-[#f0fdf4] text-[#14532d]">Mint</button>
+                            </div>
                         </div>
                         <div>
-                            <label for="custom-text-content-input" class="block text-sm font-medium text-secondary mb-1">İçerik:</label>
-                            <textarea id="custom-text-content-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition h-20"></textarea>
+                            <h3 class="text-lg font-medium text-primary mb-2">Yazı Tipi Boyutu (<span id="font-size-preview">16px</span>)</h3>
+                            <input type="range" id="font-size-slider" min="12" max="20" step="1" value="16" class="w-full h-2 bg-tertiary rounded-lg appearance-none cursor-pointer">
                         </div>
-                        <button id="save-custom-text-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Kaydet</button>
                     </div>
                 </div>
 
-                <div class="bg-primary p-6 rounded-xl shadow-lg border border-dynamic space-y-6">
-                    <h2 class="text-2xl font-semibold text-primary">Veri Yönetimi</h2>
-                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button id="export-json-btn" class="w-full bg-sky-600 text-white font-semibold p-3 rounded-lg hover:bg-sky-700 transition">Yedekle (JSON)</button>
-                        <button id="import-json-btn" class="w-full bg-teal-600 text-white font-semibold p-3 rounded-lg hover:bg-teal-700 transition">Geri Yükle (JSON)</button>
-                        <button id="export-active-pdf-btn" class="w-full bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Bekleyen Listeyi PDF Aktar</button>
-                        <button id="export-csv-btn" class="w-full bg-emerald-600 text-white font-semibold p-3 rounded-lg hover:bg-emerald-700 transition">Listeyi CSV Aktar</button>
-                         <input type="file" id="import-file-input" class="hidden" accept=".json">
-                    </div>
-                    <div>
-                         <h3 class="text-lg font-medium text-red-400 mb-2">Tehlikeli Alan</h3>
-                         <div class="p-4 border border-red-500/30 bg-red-500/10 rounded-lg space-y-3">
-                            <p class="text-sm text-red-300">Bu işlemler geri alınamaz. Lütfen dikkatli olun.</p>
-                             <button id="reset-items-btn" class="w-full bg-red-700 text-white font-semibold p-2 rounded-lg hover:bg-red-800 transition">Sadece Poşet Listesini Sıfırla</button>
-                            <button id="reset-all-btn" class="w-full bg-red-600 text-white font-bold p-3 rounded-lg hover:bg-red-700 transition">TÜM VERİLERİ SIFIRLA</button>
-                         </div>
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-telegram">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Bildirim Ayarları (Telegram)</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-telegram" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
+                        <div class="space-y-3">
+                            <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-sm text-blue-300">
+                                Telegram üzerinden bildirim almak için bir Bot oluşturup Token ve Chat ID bilgilerini buraya girin.
+                            </div>
+                            <div>
+                                <label for="telegram-bot-token" class="block text-sm font-medium text-secondary mb-1">Bot Token:</label>
+                                <input type="password" id="telegram-bot-token" placeholder="123456:ABC-DEF..." class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
+                            </div>
+                            <div>
+                                <label for="telegram-chat-id" class="block text-sm font-medium text-secondary mb-1">Chat ID (Birden çok ise virgül ile ayırın):</label>
+                                <input type="text" id="telegram-chat-id" placeholder="123456, 987654..." class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
+                            </div>
+                            <div>
+                                <label for="telegram-report-time" class="block text-sm font-medium text-secondary mb-1">Günlük Rapor Saati (Pazar Hariç):</label>
+                                <input type="time" id="telegram-report-time" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
+                                <p class="text-xs text-secondary mt-1">Uygulama bu saatte açık olmalıdır.</p>
+                            </div>
+                            <button type="button" id="save-telegram-settings-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Kaydet</button>
+                        </div>
                     </div>
                 </div>
-                 <div class="text-center mt-4 mb-4">
-                    <p class="text-xs text-secondary">Program yapımcısı Muhammed Ali KOÇ</p>
+
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-appmgmt">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.773-.598a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.598.773c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.595.777c.33.43.249 1.165-.329 1.424l-1.086.522c-.55.263-1.232.044-1.56-.51l-.538-.894a1.125 1.125 0 00-1.006-.63H12a1.125 1.125 0 00-1.006.63l-.538.894c-.328.554-.99.773-1.54.51l-1.086-.523a1.125 1.125 0 01-.329-1.424l.595-.777c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.595-.777a1.125 1.125 0 01.33-1.424l1.086-.522c.55-.263 1.232-.044 1.56.51l.538.894c.328.554.99.773 1.54.51l1.086-.523a1.125 1.125 0 00.329-1.424l-.595-.777c-.25-.35-.273-.806-.108-1.204.165-.397.505-.71.93-.78l.894-.15z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Uygulama Yönetimi</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-appmgmt" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="text-lg font-medium text-primary mb-2">Müşteri Listesi</h3>
+                                <button type="button" id="manage-customers-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Müşteri Listesini Yönet</button>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-primary mb-2">Teslim Eden Kişiler</h3>
+                                <button type="button" id="manage-delivery-personnel-btn" class="w-full bg-tertiary text-primary font-semibold p-3 rounded-lg hover:bg-slate-600 transition-all">Teslim Eden Kişileri Yönet</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-share">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Paylaşım Şablonu</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-share" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
+                        <div class="space-y-3">
+                            <div>
+                                <label for="share-template-input" class="block text-sm font-medium text-secondary mb-1">Durum Mesajı Şablonu:</label>
+                                <textarea id="share-template-input" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition h-24"></textarea>
+                                <p class="text-xs text-secondary mt-2">
+                                    Kullanılabilir değişkenler: <code class="bg-tertiary p-1 rounded">[Müşteri Adı]</code>, <code class="bg-tertiary p-1 rounded">[Poşet Sayısı]</code>, <code class="bg-tertiary p-1 rounded">[Bekleme Süresi]</code>
+                                </p>
+                            </div>
+                            <button type="button" id="save-share-template-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Şablonu Kaydet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-accordion overflow-hidden rounded-xl shadow-lg">
+                    <button type="button" class="settings-accordion-toggle flex w-full items-center gap-3 p-4 text-left transition sm:gap-4 sm:p-5" aria-expanded="false" aria-controls="settings-section-data">
+                        <span class="settings-accordion-icon inline-flex h-10 w-10 shrink-0 items-center justify-center text-blue-500" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1 text-lg font-semibold text-white sm:text-xl">Veri Yönetimi</span>
+                        <svg class="settings-accordion-chevron h-5 w-5 shrink-0 text-zinc-500 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="settings-section-data" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button type="button" id="export-json-btn" class="w-full bg-sky-600 text-white font-semibold p-3 rounded-lg hover:bg-sky-700 transition">Yedekle (JSON)</button>
+                            <button type="button" id="import-json-btn" class="w-full bg-teal-600 text-white font-semibold p-3 rounded-lg hover:bg-teal-700 transition">Geri Yükle (JSON)</button>
+                            <button type="button" id="export-active-pdf-btn" class="w-full bg-rose-600 text-white font-semibold p-3 rounded-lg hover:bg-rose-700 transition">Bekleyen Listeyi PDF Aktar</button>
+                            <button type="button" id="export-csv-btn" class="w-full bg-emerald-600 text-white font-semibold p-3 rounded-lg hover:bg-emerald-700 transition">Listeyi CSV Aktar</button>
+                            <input type="file" id="import-file-input" class="hidden" accept=".json">
+                        </div>
+                        <div>
+                             <h3 class="text-lg font-medium text-red-400 mb-2">Tehlikeli Alan</h3>
+                             <div class="p-4 border border-red-500/30 bg-red-500/10 rounded-lg space-y-3">
+                                <p class="text-sm text-red-300">Bu işlemler geri alınamaz. Lütfen dikkatli olun.</p>
+                                <button type="button" id="reset-items-btn" class="w-full bg-red-700 text-white font-semibold p-2 rounded-lg hover:bg-red-800 transition">Sadece Poşet Listesini Sıfırla</button>
+                                <button type="button" id="reset-all-btn" class="w-full bg-red-600 text-white font-bold p-3 rounded-lg hover:bg-red-700 transition">TÜM VERİLERİ SIFIRLA</button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="settings-app-footer mt-6 border-t border-white/[0.08] pt-6 text-center" aria-label="Uygulama bilgisi">
+                    <p class="flex flex-col items-center gap-1.5 text-sm text-zinc-500">
+                        <span class="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                            <span class="inline-flex items-center gap-1 font-mono text-xs text-zinc-500" aria-hidden="true">&lt;/&gt;</span>
+                            <span>Developed by <span class="text-zinc-400">Muhammed Ali KOÇ</span></span>
+                            <span class="text-base leading-none" aria-hidden="true">❤️</span>
+                        </span>
+                        <span class="text-xs font-medium tracking-wide text-zinc-600">v1.0.0</span>
+                    </p>
+                </footer>
             </div>
         </main>
+
+        <!-- Alt sabit sekme çubuğu (mobil / tüm ekranlar) -->
+        <div id="bottom-tab-bar" class="bottom-tab-bar fixed bottom-0 left-0 right-0 z-40 border-t border-dynamic/80 bg-primary/90 backdrop-blur-xl shadow-[0_-8px_32px_rgba(0,0,0,0.22)]">
+            <div class="max-w-5xl mx-auto px-0.5 sm:px-2 bottom-tab-bar__inner">
+                <nav class="bottom-tab-bar__nav grid grid-cols-5 gap-0.5 sm:gap-1 items-stretch" aria-label="Ana gezinme">
+                    <button id="tab-anasayfa" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                        </svg>
+                        <span class="bottom-tab-bar__label">Anasayfa</span>
+                    </button>
+                    <button id="tab-list" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M15 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M4.5 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M4.5 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M19.128 9.288a3.375 3.375 0 00-5.256 0M4.872 9.288a3.375 3.375 0 015.256 0M15.75 9.75a3 3 0 10-5.25-2.214 3 3 0 005.25 2.214z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label">Müşteriler</span>
+                    </button>
+                    <button id="tab-archive" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80" title="Teslim edilen kayıtlar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label">Siparişler</span>
+                    </button>
+                    <button id="tab-reports" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label">Raporlar</span>
+                    </button>
+                    <button id="tab-settings" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label">Ayarlar</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
     </div>
 
     <div id="modal-container" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
@@ -426,16 +546,16 @@
     <script type="module" src="assets/js/app.js"></script>
     
     <script>
-        // Service Worker kaydını yapıyoruz. Bu, uygulamanın çevrimdışı çalışmasını sağlar.
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(registration => {
-                    console.log('ServiceWorker kaydı başarılı, scope: ', registration.scope);
-                }, err => {
-                    console.log('ServiceWorker kaydı başarısız: ', err);
-                });
+        // Capacitor/Android WebView içinde Service Worker sorun çıkarabildiği için yalnızca tarayıcıda kayıt.
+        window.addEventListener('load', () => {
+            if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return;
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                console.log('ServiceWorker kaydı başarılı, scope: ', registration.scope);
+            }, err => {
+                console.log('ServiceWorker kaydı başarısız: ', err);
             });
-        }
+        });
     </script>
 </body>
 </html>

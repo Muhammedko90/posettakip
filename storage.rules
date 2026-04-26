@@ -1,0 +1,9 @@
+rules_version = '2';
+// Uygulama şu an Storage kullanmıyor; varsayılan olarak erişim kapalı.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

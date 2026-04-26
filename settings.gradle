@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// Android uygulaması "android" alt projesindedir (Capacitor).
+// Android Studio: tercihen File > Open ile "android" klasörünü açın; kök açıksa bu dosya Gradle'ı tanır.
+rootProject.name = "posettakip"
+
+includeBuild("android")

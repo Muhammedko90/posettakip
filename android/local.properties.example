@@ -1,0 +1,3 @@
+## Bu dosyayı "local.properties" olarak kopyalayın ve sdk.dir satırını kendi Android SDK yolunuza göre düzenleyin.
+## Android Studio: File > Settings > Appearance & Behavior > System Settings > Android SDK > "Android SDK Location"
+sdk.dir=C\:\\Users\\KULLANICI\\AppData\\Local\\Android\\Sdk
