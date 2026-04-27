@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppTheme + bildirim accent rengi (styles.xml ?attr/colorPrimary referansı bunu kullanır) -->
+    <color name="colorPrimary">#7C3AED</color>
+    <color name="colorPrimaryDark">#5B21B6</color>
+    <color name="colorAccent">#F59E0B</color>
+
+    <!-- FCM bildirimleri için varsayılan accent (manifest meta-data'dan da kullanılıyor) -->
+    <color name="notification_accent">#7C3AED</color>
+</resources>

@@ -26,9 +26,14 @@ export async function register(auth, email, password) {
 }
 
 /**
- * Çıkış yap
+ * Çıkış yap.
+ * `beforeSignOut` verilirse ÖNCE o promise beklenir (örn. FCM token temizliği),
+ * SONRA Firebase signOut çağrılır. Böylece Firestore yazımları auth varken biter.
  */
-export function logout(auth) {
+export async function logout(auth, beforeSignOut) {
+    if (typeof beforeSignOut === "function") {
+        try { await beforeSignOut(); } catch (err) { console.warn("beforeSignOut hata:", err); }
+    }
     return signOut(auth);
 }
 
@@ -58,10 +63,13 @@ export async function changePassword(user, newPassword) {
  * Giriş, kayıt, şifremi unuttum ve çıkış formlarına olay dinleyicileri bağlar
  * @param {object} auth - Firebase Auth instance
  * @param {object} dom - DOM referansları (loginForm, registerForm, ...)
- * @param {object} callbacks - { showLoading, hideLoading, onLoginSuccess?(user), onRegisterSuccess?(user) }
+ * @param {object} callbacks - { showLoading, hideLoading, onLoginSuccess?(user), onRegisterSuccess?(user), onLogoutRequested?() }
+ *
+ * `onLogoutRequested` async olabilir; çıkış butonuna basıldığında signOut'tan ÖNCE çalıştırılır.
+ * Buraya FCM token temizliği gibi auth gerektiren async cleanup işleri konabilir.
  */
 export function setupAuthEventListeners(auth, dom, callbacks) {
-    const { showLoading, hideLoading, onLoginSuccess, onRegisterSuccess } = callbacks;
+    const { showLoading, hideLoading, onLoginSuccess, onRegisterSuccess, onLogoutRequested } = callbacks;
 
     dom.loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -126,7 +134,7 @@ export function setupAuthEventListeners(auth, dom, callbacks) {
     });
 
     dom.logoutBtn.addEventListener('click', () => {
-        logout(auth);
+        logout(auth, onLogoutRequested);
     });
 
     dom.showRegisterBtn.addEventListener('click', (e) => {

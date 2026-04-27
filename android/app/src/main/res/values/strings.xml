@@ -4,4 +4,14 @@
     <string name="title_activity_main">Poşet Takip</string>
     <string name="package_name">com.emrebebe.posettakip</string>
     <string name="custom_url_scheme">com.emrebebe.posettakip</string>
+
+    <!-- Bildirim kanalı başlıkları (Sistem Ayarları -> Bildirimler ekranında görünür) -->
+    <string name="notif_channel_new_bag_name">Yeni Poşet</string>
+    <string name="notif_channel_new_bag_desc">Yeni bir poşet kaydı eklendiğinde bildirim alın.</string>
+
+    <string name="notif_channel_delivered_name">Poşet Teslim Edildi</string>
+    <string name="notif_channel_delivered_desc">Bir poşet "teslim edildi" olarak işaretlendiğinde bildirim alın.</string>
+
+    <string name="notif_channel_default_name">Genel Bildirimler</string>
+    <string name="notif_channel_default_desc">Diğer Poşet Takip duyuruları ve hatırlatmalar.</string>
 </resources>

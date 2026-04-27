@@ -4,10 +4,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, fcmVapidKey } from './firebase-config.js';
 import * as auth from './auth.js';
 import * as dataManager from './data-manager.js';
 import * as ui from './ui-renderer.js';
+import { registerFcmToken, unregisterFcmToken } from './fcm-web.js';
 
 function resolveJsPDFConstructor() {
     const j = window.jspdf;
@@ -790,6 +791,44 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.switchTab('anasayfa', true);
         listenToData();
         setupAppEventListeners();
+
+        // Web push: tarayıcıda FCM token'ı al ve users/{uid}/devices/{token} altına yaz.
+        // Hata olsa bile UI akışını engellemiyoruz.
+        registerFcmToken({
+            app,
+            db,
+            userId,
+            vapidKey: fcmVapidKey,
+            onForegroundMessage: (payload) => {
+                const data = (payload && payload.data) || {};
+                const title = data.title
+                    || (payload.notification && payload.notification.title)
+                    || 'Poşet Takip';
+                const body = data.body
+                    || (payload.notification && payload.notification.body)
+                    || '';
+                try {
+                    ui.showSimpleMessageModal(dom, title, body, true);
+                } catch (_) {
+                    if (window.Notification && Notification.permission === 'granted') {
+                        new Notification(title, { body });
+                    }
+                }
+            }
+        }).catch(err => console.warn('FCM kayıt hatası:', err));
+    }
+
+    /**
+     * Çıkış öncesi async cleanup.
+     * signOut'tan ÖNCE çalışır; bu sayede Firestore'a (auth gerekiyor) yazıp/silebiliriz.
+     */
+    async function performLogoutCleanup() {
+        if (!userId) return;
+        try {
+            await unregisterFcmToken({ db, userId, app });
+        } catch (err) {
+            console.warn('FCM cleanup hata (yoksayılıyor):', err);
+        }
     }
 
     async function handleAddItem(e) {
@@ -1177,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         switch (button.id) {
             case 'settings-logout-btn':
-                auth.logout(authInstance);
+                auth.logout(authInstance, performLogoutCleanup);
                 break;
             case 'change-password-btn':
                 ui.showChangePasswordModal(dom, async (currentPass, newPass) => {
@@ -1759,7 +1798,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     hideLoadingMsg();
                     ui.showAppUI(dom, user);
                     initializeAppLogic();
-                }
+                },
+                onLogoutRequested: performLogoutCleanup
             });
             showLoadingMsg("Kimlik durumu kontrol ediliyor...");
 

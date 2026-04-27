@@ -7,7 +7,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const www = path.join(root, 'www');
 
-const FILES = ['index.html', 'manifest.json', 'sw.js', '.nojekyll'];
+const FILES = ['index.html', 'manifest.json', 'sw.js', 'firebase-messaging-sw.js', '.nojekyll'];
 
 function rmrf(dir) {
   if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });

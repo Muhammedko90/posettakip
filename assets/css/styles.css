@@ -602,6 +602,12 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     background-color: var(--bg-tertiary);
     border-color: var(--border-color);
 }
+/* Menü açık olan kart, sıradaki kardeş kartların oluşturduğu yığın
+   bağlamlarının (isolation: isolate) altında kalmasın diye yukarı taşınır.
+   Aksi halde dropdown'ın alt yarısı bir sonraki kartın altında kalıyordu. */
+.customer-card:has(.action-menu:not(.hidden)) {
+    z-index: 50;
+}
 .customer-card .action-menu button {
     color: var(--text-primary);
 }

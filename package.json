@@ -11,7 +11,11 @@
     "cap:open": "npx cap open android",
     "android:build": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug",
     "android:release": "npm run cap:sync && cd android && .\\gradlew.bat assembleRelease",
-    "firebase:deploy-rules": "firebase deploy --only firestore:rules,storage --project emre-bebe-takip"
+    "firebase:deploy-rules": "firebase deploy --only firestore:rules,storage --project emre-bebe-takip",
+    "functions:install": "npm --prefix functions install",
+    "functions:deploy": "firebase deploy --only functions:fcm --project emre-bebe-takip",
+    "functions:logs": "firebase functions:log --project emre-bebe-takip",
+    "functions:emulate": "firebase emulators:start --only functions,firestore --project emre-bebe-takip"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",
