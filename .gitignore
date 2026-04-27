@@ -9,3 +9,20 @@ build/
 *.log
 .idea/
 .DS_Store
+Thumbs.db
+
+# Ortam / gizli anahtarlar
+.env
+.env.*
+!.env.example
+
+# Firebase (projeye özel; repoda sadece .example kopyaları)
+.firebaserc
+assets/js/firebase-config.js
+android/app/google-services.json
+**/serviceAccount*.json
+**/*-firebase-adminsdk-*.json
+
+# Android imza
+*.keystore
+*.jks
