@@ -965,6 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const parentMenu = button.closest('.action-menu');
         if (parentMenu && button.dataset.action !== 'toggle-menu') {
             parentMenu.classList.add('hidden');
+            parentMenu.closest('.customer-card')?.classList.remove('customer-card--menu-open');
         }
         const action = button.dataset.action;
         const itemDiv = button.closest('div[data-id]');
@@ -978,9 +979,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (action === 'toggle-menu') {
             const allMenus = document.querySelectorAll('.action-menu');
             const currentMenu = button.closest('.default-actions')?.querySelector('.action-menu');
+            const card = button.closest('.customer-card');
             if (!currentMenu) return;
-            allMenus.forEach(menu => { if (menu !== currentMenu) menu.classList.add('hidden'); });
+            allMenus.forEach((menu) => {
+                if (menu !== currentMenu) {
+                    menu.classList.add('hidden');
+                    menu.closest('.customer-card')?.classList.remove('customer-card--menu-open');
+                }
+            });
             currentMenu.classList.toggle('hidden');
+            if (card) {
+                if (currentMenu.classList.contains('hidden')) {
+                    card.classList.remove('customer-card--menu-open');
+                } else {
+                    card.classList.add('customer-card--menu-open');
+                }
+            }
             return;
         }
 
@@ -1765,7 +1779,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.dashboard?.quickNoteCustomer?.setAttribute('aria-expanded', 'false');
             }
             const openMenu = document.querySelector('.action-menu:not(.hidden)');
-            if (openMenu && !e.target.closest('.default-actions')) openMenu.classList.add('hidden');
+            if (openMenu && !e.target.closest('.default-actions')) {
+                openMenu.classList.add('hidden');
+                openMenu.closest('.customer-card')?.classList.remove('customer-card--menu-open');
+            }
         });
         dom.scrollToTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
         window.addEventListener('scroll', () => {
