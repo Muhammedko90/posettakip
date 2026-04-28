@@ -18,7 +18,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link href="assets/css/styles.css?v=40" rel="stylesheet">
+    <link href="assets/css/styles.css?v=49" rel="stylesheet">
 </head>
 <body class="bg-secondary text-primary">
 
@@ -76,26 +76,69 @@
     </div>
 
 
-    <div id="app-container" class="hidden container mx-auto max-w-5xl p-4 sm:p-6 md:p-8 transition-all duration-300 pb-[calc(7rem+max(12px,env(safe-area-inset-bottom,0px)))]">
-        
-        <header class="app-header flex items-center justify-between mb-4 md:mb-6 gap-2">
-            <div class="w-14 sm:w-20 flex-shrink-0"></div>
-            <div class="flex-grow text-center px-1 min-w-0 overflow-x-auto overflow-y-hidden">
-                <h1 class="app-header__title inline-block text-primary whitespace-nowrap">Müşteri Poşet Takibi</h1>
-            </div>
-            <div class="w-14 sm:w-20 flex-shrink-0 flex justify-end gap-1 sm:gap-2">
-                <button id="toggle-width-btn" type="button" class="app-header__icon-btn p-2 text-slate-400 hover:text-white transition rounded-xl hover:bg-tertiary/80" title="Ekranı Genişlet/Daralt" aria-label="Ekranı genişlet veya daralt">
-                    <svg id="icon-expand" class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+    <div id="app-container" class="hidden app-with-side-nav transition-[padding-left] duration-300 ease-out">
+        <aside id="bottom-tab-bar" class="side-nav bottom-tab-bar fixed left-0 top-0 bottom-0 z-40 flex flex-col border-r border-dynamic/80 bg-primary/95 backdrop-blur-xl shadow-[4px_0_32px_rgba(0,0,0,0.2)]" aria-label="Kenar menüsü">
+            <div class="side-nav__header flex shrink-0 items-center justify-between gap-1 border-b border-dynamic/50 px-2 py-2" style="padding-top: max(0.5rem, env(safe-area-inset-top, 0px))">
+                <button type="button" id="side-nav-toggle" class="side-nav-toggle shrink-0 rounded-xl p-2 text-secondary transition hover:bg-tertiary/80 hover:text-primary" title="Menüyü daralt" aria-expanded="true" aria-controls="side-nav-links" aria-label="Gezinme menüsünü daralt veya genişlet">
+                    <svg class="side-nav-toggle__chevron h-5 w-5 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
                 </button>
-                <button type="button" id="notification-bell" class="app-header__icon-btn relative p-2 text-slate-400 hover:text-white transition rounded-xl hover:bg-tertiary/80" title="Bildirimler ve notlar" aria-label="Bildirimler">
-                    <svg class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                    </svg>
-                    <span id="notification-badge" class="hidden absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[0.65rem] font-semibold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center border-2 border-[var(--bg-secondary)]"></span>
-                </button>
+                <div class="side-nav__tools flex items-center gap-0.5">
+                    <button id="toggle-width-btn" type="button" class="app-header__icon-btn shrink-0 rounded-xl p-2 text-slate-400 transition hover:bg-tertiary/80 hover:text-white" title="Ekranı Genişlet/Daralt" aria-label="Ekranı genişlet veya daralt">
+                        <svg id="icon-expand" class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                    </button>
+                    <button type="button" id="notification-bell" class="app-header__icon-btn relative shrink-0 rounded-xl p-2 text-slate-400 transition hover:bg-tertiary/80 hover:text-white" title="Bildirimler ve notlar" aria-label="Bildirimler">
+                        <svg class="app-header__icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                        </svg>
+                        <span id="notification-badge" class="hidden absolute -top-0.5 -right-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border-2 border-[var(--bg-primary)] bg-red-500 px-1 text-[0.65rem] font-semibold text-white"></span>
+                    </button>
+                </div>
             </div>
+            <div class="bottom-tab-bar__inner flex min-h-0 flex-1 flex-col overflow-y-auto px-1.5 py-2">
+                <nav id="side-nav-links" class="bottom-tab-bar__nav flex flex-col gap-1" aria-label="Ana gezinme">
+                    <button id="tab-anasayfa" type="button" title="Anasayfa" class="tab-button bottom-tab-bar__btn flex min-w-0 flex-row items-center justify-start rounded-xl py-2.5 text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                        </svg>
+                        <span class="bottom-tab-bar__label min-w-0">Anasayfa</span>
+                    </button>
+                    <button id="tab-list" type="button" title="Müşteriler" class="tab-button bottom-tab-bar__btn flex min-w-0 flex-row items-center justify-start rounded-xl py-2.5 text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M15 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M4.5 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M4.5 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M19.128 9.288a3.375 3.375 0 00-5.256 0M4.872 9.288a3.375 3.375 0 015.256 0M15.75 9.75a3 3 0 10-5.25-2.214 3 3 0 005.25 2.214z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label min-w-0">Müşteriler</span>
+                    </button>
+                    <button id="tab-archive" type="button" class="tab-button bottom-tab-bar__btn flex min-w-0 flex-row items-center justify-start rounded-xl py-2.5 text-secondary hover:bg-tertiary/80" title="Gönderilen kayıtlar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label min-w-0">Gönderilenler</span>
+                    </button>
+                    <button id="tab-reports" type="button" title="Raporlar" class="tab-button bottom-tab-bar__btn flex min-w-0 flex-row items-center justify-start rounded-xl py-2.5 text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label min-w-0">Raporlar</span>
+                    </button>
+                    <button id="tab-settings" type="button" title="Ayarlar" class="tab-button bottom-tab-bar__btn flex min-w-0 flex-row items-center justify-start rounded-xl py-2.5 text-secondary hover:bg-tertiary/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span class="bottom-tab-bar__label min-w-0">Ayarlar</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <div id="app-shell" class="container mx-auto max-w-5xl min-w-0 p-4 transition-all duration-300 sm:p-5">
+
+        <header class="app-header mb-3 md:mb-5">
+            <h1 class="app-header__title text-center text-primary whitespace-nowrap">Müşteri Poşet Takibi</h1>
         </header>
 
         <main id="main-content" class="relative">
@@ -179,28 +222,33 @@
                 </section>
             </div>
 
-            <div id="panel-list" class="panel hidden customers-page space-y-6 customers-page--padded">
-                 <div class="customers-quick gradient-border p-4 sm:p-5">
-                    <h2 class="customers-quick__title">Yeni Poşet Ekle / Listede Ara</h2>
-                    <form id="add-item-form" class="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+            <div id="panel-list" class="panel hidden customers-page space-y-4 customers-page--padded">
+                 <div class="customers-quick gradient-border pl-4 pr-0 py-3 sm:py-3.5">
+                    <form id="add-item-form" class="flex w-full min-w-0 flex-row flex-nowrap items-center gap-x-4">
                         <div class="relative min-w-0 flex-1">
-                            <label for="customer-name" class="customers-quick__label">Müşteri adı / arama</label>
-                            <div class="relative mt-1.5 glow-search">
-                                <input type="text" id="customer-name" placeholder="Müşteri adı / listede ara..." class="customers-quick__input customers-quick__input--with-clear w-full py-3 pl-4 pr-11" required autocomplete="off">
-                                <button type="button" id="clear-customer-name" class="customers-quick__clear-btn absolute inset-y-0 right-1.5 my-auto flex h-9 w-9 items-center justify-center rounded-lg hidden" aria-label="Temizle">
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                            <label for="customer-name" class="customers-quick__label sr-only">Müşteri adı veya listede ara</label>
+                            <div class="relative glow-search">
+                                <span class="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-secondary/45" aria-hidden="true">
+                                    <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </span>
+                                <input type="text" id="customer-name" placeholder="Müşteri adı ile ara veya yeni ekle..." class="customers-quick__input customers-quick__input--with-clear customers-quick__input--main h-11 w-full rounded-[10px] py-0 pl-9 pr-9" required autocomplete="off">
+                                <button type="button" id="clear-customer-name" class="customers-quick__clear-btn absolute inset-y-0 right-1.5 my-auto flex h-8 w-8 items-center justify-center rounded-md text-secondary/80 hidden hover:text-primary" aria-label="Temizle">
+                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                                 </button>
                             </div>
                             <div id="suggestions-box" class="customers-quick__suggestions absolute left-0 right-0 top-full z-20 mt-1 hidden max-h-60 overflow-y-auto"></div>
                         </div>
-                        <div class="w-full shrink-0 sm:w-28 lg:w-32">
-                            <label for="bag-count" class="customers-quick__label">Adet</label>
-                            <input type="number" id="bag-count" placeholder="1" value="1" min="1" class="customers-quick__input customers-quick__input--qty mt-1.5 w-full px-3 py-3" required>
+                        <div class="flex shrink-0 items-center gap-x-4 ml-auto pr-3">
+                            <div class="customers-quick__qty-group flex h-11 shrink-0 overflow-hidden rounded-[10px] border border-dynamic bg-tertiary shadow-sm">
+                                <button type="button" id="bag-count-dec" class="customers-quick__qty-btn flex w-9 items-center justify-center border-0 bg-secondary/90 text-xl font-semibold leading-none text-primary/90 transition" aria-label="Adeti azalt">−</button>
+                                <input type="number" id="bag-count" placeholder="Adet" value="1" min="1" class="customers-quick__input customers-quick__input--qty h-11 w-[2.75rem] shrink-0 border-0 border-x border-dynamic bg-tertiary py-0 text-center text-sm font-semibold tabular-nums focus:ring-0 focus:outline-none" required inputmode="numeric">
+                                <button type="button" id="bag-count-inc" class="customers-quick__qty-btn flex w-9 items-center justify-center border-0 bg-secondary/90 text-xl font-semibold leading-none text-primary/90 transition" aria-label="Adeti artır">+</button>
+                            </div>
+                            <button type="submit" class="customers-quick__submit flex h-11 shrink-0 items-center justify-center gap-2 rounded-[10px] px-5 text-sm font-semibold shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                Ekle
+                            </button>
                         </div>
-                        <button type="submit" class="customers-quick__submit flex w-full shrink-0 items-center justify-center gap-2 px-6 py-3 lg:w-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                            Ekle
-                        </button>
                     </form>
                 </div>
                 <div class="customers-list-section">
@@ -491,43 +539,6 @@
             </div>
         </main>
 
-        <!-- Alt sabit sekme çubuğu (mobil / tüm ekranlar) -->
-        <div id="bottom-tab-bar" class="bottom-tab-bar fixed bottom-0 left-0 right-0 z-40 border-t border-dynamic/80 bg-primary/90 backdrop-blur-xl shadow-[0_-8px_32px_rgba(0,0,0,0.22)]">
-            <div class="max-w-5xl mx-auto px-0.5 sm:px-2 bottom-tab-bar__inner">
-                <nav class="bottom-tab-bar__nav grid grid-cols-5 gap-0.5 sm:gap-1 items-stretch" aria-label="Ana gezinme">
-                    <button id="tab-anasayfa" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-                        </svg>
-                        <span class="bottom-tab-bar__label">Anasayfa</span>
-                    </button>
-                    <button id="tab-list" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M15 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M4.5 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-1.043M4.5 19.128a9.38 9.38 0 01-2.625.372 9.337 9.337 0 01-4.121-1.043M19.128 9.288a3.375 3.375 0 00-5.256 0M4.872 9.288a3.375 3.375 0 015.256 0M15.75 9.75a3 3 0 10-5.25-2.214 3 3 0 005.25 2.214z" />
-                        </svg>
-                        <span class="bottom-tab-bar__label">Müşteriler</span>
-                    </button>
-                    <button id="tab-archive" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80" title="Teslim edilen kayıtlar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                        </svg>
-                        <span class="bottom-tab-bar__label">Siparişler</span>
-                    </button>
-                    <button id="tab-reports" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                        </svg>
-                        <span class="bottom-tab-bar__label">Raporlar</span>
-                    </button>
-                    <button id="tab-settings" type="button" class="tab-button bottom-tab-bar__btn flex flex-col items-center justify-center min-w-0 rounded-xl text-secondary hover:bg-tertiary/80">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="bottom-tab-bar__icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.65">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.37.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span class="bottom-tab-bar__label">Ayarlar</span>
-                    </button>
-                </nav>
-            </div>
         </div>
     </div>
 

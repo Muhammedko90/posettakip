@@ -4,6 +4,7 @@
     --accent-color: #a78bfa; --accent-color-dark: #8b5cf6;
     --accent-bg-light: #a78bfa26; --accent-text-light: var(--accent-color);
     --font-size-base: 16px;
+    --side-nav-width: 13.75rem;
 }
 .theme-sunset {
     --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
@@ -35,10 +36,12 @@
     --accent-color: #58a6ff; --accent-color-dark: #388bfd;
     --accent-bg-light: #58a6ff26; --accent-text-light: #58a6ff;
 }
+html.side-nav-collapsed {
+    --side-nav-width: 3.625rem;
+}
 html {
     scroll-behavior: smooth;
-    /* Sabit alt çubuk için kaydırma sonu güvenli alanı (özellikle mobil) */
-    scroll-padding-bottom: calc(6rem + max(12px, env(safe-area-inset-bottom, 0px)));
+    scroll-padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
 }
 body {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
@@ -63,22 +66,69 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
 .accent-bg-hover:hover { background-color: var(--accent-color); }
 .ring-accent:focus { --tw-ring-color: var(--accent-color); }
 
-/* Alt sekme çubuğu: home indicator üstünde okunaklı yazı, eşit sütun, dikey ortalama */
-.bottom-tab-bar {
-    padding-top: 0.4rem;
-    /* Android WebView bazen safe-area döndürmez; en az 12px + sistem çentiği */
-    padding-bottom: calc(0.65rem + max(12px, env(safe-area-inset-bottom, 0px)));
+/* Sol kenar gezinme: genişlet / daralt */
+.app-with-side-nav:not(.hidden) {
+    padding-left: var(--side-nav-width);
+    transition: padding-left 0.3s ease;
+    box-sizing: border-box;
 }
+.side-nav.bottom-tab-bar {
+    width: var(--side-nav-width);
+    transition: width 0.3s ease;
+    padding-top: 0;
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+}
+.side-nav__header {
+    -webkit-tap-highlight-color: transparent;
+}
+.side-nav__tools {
+    min-width: 0;
+}
+html.side-nav-collapsed .side-nav__header {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+}
+html.side-nav-collapsed .side-nav__tools {
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.side-nav-toggle__chevron {
+    transform-origin: center;
+}
+html.side-nav-collapsed .side-nav-toggle__chevron {
+    transform: scaleX(-1);
+}
+html.side-nav-collapsed .bottom-tab-bar__btn {
+    justify-content: center;
+    gap: 0;
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+}
+html.side-nav-collapsed .bottom-tab-bar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Sekme çubuğu (sol panel): satır düzeni ikon + etiket */
 .bottom-tab-bar__inner {
     padding-left: 0.125rem;
     padding-right: 0.125rem;
 }
 .bottom-tab-bar__nav {
-    min-height: 3.85rem;
+    min-height: 0;
 }
 .bottom-tab-bar__btn {
-    padding: 0.45rem 0.12rem 0.35rem;
-    gap: 0.35rem;
+    padding: 0.55rem 0.55rem;
+    gap: 0.65rem;
     -webkit-tap-highlight-color: transparent;
 }
 .bottom-tab-bar__icon {
@@ -90,6 +140,15 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     .bottom-tab-bar__icon {
         width: 1.85rem;
         height: 1.85rem;
+    }
+}
+.side-nav .bottom-tab-bar__label {
+    text-align: start;
+    font-size: 0.6875rem;
+}
+@media (min-width: 400px) {
+    .side-nav .bottom-tab-bar__label {
+        font-size: 0.75rem;
     }
 }
 .bottom-tab-bar__label {
@@ -209,7 +268,7 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
 #scroll-to-top-btn {
     position: fixed;
     right: 20px;
-    bottom: calc(10rem + max(12px, env(safe-area-inset-bottom, 0px)));
+    bottom: calc(1.25rem + max(12px, env(safe-area-inset-bottom, 0px)));
     opacity: 0; visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
     z-index: 45;
@@ -227,12 +286,8 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     gap: 1rem;
 }
 
-/* Sabit alt sekme çubuğu (#bottom-tab-bar ~5.7rem + safe-area) içeriğin son satırını
-   kapatmasın diye ana içerik kabına yeterli alt boşluk veriyoruz. Bu sayede tüm sekmelerde
-   (Müşteriler, Siparişler/Arşiv, Raporlar, Ayarlar, Anasayfa) en alttaki kart ya da
-   sayfalama butonları çubuğun arkasında kalmıyor. */
 #main-content {
-    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
 
 /* Sekme içerikleri: panelin kendi içinde de küçük bir nefes alanı kalsın */
@@ -437,12 +492,10 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
         0 4px 6px -1px rgba(0, 0, 0, 0.08),
         0 12px 28px -10px rgba(0, 0, 0, 0.18);
 }
-.customers-quick__title {
-    margin-bottom: 1rem;
-    font-size: clamp(1rem, 2vw, 1.25rem);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
+/* Öneri açılır listesi: liste bölümü DOM'da sonra geldiği için kartların altında kalıyordu */
+#panel-list .customers-quick.gradient-border {
+    z-index: 90;
+    overflow: visible;
 }
 .customers-quick__label {
     display: block;
@@ -454,7 +507,7 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     color: var(--text-secondary);
 }
 .customers-quick__input {
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     border: 1px solid var(--border-color);
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
@@ -465,19 +518,44 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     color: var(--text-secondary);
     opacity: 0.88;
 }
+#panel-list .customers-quick__input--main {
+    font-size: 0.8125rem;
+}
+#panel-list .customers-quick__input--main::placeholder {
+    font-size: 0.8125rem;
+    color: rgba(148, 163, 184, 0.52);
+    opacity: 1;
+}
+.theme-mint #panel-list .customers-quick__input--main::placeholder {
+    color: rgba(22, 101, 52, 0.45);
+}
+.theme-ocean #panel-list .customers-quick__input--main::placeholder {
+    color: rgba(7, 89, 133, 0.45);
+}
 .customers-quick__input:focus {
-    border-color: var(--accent-color);
+    border-color: #0ea5e9;
     background-color: var(--bg-primary);
-    box-shadow: 0 0 0 1px var(--accent-color);
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.65);
 }
 .customers-quick__input--qty {
     text-align: center;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+}
+.customers-quick__input--qty::-webkit-outer-spin-button,
+.customers-quick__input--qty::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.customers-quick__input--qty:focus {
+    box-shadow: none !important;
+    border-color: var(--border-color);
+    background-color: var(--bg-tertiary);
 }
 .customers-quick__submit {
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     font-weight: 600;
     color: #fff;
     background-color: var(--accent-color-dark);
@@ -489,7 +567,7 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     filter: brightness(1.05);
 }
 .customers-quick__submit:focus-visible {
-    outline: 2px solid var(--accent-color);
+    outline: 2px solid #0ea5e9;
     outline-offset: 2px;
 }
 .customers-quick__suggestions {
@@ -497,6 +575,7 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     border: 1px solid var(--border-color);
     background-color: var(--bg-tertiary);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    z-index: 50;
 }
 .customers-quick__clear-btn {
     color: var(--text-secondary);
@@ -507,6 +586,29 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
 }
 .customers-quick__clear-btn:hover {
     color: var(--text-primary);
+}
+.customers-quick__qty-btn {
+    cursor: pointer;
+    outline: none;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+.customers-quick__qty-btn:hover {
+    color: #e2e8f0;
+    background-color: rgba(14, 165, 233, 0.22);
+    box-shadow:
+        inset 0 0 0 1px rgba(14, 165, 233, 0.35),
+        0 0 16px rgba(14, 165, 233, 0.28);
+}
+.customers-quick__qty-btn:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: -2px;
+}
+#panel-list .customers-quick__qty-group:focus-within {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.65);
 }
 .customers-quick__suggest-item:hover {
     background-color: var(--accent-bg-light);
@@ -1219,9 +1321,16 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
     }
 }
 
-/* Müşteriler paneli — ana arama (.customers-quick__input border-radius: 0.5rem) */
+/* Müşteriler — arama: mavi odak, radius glow ile uyumlu */
 #panel-list .glow-search {
-    --glow-radius: 0.5rem;
+    --glow-radius: 0.625rem;
+}
+#panel-list .customers-quick .glow-search:focus-within > input {
+    border-color: #0ea5e9 !important;
+    box-shadow:
+        0 0 0 1px rgba(14, 165, 233, 0.9),
+        0 0 14px rgba(14, 165, 233, 0.28),
+        0 0 28px rgba(14, 165, 233, 0.12) !important;
 }
 
 /* Arşiv paneli — search input (rounded-xl ≈ 0.75rem) */

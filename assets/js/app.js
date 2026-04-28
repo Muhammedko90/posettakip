@@ -22,6 +22,63 @@ function resolveJsPDFConstructor() {
 document.addEventListener('DOMContentLoaded', () => {
     const dom = ui.getDomRefs();
 
+    const SIDE_NAV_LS_KEY = 'posettakip-side-nav-collapsed';
+
+    function setSideNavCollapsed(collapsed, persist) {
+        document.documentElement.classList.toggle('side-nav-collapsed', collapsed);
+        const toggleBtn = document.getElementById('side-nav-toggle');
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-expanded', String(!collapsed));
+            toggleBtn.title = collapsed ? 'Menüyü genişlet' : 'Menüyü daralt';
+            toggleBtn.setAttribute('aria-label', collapsed ? 'Gezinme menüsünü genişlet' : 'Gezinme menüsünü daralt');
+        }
+        if (persist) {
+            try {
+                localStorage.setItem(SIDE_NAV_LS_KEY, collapsed ? '1' : '0');
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    function applySideNavCollapsed(collapsed) {
+        setSideNavCollapsed(collapsed, true);
+    }
+
+    /** Dar menü kayıtlıysa: okun üzerine gelince geçici genişler, sidebar dışına çıkınca tekrar daralır (tıklama gerekmez). */
+    let sideNavHoverReveal = false;
+    document.getElementById('side-nav-toggle')?.addEventListener('mouseenter', () => {
+        try {
+            if (localStorage.getItem(SIDE_NAV_LS_KEY) !== '1') return;
+        } catch {
+            return;
+        }
+        if (!document.documentElement.classList.contains('side-nav-collapsed')) return;
+        sideNavHoverReveal = true;
+        setSideNavCollapsed(false, false);
+    });
+    document.getElementById('bottom-tab-bar')?.addEventListener('mouseleave', () => {
+        if (!sideNavHoverReveal) return;
+        sideNavHoverReveal = false;
+        try {
+            if (localStorage.getItem(SIDE_NAV_LS_KEY) === '1') {
+                setSideNavCollapsed(true, false);
+            }
+        } catch {
+            setSideNavCollapsed(true, false);
+        }
+    });
+
+    document.getElementById('side-nav-toggle')?.addEventListener('click', () => {
+        sideNavHoverReveal = false;
+        applySideNavCollapsed(!document.documentElement.classList.contains('side-nav-collapsed'));
+    });
+    try {
+        if (localStorage.getItem(SIDE_NAV_LS_KEY) === '1') applySideNavCollapsed(true);
+    } catch {
+        /* ignore */
+    }
+
     /** Android: göreli import (import map / bazı WebView sorunları yok); dinleyici yoksa geri tuşu tepkisiz kalıyordu */
     void (async () => {
         try {
@@ -99,13 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
         isFullWidth = enable;
         settings.isFullWidth = enable;
         
+        const shell = dom.appShell || dom.appContainer;
         if (enable) {
-            dom.appContainer.classList.remove('container', 'mx-auto', 'max-w-5xl');
-            dom.appContainer.classList.add('w-full', 'px-4');
+            shell.classList.remove('container', 'mx-auto', 'max-w-5xl');
+            shell.classList.add('w-full', 'px-4');
             if (dom.toggleWidthBtn) dom.toggleWidthBtn.innerHTML = ui.icons.collapse;
         } else {
-            dom.appContainer.classList.add('container', 'mx-auto', 'max-w-5xl');
-            dom.appContainer.classList.remove('w-full', 'px-4');
+            shell.classList.add('container', 'mx-auto', 'max-w-5xl');
+            shell.classList.remove('w-full', 'px-4');
             if (dom.toggleWidthBtn) dom.toggleWidthBtn.innerHTML = ui.icons.expand;
         }
         
@@ -1465,6 +1523,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupAppEventListeners() {
         dom.addItemForm?.addEventListener('submit', handleAddItem);
+        document.getElementById('bag-count-dec')?.addEventListener('click', () => {
+            const el = dom.bagCountInput;
+            if (!el) return;
+            let v = parseInt(el.value, 10);
+            if (Number.isNaN(v)) v = 1;
+            if (v > 1) el.value = String(v - 1);
+        });
+        document.getElementById('bag-count-inc')?.addEventListener('click', () => {
+            const el = dom.bagCountInput;
+            if (!el) return;
+            let v = parseInt(el.value, 10);
+            if (Number.isNaN(v)) v = 0;
+            el.value = String(Math.max(1, v + 1));
+        });
         dom.dashboard?.quickNoteBtn?.addEventListener('click', handleDashboardQuickNote);
         const qnText = dom.dashboard?.quickNoteText;
         const qnCust = dom.dashboard?.quickNoteCustomer;

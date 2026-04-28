@@ -275,6 +275,7 @@ export function getDomRefs() {
         loadingText: document.getElementById('loading-text'),
         authContainer: document.getElementById('auth-container'),
         appContainer: document.getElementById('app-container'),
+        appShell: document.getElementById('app-shell'),
         loginForm: document.getElementById('login-form'),
         registerForm: document.getElementById('register-form'),
         forgotPasswordForm: document.getElementById('forgot-password-form'),
