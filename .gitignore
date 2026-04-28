@@ -11,19 +11,5 @@ build/
 .DS_Store
 Thumbs.db
 
-# Ortam / gizli anahtarlar
-.env
-.env.*
-!.env.example
-
-# Firebase (projeye özel; repoda sadece .example kopyaları)
-.firebaserc
-assets/js/firebase-config.js
-firebase-messaging-sw.js
+# Android Firebase (yerel tutulur; repo dışında)
 android/app/google-services.json
-**/serviceAccount*.json
-**/*-firebase-adminsdk-*.json
-
-# Android imza
-*.keystore
-*.jks
