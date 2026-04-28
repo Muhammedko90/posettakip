@@ -74,9 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
         applySideNavCollapsed(!document.documentElement.classList.contains('side-nav-collapsed'));
     });
     try {
-        if (localStorage.getItem(SIDE_NAV_LS_KEY) === '1') applySideNavCollapsed(true);
+        const saved = localStorage.getItem(SIDE_NAV_LS_KEY);
+        if (saved === '0') applySideNavCollapsed(false);
+        else applySideNavCollapsed(true);
     } catch {
-        /* ignore */
+        applySideNavCollapsed(true);
     }
 
     /** Android: göreli import (import map / bazı WebView sorunları yok); dinleyici yoksa geri tuşu tepkisiz kalıyordu */
