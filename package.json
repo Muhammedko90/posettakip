@@ -2,7 +2,7 @@
   "name": "posettakip",
   "private": true,
   "scripts": {
-    "postinstall": "patch-package && node scripts/ensure-capacitor-vendor.cjs",
+    "postinstall": "patch-package && node scripts/ensure-capacitor-vendor.cjs && node scripts/ensure-local-firebase-files.cjs",
     "dev": "serve . -l 5173",
     "start": "serve . -l 5173",
     "copy:www": "node scripts/copy-www.cjs",

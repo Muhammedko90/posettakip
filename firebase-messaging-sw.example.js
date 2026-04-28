@@ -2,31 +2,27 @@
 /**
  * Firebase Cloud Messaging - Arka plan service worker'ı.
  *
- * Sayfa kapalıyken / sekme arka plandayken gelen push mesajlarını yakalar
- * ve native Notification API'si ile bildirim olarak gösterir.
+ * Bu dosyayı "firebase-messaging-sw.js" olarak kopyalayın ve aşağıdaki
+ * firebase.initializeApp(...) bloğunu Firebase Console’daki web uygulaması
+ * yapılandırmasıyla doldurun (assets/js/firebase-config.js ile aynı değerler).
  *
- * NOT: Bu dosya MUTLAKA site kökünde (https://.../firebase-messaging-sw.js)
- * servis edilmelidir; alt klasöre konursa Firebase SDK bulamaz.
- *
- * Service Worker ortamında ES module / dynamic import desteği tutarsız olduğu
- * için Firebase'in "compat" sürümlerini importScripts ile yüklüyoruz.
+ * Yerel dosya .gitignore altında tutulur; gerçek anahtarları commitlemeyin.
  */
 
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-    apiKey: "AIzaSyDsIDN74rIPhYtdaTIkeGcrczxQEjr7-sw",
-    authDomain: "emre-bebe-takip.firebaseapp.com",
-    projectId: "emre-bebe-takip",
-    storageBucket: "emre-bebe-takip.firebasestorage.app",
-    messagingSenderId: "174642780473",
-    appId: "1:174642780473:web:89c50d5f80612c16e3f0e8"
+    apiKey: "YOUR_WEB_API_KEY",
+    authDomain: "your-project-id.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project-id.firebasestorage.app",
+    messagingSenderId: "000000000000",
+    appId: "1:000000000000:web:0000000000000000000000"
 });
 
 const messaging = firebase.messaging();
 
-// Native Android tarafıyla aynı kanal id mantığı.
 function resolveTag(type) {
     switch (type) {
         case 'new_bag':
@@ -40,11 +36,6 @@ function resolveTag(type) {
     }
 }
 
-/**
- * Sunucudan SADECE "data" payload'u gönderildiğinde tetiklenir.
- * "notification" payload'u kullanılırsa tarayıcı bildirimi otomatik gösterir
- * ve bu callback çalışmaz – tutarlı kontrol için data-only önerilir.
- */
 messaging.onBackgroundMessage((payload) => {
     const data = payload && payload.data ? payload.data : {};
     const title = data.title || 'Poşet Takip';
@@ -62,9 +53,6 @@ messaging.onBackgroundMessage((payload) => {
     });
 });
 
-/**
- * Bildirime tıklandığında uygulamayı aç (varsa odakla, yoksa yeni sekme aç).
- */
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const targetUrl = (event.notification.data && event.notification.data.url) || '/';

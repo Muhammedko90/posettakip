@@ -19,6 +19,7 @@ Thumbs.db
 # Firebase (projeye özel; repoda sadece .example kopyaları)
 .firebaserc
 assets/js/firebase-config.js
+firebase-messaging-sw.js
 android/app/google-services.json
 **/serviceAccount*.json
 **/*-firebase-adminsdk-*.json
