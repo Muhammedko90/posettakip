@@ -94,6 +94,11 @@ html.side-nav-collapsed .side-nav__tools {
     flex-direction: column;
     gap: 0.2rem;
 }
+
+/* Tam genişlikte kenar çubuğu: geniş/dar içerik; dar ikon şeridinde gösterme */
+html.side-nav-collapsed #toggle-width-btn {
+    display: none;
+}
 .side-nav-toggle__chevron {
     transform-origin: center;
 }
