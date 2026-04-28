@@ -1,14 +1,14 @@
 // Önbellek (cache) adı ve versiyonu.
 // Versiyonu yükselterek tarayıcının yeni dosyaları almasını sağlıyoruz.
-const CACHE_NAME = 'emre-bebe-takip-cache-v39';
+const CACHE_NAME = 'emre-bebe-takip-cache-v40';
 
 // Sadece aynı kaynak (origin) dosyaları önbelleğe alınır.
 // Harici CDN'ler CORS vermediği için cache.add ile eklenemez; index.html zaten script ile yükler.
+// Not: '/' kökünü önbelleğe almak GitHub Pages (/kullanici/repo/) altında yanlış sayfayı cache'ler.
 const urlsToCache = [
-  '/',
   'index.html',
   'manifest.json',
-  'assets/css/styles.css?v=39',
+  'assets/css/styles.css?v=40',
   'assets/js/gradient-border.js?v=1'
 ];
 

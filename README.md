@@ -1,5 +1,7 @@
 # 🛍️ Poşet Takip Sistemi
 
+**Canlı uygulama:** [muhammedko90.github.io/posettakip/](https://muhammedko90.github.io/posettakip/)
+
 Bu uygulama, işletmelerin poşet stoklarını dijital ortamda düzenli bir şekilde takip etmeleri için tasarlanmıştır. Modern web teknolojileri kullanılarak geliştirilmiş, hızlı ve kullanıcı dostu bir çözümdür.
 
 ## ✨ Özellikler

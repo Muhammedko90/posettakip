@@ -35,8 +35,19 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const TOKEN_LS_KEY = "poset:fcmToken";
-const SW_PATH = "/firebase-messaging-sw.js";
-const SW_SCOPE = "/firebase-cloud-messaging-push-scope";
+
+/** GitHub Pages (/repo/) gibi alt yolda çalışırken SW yolu kökten değil uygulama klasöründen olmalı */
+function appBasePath() {
+    if (typeof location === "undefined") return "/";
+    if (location.protocol === "file:") return "/";
+    let p = location.pathname;
+    if (!p.endsWith("/")) p = p.replace(/\/[^/]*$/, "/");
+    return p || "/";
+}
+
+const APP_BASE = appBasePath();
+const SW_PATH = `${APP_BASE}firebase-messaging-sw.js`;
+const SW_SCOPE = `${APP_BASE}firebase-cloud-messaging-push-scope`;
 const CAPACITOR_CORE_PATH = "../vendor/capacitor-core.js";
 
 let cachedMessaging = null;

@@ -1,6 +1,7 @@
 {
   "name": "posettakip",
   "private": true,
+  "homepage": "https://muhammedko90.github.io/posettakip/",
   "scripts": {
     "postinstall": "patch-package && node scripts/ensure-capacitor-vendor.cjs && node scripts/ensure-local-firebase-files.cjs",
     "dev": "serve . -l 5173",
