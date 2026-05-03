@@ -422,6 +422,110 @@ document.addEventListener('DOMContentLoaded', () => {
                  });
              }
         }
+
+        if (action === 'ykvar') {
+            const item = allItems.find((i) => i.id === itemId);
+            const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
+            const emptyKb = { inline_keyboard: [] };
+            if (item && item.status === 'active') {
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text:
+                            `✅ *Var* — *${item.customerName}*\n🛍️ Bekleyen: *${item.bagCount}* poşet\n_Beklemede (yoklamada doğrulandı)._`,
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            } else if (item) {
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: `ℹ️ *${item.customerName}* için kayıt artık bekleyen listede değil.`,
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            } else {
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: '❌ Kayıt bulunamadı.',
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            }
+        }
+
+        if (action === 'ykdel') {
+            const item = allItems.find((i) => i.id === itemId);
+            const emptyKb = { inline_keyboard: [] };
+            const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
+
+            if (item && item.status === 'active') {
+                await updateItem(item.id, {
+                    status: 'delivered',
+                    deliveredAt: new Date(),
+                    deliveredBy: 'Telegram yoklama',
+                    note: '',
+                    reminderDate: null,
+                });
+
+                const dateStr = new Date().toLocaleString('tr-TR');
+                sendTelegramNotification(
+                    `✅ *Teslimat (Telegram yoklama)*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim edilen: ${item.bagCount} adet\n📱 *Kaynak:* Telegram yoklaması — ❌ teslim\n📅 Tarih: ${dateStr}`,
+                    null,
+                    null,
+                    { bypassSundayCheck: true },
+                );
+
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: `❌ *Teslim edildi (yoklama)*\n\n👤 ${item.customerName}\n🛍️ ${item.bagCount} adet\n_Teslim eden:_ Telegram yoklama`,
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            } else if (item) {
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: `❌ *${item.customerName}* zaten teslim veya güncellenmiş.`,
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            } else {
+                await fetch(editUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        message_id: messageId,
+                        text: '❌ Kayıt bulunamadı.',
+                        parse_mode: 'Markdown',
+                        reply_markup: emptyKb,
+                    }),
+                });
+            }
+        }
     }
 
     async function processTelegramCommand(message) {
@@ -665,20 +769,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 case '/yoklama': {
-                    if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
-                    const active = allItems.filter(i => i.status === 'active').sort((a, b) =>
-                        ui.toTrUpperCase(a.customerName).localeCompare(ui.toTrUpperCase(b.customerName), 'tr'));
-                    if (active.length === 0) {
-                        reply = "📋 *Poşet Yoklaması*\n\nBekleyen kayıt yok.";
-                    } else {
-                        const lines = active.map((item, idx) => {
-                            const n = item.note ? ` _(${item.note})_` : '';
-                            return `${idx + 1}. ${item.customerName} — *${item.bagCount}* poşet${n}`;
-                        });
-                        const totalBags = active.reduce((a, b) => a + b.bagCount, 0);
-                        reply = `📋 *Poşet Yoklaması*\n\n${lines.join('\n')}\n\n👥 Müşteri: ${active.length}\n🛍️ Toplam poşet: ${totalBags}`;
+                    if (!isAdmin) {
+                        reply = '⛔ Yetkiniz yok.';
+                        break;
                     }
-                    break;
+                    const active = allItems
+                        .filter((i) => i.status === 'active')
+                        .sort((a, b) =>
+                            ui.toTrUpperCase(a.customerName).localeCompare(ui.toTrUpperCase(b.customerName), 'tr'),
+                        );
+                    if (active.length === 0) {
+                        reply = '📋 *Poşet yoklaması*\n\nBekleyen kayıt yok.';
+                        break;
+                    }
+                    const totalBags = active.reduce((sum, row) => sum + row.bagCount, 0);
+                    await sendTelegramNotification(
+                        `📋 *Poşet yoklaması başladı*\n\n👥 ${active.length} müşteri · 🛍️ ${totalBags} poşet\nHer satırda *Var* (beklemede) veya *Teslim* (❌ teslim kaydı) seçin.`,
+                        chatId,
+                        null,
+                        { bypassSundayCheck: true },
+                    );
+                    let idx = 0;
+                    for (const item of active) {
+                        idx += 1;
+                        const noteLine = item.note ? `\n📝 ${item.note}` : '';
+                        const body = `🔍 *Yoklama ${idx}/${active.length}*\n\n👤 ${item.customerName}\n🛍️ *${item.bagCount}* poşet${noteLine}`;
+                        await sendTelegramNotification(body, chatId, {
+                            inline_keyboard: [
+                                [
+                                    { text: '✅ Var', callback_data: `ykvar_${item.id}` },
+                                    { text: '❌ Teslim', callback_data: `ykdel_${item.id}` },
+                                ],
+                            ],
+                        }, { bypassSundayCheck: true });
+                        await new Promise((r) => setTimeout(r, 120));
+                    }
+                    return;
                 }
 
                 case '/ozet': {
@@ -705,7 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             "➕ `/ekle` — Yeni poşet ekle\nÖrn: `/ekle Ahmet 2`\n\n" +
                             "✅ `/teslim` — Poşet teslim et\nÖrn: `/teslim Ahmet 1`\n\n" +
                             "📋 `/bekleyen` — Bekleyenleri listele, butonla teslim et\n\n" +
-                            "📋 `/yoklama` — Poşet yoklaması (sıralı liste)\n\n" +
+                            "📋 `/yoklama` — Her bekleyen için ayrı mesaj; Var veya ❌ teslim\n\n" +
                             "📊 `/ozet` — Anlık durum ve sayısal özet\n\n" +
                             "🌙 `/gunsonu` — Detaylı gün sonu işlem raporu\n\n" +
                             "📱 `/sms` — Müşteri için hazır bilgilendirme mesajı\nÖrn: `/sms Ahmet`\n\n" +
@@ -1598,6 +1724,22 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         qnText?.addEventListener('keydown', submitOnEnter);
         qnCust?.addEventListener('keydown', submitOnEnter);
+
+        document.querySelectorAll('[data-dashboard-kpi]').forEach((el) => {
+            const openKpiModal = () => {
+                const kind = el.getAttribute('data-dashboard-kpi');
+                if (!kind || !/^customers|bags|week|alert$/.test(kind)) return;
+                ui.showDashboardKpiDetailModal(dom, kind, allItems, ui.formatDate);
+            };
+            el.addEventListener('click', openKpiModal);
+            el.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    openKpiModal();
+                }
+            });
+        });
+
         dom.searchArchiveInput?.addEventListener('input', () => {
             archiveCurrentPage = 1;
             renderAll();
@@ -1720,7 +1862,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!seenNotifications.includes(itemId)) seenNotifications.push(itemId);
             localStorage.setItem(`seenNotifications-${userId}`, JSON.stringify([...new Set(seenNotifications)]));
             ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
-            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
+            ui.renderNotificationsPage(dom, allItems, seenNotifications, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
         };
         const onMarkAllNotifsRead = () => {
             const unseenR = ui.getUnseenReminders(allItems, seenNotifications);
@@ -1728,10 +1870,8 @@ document.addEventListener('DOMContentLoaded', () => {
             seenNotifications.push(...unseenR.map(i => i.id), ...unseenO.map(i => i.id));
             localStorage.setItem(`seenNotifications-${userId}`, JSON.stringify([...new Set(seenNotifications)]));
             ui.checkAndDisplayNotifications(dom, allItems, seenNotifications, ui.getUnseenReminders, ui.getUnseenOverdueItems);
+            ui.renderNotificationsPage(dom, allItems, seenNotifications, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
         };
-        dom.notificationBell?.addEventListener('click', () => {
-            ui.showNotificationsModal(dom, allItems, seenNotifications, userId, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
-        });
         // Yeni buton dinleyicisi
         dom.toggleWidthBtn?.addEventListener('click', () => {
             toggleFullWidth(!isFullWidth);
@@ -1811,6 +1951,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.renderPeriodicReport(allItems, range, ui.formatDate);
                         });
                     }, 300);
+                }
+                if (targetTab === 'notifications') {
+                    ui.renderNotificationsPage(dom, allItems, seenNotifications, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
                 }
             }
         });

@@ -557,6 +557,10 @@ html.side-nav-collapsed .bottom-tab-bar__label {
     padding-bottom: 0;
 }
 
+.notifications-page--padded {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
 .settings-page--padded {
     padding-bottom: 1.25rem;
 }
@@ -1114,6 +1118,24 @@ html.side-nav-collapsed .bottom-tab-bar__label {
 #panel-anasayfa .dashboard-kpi-svg {
     width: clamp(1.15rem, 3.2vmin, 1.55rem);
     height: clamp(1.15rem, 3.2vmin, 1.55rem);
+}
+
+#panel-anasayfa .dashboard-kpi.dashboard-kpi--interactive {
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+#panel-anasayfa .dashboard-kpi.dashboard-kpi--interactive:hover {
+    filter: brightness(1.07);
+}
+
+#panel-anasayfa .dashboard-kpi.dashboard-kpi--interactive:active {
+    transform: scale(0.985);
+}
+
+#panel-anasayfa .dashboard-kpi.dashboard-kpi--interactive:focus-visible {
+    outline: 2px solid rgb(129, 140, 248);
+    outline-offset: 2px;
 }
 
 #panel-anasayfa .dashboard-section-title {

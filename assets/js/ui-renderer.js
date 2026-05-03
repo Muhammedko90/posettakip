@@ -324,8 +324,9 @@ export function getDomRefs() {
         modalContainer: document.getElementById('modal-container'),
         modalContentWrapper: document.getElementById('modal-content-wrapper'),
         modalContent: document.getElementById('modal-content'),
-        notificationBell: document.getElementById('notification-bell'),
+        notificationBell: document.getElementById('tab-notifications'),
         notificationBadge: document.getElementById('notification-badge'),
+        notificationsPageInner: document.getElementById('notifications-page-inner'),
         scrollToTopBtn: document.getElementById('scroll-to-top-btn'),
         toggleWidthBtn: document.getElementById('toggle-width-btn'),
         shareTemplate: {
@@ -744,6 +745,136 @@ export function renderDashboard(dom, allItems, formatDateFn, formatRelativeTimeF
                 '<p class="dashboard-empty text-secondary py-4 text-center">Henüz işlem yok.</p>';
         }
     }
+}
+
+/**
+ * Ana sayfa KPI kutusundan detay modalı (`customers` / `bags` bekleyen listesi; `week` teslimler; `alert` gecikenler).
+ */
+export function showDashboardKpiDetailModal(dom, kpiKind, allItems, formatDateFn) {
+    if (!dom?.modalContent) return;
+
+    const activeItems = allItems.filter((item) => item.status !== 'delivered');
+    const archivedItems = allItems.filter((item) => item.status === 'delivered');
+    const esc = escapeDashboardHtml;
+
+    let title = '';
+    let subtitle = '';
+    let rowsHtml = '';
+
+    if (kpiKind === 'customers' || kpiKind === 'bags') {
+        const map = new Map();
+        for (const it of activeItems) {
+            const nm = String(it.customerName ?? '').trim();
+            if (!nm) continue;
+            map.set(nm, (map.get(nm) || 0) + (Number(it.bagCount) || 0));
+        }
+        const entries = [...map.entries()].sort((a, b) => toTrUpperCase(a[0]).localeCompare(toTrUpperCase(b[0]), 'tr'));
+        const totalBags = entries.reduce((s, [, v]) => s + v, 0);
+        title = kpiKind === 'customers' ? 'Bekleyen müşteriler' : 'Bekleyen poşet özeti';
+        subtitle = `<p class="text-secondary text-sm mb-3">${entries.length} müşteri · toplam <span class="text-primary font-medium">${totalBags}</span> poşet</p>`;
+        if (entries.length === 0) {
+            rowsHtml = '<p class="text-secondary py-8 text-center">Bekleyen kayıt yok.</p>';
+        } else {
+            rowsHtml = entries
+                .map(
+                    ([name, bags]) => `
+                <div class="flex items-start justify-between gap-3 rounded-xl border border-white/[0.08] bg-slate-900/35 px-3 py-2.5">
+                    <span class="text-primary font-medium min-w-0 break-words">${esc(name)}</span>
+                    <span class="text-secondary shrink-0 tabular-nums text-sm">${bags} poşet</span>
+                </div>`
+                )
+                .join('');
+        }
+    } else if (kpiKind === 'week') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const recent = archivedItems.filter((item) => {
+            if (!item.deliveredAt) return false;
+            const d = item.deliveredAt.seconds != null ? new Date(item.deliveredAt.seconds * 1000) : new Date(item.deliveredAt);
+            return Number.isFinite(d.getTime()) && d >= sevenDaysAgo;
+        });
+        recent.sort((a, b) => firestoreOrDateToSeconds(b.deliveredAt) - firestoreOrDateToSeconds(a.deliveredAt));
+        const bagSum = recent.reduce((s, it) => s + (Number(it.bagCount) || 0), 0);
+        title = 'Son 7 günlük teslimatlar';
+        subtitle = `<p class="text-secondary text-sm mb-3">${recent.length} kayıt · toplam <span class="text-primary font-medium">${bagSum}</span> poşet</p>`;
+        if (recent.length === 0) {
+            rowsHtml = '<p class="text-secondary py-8 text-center">Bu aralıkta teslim kaydı yok.</p>';
+        } else {
+            rowsHtml = recent
+                .map((it) => {
+                    const when = formatDateFn(it.deliveredAt);
+                    return `
+                <div class="flex items-start justify-between gap-3 rounded-xl border border-white/[0.08] bg-slate-900/35 px-3 py-2.5">
+                    <div class="min-w-0">
+                        <p class="text-primary font-medium break-words">${esc(it.customerName)}</p>
+                        <p class="text-secondary text-xs mt-0.5">${esc(when)}</p>
+                    </div>
+                    <span class="text-emerald-300/95 shrink-0 tabular-nums text-sm">${Number(it.bagCount) || 0} poşet</span>
+                </div>`;
+                })
+                .join('');
+        }
+    } else if (kpiKind === 'alert') {
+        const nowPlain = new Date();
+        const overdue = [];
+        for (const it of activeItems) {
+            const itemDate = it.createdAt?.seconds ? new Date(it.createdAt.seconds * 1000) : new Date(it.createdAt || new Date());
+            const diffDays = Math.floor(
+                (new Date(nowPlain.getFullYear(), nowPlain.getMonth(), nowPlain.getDate()) -
+                    new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate())) /
+                    (1000 * 60 * 60 * 24)
+            );
+            if (diffDays >= 20) overdue.push({ item: it, diffDays });
+        }
+        overdue.sort(
+            (a, b) =>
+                b.diffDays - a.diffDays ||
+                toTrUpperCase(a.item.customerName).localeCompare(toTrUpperCase(b.item.customerName), 'tr')
+        );
+        const uniqueCustomers = new Set(overdue.map((o) => o.item.customerName));
+        title = 'Gecikmiş siparişler (20+ gün)';
+        subtitle = `<p class="text-secondary text-sm mb-3">${uniqueCustomers.size} müşteri · ${overdue.length} bekleyen kayıt</p>`;
+        if (overdue.length === 0) {
+            rowsHtml = '<p class="text-secondary py-8 text-center">Bu kriterde geciken kayıt yok.</p>';
+        } else {
+            rowsHtml = overdue
+                .map(
+                    ({ item, diffDays }) => `
+                <div class="flex items-start justify-between gap-3 rounded-xl border border-red-500/25 bg-red-950/25 px-3 py-2.5">
+                    <div class="min-w-0">
+                        <p class="text-primary font-medium break-words">${esc(item.customerName)}</p>
+                        <p class="text-secondary text-xs mt-0.5">${diffDays} gündür bekliyor</p>
+                    </div>
+                    <span class="text-red-200/95 shrink-0 tabular-nums text-sm">${Number(item.bagCount) || 0} poşet</span>
+                </div>`
+                )
+                .join('');
+        }
+    } else {
+        return;
+    }
+
+    if (dom.modalContentWrapper) {
+        dom.modalContentWrapper.classList.remove('max-w-2xl', 'max-w-4xl', 'max-w-5xl', 'w-full');
+        dom.modalContentWrapper.classList.add('max-w-lg', 'w-full', 'max-h-[85vh]', 'flex', 'flex-col', 'overflow-hidden');
+    }
+
+    dom.modalContent.innerHTML = `
+        <h3 class="text-xl font-semibold text-primary shrink-0 mb-1">${esc(title)}</h3>
+        ${subtitle}
+        <div id="dashboard-kpi-modal-scroll" class="dashboard-kpi-modal-scroll min-h-0 max-h-[min(380px,52vh)] flex-1 overflow-y-auto space-y-2 pr-1 -mr-1 mb-4">
+            ${rowsHtml}
+        </div>
+        <div class="flex justify-end shrink-0 pt-1 border-t border-white/10">
+            <button type="button" id="dashboard-kpi-modal-close" class="accent-bg text-white px-4 py-2 rounded-lg accent-bg-hover transition">Tamam</button>
+        </div>`;
+
+    dom.modalContent.querySelector('#dashboard-kpi-modal-close')?.addEventListener(
+        'click',
+        () => hideModalUI(dom),
+        { once: true }
+    );
+    showModalUI(dom);
 }
 
 export function renderItems(dom, items, sortState, viewMode, searchQuery, formatDateFn, formatRelativeTimeFn, visibleCount, onLoadMore) {
@@ -1491,25 +1622,35 @@ export function renderPeriodicReport(allItems, range, formatDateFn) {
     mountChartsWhenSized();
 }
 
-export function getUnseenOverdueItems(allItems, seenNotifications, overDueDays = 20) {
-    const now = new Date();
-    return allItems.filter(item => {
-        if (item.status !== 'active') return false;
-        const itemDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt);
-        const diffDays = Math.floor((now - itemDate) / (1000 * 60 * 60 * 24));
-        return diffDays >= overDueDays && !seenNotifications.includes(item.id);
-    });
-}
-
-export function getUnseenReminders(allItems, seenNotifications) {
+/** Aktif kayıtlarda vadesi gelmiş (bugün ve öncesi) hatırlatmalar — okundu filtresi yok */
+function getAllDueReminders(allItems) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return allItems.filter(item => {
         if (item.status !== 'active' || !item.reminderDate) return false;
         const [y, m, d] = item.reminderDate.split('-').map(Number);
         const reminderDate = new Date(y, m - 1, d);
-        return reminderDate <= today && !seenNotifications.includes(item.id);
+        return reminderDate <= today;
     });
+}
+
+/** active + overDueDays+ gün bekleyen kayıtlar — okundu filtresi yok */
+function getAllOverdueActiveItems(allItems, overDueDays = 20) {
+    const now = new Date();
+    return allItems.filter(item => {
+        if (item.status !== 'active') return false;
+        const itemDate = item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000) : new Date(item.createdAt);
+        const diffDays = Math.floor((now - itemDate) / (1000 * 60 * 60 * 24));
+        return diffDays >= overDueDays;
+    });
+}
+
+export function getUnseenOverdueItems(allItems, seenNotifications, overDueDays = 20) {
+    return getAllOverdueActiveItems(allItems, overDueDays).filter(item => !seenNotifications.includes(item.id));
+}
+
+export function getUnseenReminders(allItems, seenNotifications) {
+    return getAllDueReminders(allItems).filter(item => !seenNotifications.includes(item.id));
 }
 
 export function checkAndDisplayNotifications(dom, allItems, seenNotifications, getUnseenRemindersFn, getUnseenOverdueItemsFn) {
@@ -1532,7 +1673,16 @@ export function hideModalUI(dom) {
     dom.modalContainer.style.opacity = '0';
     dom.modalContentWrapper.classList.add('scale-95', 'opacity-0');
     if (dom.modalContentWrapper) {
-        dom.modalContentWrapper.classList.remove('max-w-4xl', 'max-w-5xl', 'w-full');
+        dom.modalContentWrapper.classList.remove(
+            'max-w-4xl',
+            'max-w-5xl',
+            'max-w-lg',
+            'w-full',
+            'max-h-[85vh]',
+            'flex',
+            'flex-col',
+            'overflow-hidden'
+        );
         dom.modalContentWrapper.classList.add('max-w-2xl');
     }
     setTimeout(() => {
@@ -2013,44 +2163,68 @@ export function showChangePasswordModal(dom, onConfirm) {
     });
 }
 
-export function showNotificationsModal(dom, allItems, seenNotifications, userId, formatRelativeTimeFn, formatDateFn, onMarkAsRead, onMarkAllAsRead) {
-    if (dom.modalContentWrapper) {
-        dom.modalContentWrapper.classList.remove('max-w-2xl');
-        dom.modalContentWrapper.classList.add('max-w-4xl', 'w-full');
-    }
+function sortNotifItemsUnreadFirst(items, seenNotifications) {
+    return [...items].sort((a, b) => {
+        const aSeen = seenNotifications.includes(a.id);
+        const bSeen = seenNotifications.includes(b.id);
+        if (aSeen === bSeen) return 0;
+        return aSeen ? 1 : -1;
+    });
+}
+
+export function renderNotificationsPage(dom, allItems, seenNotifications, formatRelativeTimeFn, formatDateFn, onMarkAsRead, onMarkAllAsRead) {
+    const inner = dom.notificationsPageInner;
+    if (!inner) return;
     const unseenReminders = getUnseenReminders(allItems, seenNotifications);
     const unseenOverdue = getUnseenOverdueItems(allItems, seenNotifications);
-    let modalHtml = `<div class="flex justify-between items-start gap-2 mb-4"><div><h3 class="text-xl font-semibold text-primary">Bildirimler ve notlar</h3><p class="text-xs text-secondary mt-1">Hatırlatmalar, gecikenler ve tüm müşteri notları</p></div><button id="modal-close" class="p-1 shrink-0 text-secondary hover:text-primary transition">${icons.cancel}</button></div><div class="max-h-[min(72vh,560px)] overflow-y-auto pr-2 space-y-5">`;
-    modalHtml += `<div class="space-y-4">`;
-    if (unseenReminders.length > 0) {
-        modalHtml += `<div><h4 class="text-lg font-semibold text-cyan-300 mb-2">Bugünün Hatırlatmaları</h4><div class="space-y-2">`;
-        unseenReminders.forEach(item => {
-            modalHtml += `<div class="bg-tertiary/50 p-3 rounded-md flex justify-between items-center gap-2"><div class="min-w-0"><p class="text-primary font-medium">${item.customerName}</p><p class="text-sm text-cyan-200">${item.note || 'Hatırlatıcı'}</p></div><button data-notif-id="${item.id}" class="mark-as-read-btn shrink-0 text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button></div>`;
+    const allReminders = sortNotifItemsUnreadFirst(getAllDueReminders(allItems), seenNotifications);
+    const allOverdue = sortNotifItemsUnreadFirst(getAllOverdueActiveItems(allItems), seenNotifications);
+    const hasAnyNotifRow = allReminders.length > 0 || allOverdue.length > 0;
+    const hasUnreadNotif = unseenReminders.length > 0 || unseenOverdue.length > 0;
+
+    let pageHtml = `<div class="mb-5 pb-4 border-b border-dynamic/70"><h2 class="text-xl sm:text-2xl font-semibold text-primary">Bildirimler ve notlar</h2><p class="text-sm text-secondary mt-1">Hatırlatmalar, gecikenler ve tüm müşteri notları</p></div><div class="space-y-5">`;
+    pageHtml += `<div class="space-y-4">`;
+    if (allReminders.length > 0) {
+        pageHtml += `<div><h4 class="text-lg font-semibold text-cyan-300 mb-2">Bugünün Hatırlatmaları</h4><div class="space-y-2">`;
+        allReminders.forEach(item => {
+            const read = seenNotifications.includes(item.id);
+            const rowMuted = read ? ' bg-tertiary/30 border border-white/5' : ' bg-tertiary/50 border border-transparent';
+            const nameCls = read ? 'text-secondary font-normal' : 'text-primary font-bold';
+            const subCls = read ? 'text-secondary/80 font-normal' : 'text-cyan-200 font-semibold';
+            const actionHtml = read
+                ? `<span class="shrink-0 text-xs text-secondary/70 tabular-nums" aria-hidden="true">Okundu</span>`
+                : `<button type="button" data-notif-id="${item.id}" class="mark-as-read-btn shrink-0 text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button>`;
+            pageHtml += `<div class="notif-feed-row p-3 rounded-md flex justify-between items-center gap-2${rowMuted}"><div class="min-w-0"><p class="${nameCls}">${item.customerName}</p><p class="text-sm ${subCls}">${item.note || 'Hatırlatıcı'}</p></div>${actionHtml}</div>`;
         });
-        modalHtml += `</div></div>`;
+        pageHtml += `</div></div>`;
     }
-    if (unseenOverdue.length > 0) {
-        modalHtml += `<div><h4 class="text-lg font-semibold text-yellow-400 mb-2">Geciken Poşetler (20+ gün)</h4><div class="space-y-2">`;
-        unseenOverdue.forEach(item => {
-            modalHtml += `<div class="bg-tertiary/50 p-3 rounded-md flex justify-between items-center gap-2"><div class="min-w-0"><p class="text-primary font-medium">${item.customerName}</p><p class="text-sm text-yellow-300">${formatRelativeTimeFn(item.createdAt)}</p></div><button data-notif-id="${item.id}" class="mark-as-read-btn shrink-0 text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button></div>`;
+    if (allOverdue.length > 0) {
+        pageHtml += `<div><h4 class="text-lg font-semibold text-yellow-400 mb-2">Geciken Poşetler (20+ gün)</h4><div class="space-y-2">`;
+        allOverdue.forEach(item => {
+            const read = seenNotifications.includes(item.id);
+            const rowMuted = read ? ' bg-tertiary/30 border border-white/5' : ' bg-tertiary/50 border border-transparent';
+            const nameCls = read ? 'text-secondary font-normal' : 'text-primary font-bold';
+            const subCls = read ? 'text-secondary/75 font-normal' : 'text-yellow-300 font-semibold';
+            const actionHtml = read
+                ? `<span class="shrink-0 text-xs text-secondary/70 tabular-nums" aria-hidden="true">Okundu</span>`
+                : `<button type="button" data-notif-id="${item.id}" class="mark-as-read-btn shrink-0 text-sm bg-slate-600 px-3 py-1 rounded-md hover:bg-slate-500 transition">Okundu</button>`;
+            pageHtml += `<div class="notif-feed-row p-3 rounded-md flex justify-between items-center gap-2${rowMuted}"><div class="min-w-0"><p class="${nameCls}">${item.customerName}</p><p class="text-sm ${subCls}">${formatRelativeTimeFn(item.createdAt)}</p></div>${actionHtml}</div>`;
         });
-        modalHtml += `</div></div>`;
+        pageHtml += `</div></div>`;
     }
-    if (unseenReminders.length === 0 && unseenOverdue.length === 0) modalHtml += `<p class="text-center text-secondary py-2">Okunmamış bildirim bulunmuyor.</p>`;
-    modalHtml += `</div>`;
-    if (unseenReminders.length > 0 || unseenOverdue.length > 0) modalHtml += `<div class="pt-2"><button id="mark-all-as-read" class="w-full bg-tertiary p-2 rounded-lg hover:bg-slate-600 transition text-sm">Bildirimleri okundu işaretle</button></div>`;
-    modalHtml += `<div class="pt-4 mt-2 border-t border-dynamic"><h4 class="text-base font-semibold text-primary mb-3">Tüm notlar</h4><div id="modal-notes-list" class="space-y-2"></div><p id="modal-empty-notes" class="hidden text-center text-secondary bg-tertiary/30 border border-dynamic p-4 rounded-lg text-sm">Henüz not eklenmiş bir kayıt bulunmuyor.</p></div>`;
-    modalHtml += `</div>`;
-    dom.modalContent.innerHTML = modalHtml;
+    if (!hasAnyNotifRow) pageHtml += `<p class="text-center text-secondary py-2">Hatırlatma veya gecikme bildirimi bulunmuyor.</p>`;
+    pageHtml += `</div>`;
+    if (hasUnreadNotif) pageHtml += `<div class="pt-1"><button type="button" id="notif-mark-all-read" class="w-full bg-tertiary p-2 rounded-lg hover:bg-slate-600 transition text-sm">Bildirimleri okundu işaretle</button></div>`;
+    pageHtml += `<div class="pt-4 mt-4 border-t border-dynamic"><h4 class="text-base font-semibold text-primary mb-3">Tüm notlar</h4><div id="notif-notes-list" class="space-y-2"></div><p id="notif-empty-notes" class="hidden text-center text-secondary bg-tertiary/30 border border-dynamic p-4 rounded-lg text-sm">Henüz not eklenmiş bir kayıt bulunmuyor.</p></div>`;
+    pageHtml += `</div>`;
+    inner.innerHTML = pageHtml;
     renderNotes(
-        { notesList: document.getElementById('modal-notes-list'), emptyNotesMessage: document.getElementById('modal-empty-notes') },
+        { notesList: document.getElementById('notif-notes-list'), emptyNotesMessage: document.getElementById('notif-empty-notes') },
         allItems,
         formatDateFn
     );
-    showModalUI(dom);
-    dom.modalContent.querySelector('#modal-close')?.addEventListener('click', () => hideModalUI(dom), { once: true });
-    dom.modalContent.querySelector('#mark-all-as-read')?.addEventListener('click', () => { onMarkAllAsRead(); hideModalUI(dom); });
-    dom.modalContent.querySelectorAll('.mark-as-read-btn').forEach(btn => {
+    inner.querySelector('#notif-mark-all-read')?.addEventListener('click', () => { onMarkAllAsRead(); });
+    inner.querySelectorAll('.mark-as-read-btn').forEach(btn => {
         btn.addEventListener('click', (e) => { onMarkAsRead(e.currentTarget.dataset.notifId); });
     });
 }
