@@ -138,24 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastKnownBotToken = null;
     /** Aynı anda birden fazla getUpdates işlenmesini engeller (üçlü yanıtlar önlenir). */
     let telegramPollFetchInFlight = false;
-    const recentTelegramUpdateIds = new Set();
-    const TELEGRAM_UPDATE_ID_CACHE_MAX = 400;
-
-    /** Son işlenmiş update_id'leri tutar; çok sekme/tekrarlama durumunda aynı güncelleme iki kez işlenmesin. */
-    function telegramUpdateAlreadyHandled(updateId) {
-        const id = typeof updateId === 'number' ? updateId : parseInt(String(updateId), 10);
-        if (!Number.isFinite(id)) return false;
-        return recentTelegramUpdateIds.has(id);
-    }
-
-    function rememberTelegramUpdateId(updateId) {
-        const id = typeof updateId === 'number' ? updateId : parseInt(String(updateId), 10);
-        if (!Number.isFinite(id)) return;
-        recentTelegramUpdateIds.add(id);
-        while (recentTelegramUpdateIds.size > TELEGRAM_UPDATE_ID_CACHE_MAX) {
-            recentTelegramUpdateIds.delete(recentTelegramUpdateIds.values().next().value);
-        }
-    }
 
     function showLoadingMsg(msg) { ui.showLoading(dom, msg); }
     function hideLoadingMsg() { ui.hideLoading(dom); }
@@ -346,8 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         for (const update of data.result) {
                             if (update.update_id > maxId) maxId = update.update_id;
 
-                            if (telegramUpdateAlreadyHandled(update.update_id)) continue;
-                            rememberTelegramUpdateId(update.update_id);
+                            const ownsUpdate = await dataManager.tryClaimTelegramUpdate(
+                                db,
+                                userId,
+                                update.update_id,
+                            );
+                            if (!ownsUpdate) continue;
 
                             if (update.message && update.message.text) {
                                 await processTelegramCommand(update.message);
@@ -674,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 case '/teslim':
+                case '/teslimet':
                 case '/tset': {
                     if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     if (parts.length < 2) { reply = "⚠️ Kullanım: `/teslim [Müşteri Adı]`"; break; }
@@ -856,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case '/yardim': {
                     reply = "🤖 *Bot Komutları*\n\n" +
                             "➕ `/ekle` — Yeni poşet ekle\nÖrn: `/ekle Ahmet 2`\n\n" +
-                            "✅ `/teslim` — Poşet teslim et\nÖrn: `/teslim Ahmet 1`\n\n" +
+                            "✅ `/teslim` — Poşet teslim et (aynı: `/teslimet`, `/tset`)\nÖrn: `/teslim Ahmet 1`\n\n" +
                             "📋 `/bekleyen` — Bekleyenleri listele, butonla teslim et\n\n" +
                             "📋 `/yoklama` — Her bekleyen için ayrı mesaj; Var veya ❌ teslim\n\n" +
                             "📊 `/ozet` — Anlık durum ve sayısal özet\n\n" +
@@ -869,7 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             "📢 `/duyuru` — Duyuru mesajı yayınla\nÖrn: `/duyuru Yarın kapalıyız`\n\n" +
                             "🗑️ `/sil` — Kaydı sil\nÖrn: `/sil Ahmet`\n\n" +
                             "🆔 `/id` — Kendi Chat ID numaranı öğren\n\n" +
-                            "❓ `/yardim` — Bu listeyi göster\n\n" +
+                            "❓ `/yardim` veya `/help` — Bu listeyi göster\n\n" +
                             "🔁 `/yenile` — Bot bağlantısını yenile\n\n" +
                             "🏓 `/ping` — Botun çalışıp çalışmadığını kontrol et\n\n" +
                             "👋 `/basla` — Duyuru listesine abone ol";

@@ -14,9 +14,10 @@ import {
     where,
     serverTimestamp,
     writeBatch,
-    arrayUnion
+    arrayUnion,
+    runTransaction,
+    setDoc,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export function getDefaultSettings() {
     return {
@@ -40,6 +41,33 @@ export async function saveSettings(db, userId, settings) {
     if (!userId) return;
     const settingsRef = doc(db, 'users', userId, 'settings', 'appSettings');
     await setDoc(settingsRef, settings, { merge: true });
+}
+
+/**
+ * Telegram Bot API update_id için atomik hak (bir kez işle).
+ * Aynı hesapta çok sekme/cihaz açıkken aynı komutun birden fazla yanıt vermesini engeller.
+ * @returns {Promise<boolean>} true = bu süreç komutu işlesin.
+ */
+export async function tryClaimTelegramUpdate(db, userId, updateId) {
+    if (!db || !userId) return false;
+    const id = typeof updateId === 'number' ? updateId : parseInt(String(updateId), 10);
+    if (!Number.isFinite(id)) return false;
+
+    const ref = doc(db, 'users', userId, 'telegramConsumedUpdates', String(id));
+
+    try {
+        return await runTransaction(db, async (t) => {
+            const snap = await t.get(ref);
+            if (snap.exists()) {
+                return false;
+            }
+            t.set(ref, { updateId: id, consumedAt: serverTimestamp() });
+            return true;
+        });
+    } catch (err) {
+        console.warn('tryClaimTelegramUpdate:', err);
+        return false;
+    }
 }
 
 /**
