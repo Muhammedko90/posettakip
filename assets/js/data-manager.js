@@ -29,8 +29,13 @@ export function getDefaultSettings() {
         telegramBotToken: '', 
         telegramChatId: '',
         telegramReportTime: '09:00',
+        /** Günlük otomatik JSON yedeğinin gönderileceği saat (yerel saat, Pazar hariç; uygulama açık olmalı) */
+        telegramBackupTime: '19:00',
         lastReportDate: '',
-        telegramLastUpdateId: 0 // Yeni: Botun okuduğu son mesaj ID'si
+        lastBackupDate: '',
+        telegramLastUpdateId: 0, // Botun okuduğu son mesaj ID'si (tarayıcı polling)
+        telegramWebhookSecret: '', // Cloud webhook — Functions tarafından doldurulur
+        telegramCloudWebhookActive: false // true ise komutlar sunucuda (uygulama kapalı çalışır)
     };
 }
 

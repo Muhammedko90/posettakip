@@ -4,6 +4,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 import { firebaseConfig, fcmVapidKey } from './firebase-config.js';
 import * as auth from './auth.js';
 import * as dataManager from './data-manager.js';
@@ -112,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })();
 
-    let app, authInstance, db, userId, currentUser;
+    let app, authInstance, db, functionsService, userId, currentUser;
     let allItems = [];
     let allCustomers = [];
     let deliveryPersonnel = [];
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendTelegramNotification(message, chatId = null, replyMarkup = null, options = {}) {
         if (!settings.telegramBotToken) return;
-        if (!options.bypassSundayCheck && isSundayLocal()) return;
+        if (isSundayLocal()) return;
 
         let targets = [];
         if (chatId) {
@@ -218,6 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.reply_markup = replyMarkup;
             }
 
+            if (options.silent) {
+                body.disable_notification = true;
+            }
+
             try {
                 const res = await fetch(url, {
                     method: 'POST',
@@ -236,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendTelegramDocument(chatId, blob, filename, caption = '', options = {}) {
         if (!settings.telegramBotToken) return;
-        if (!options.bypassSundayCheck && isSundayLocal()) return;
+        if (isSundayLocal()) return;
 
         if (!chatId && settings.telegramChatId) {
              const ids = settings.telegramChatId.split(',').map(id => id.trim()).filter(id => id);
@@ -250,6 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('chat_id', chatId);
         formData.append('document', blob, filename);
         if (caption) formData.append('caption', caption);
+        if (options.silent) {
+            formData.append('disable_notification', 'true');
+        }
 
         try {
             await fetch(url, {
@@ -370,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = callbackQuery.data;
         const message = callbackQuery.message;
         if (!message) return;
+        if (isSundayLocal()) return;
 
         const chatId = message.chat.id;
         const messageId = message.message_id;
@@ -415,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      `✅ Teslimat (Telegram)\n\nMüşteri: ${item.customerName}\nTeslim edilen: ${item.bagCount} adet\nKaynak: Hızlı teslim\nTarih: ${dateStr}`,
                      null,
                      null,
-                     { bypassSundayCheck: true, parseMode: null },
+                     { parseMode: null },
                  );
 
                  const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
@@ -501,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `✅ Teslimat (Telegram yoklama)\n\nMüşteri: ${item.customerName}\nTeslim edilen: ${item.bagCount} adet\nKaynak: Yoklama — Teslim\nTarih: ${dateStr}`,
                     null,
                     null,
-                    { bypassSundayCheck: true, parseMode: null },
+                    { parseMode: null },
                 );
 
                 await fetch(editUrl, {
@@ -542,7 +551,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processTelegramCommand(message) {
         if (!message || !message.text) return;
-        
+        if (isSundayLocal()) return;
+
         const text = message.text.trim();
         const chatId = message.chat.id;
         
@@ -609,7 +619,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const announcement = parts.slice(1).join(' ');
                     if (!announcement) { reply = "⚠️ Mesaj yazmadınız. Örn: `/duyuru Yarın kapalıyız`"; break; }
-                    if (isSundayLocal()) { reply = "⛔ Pazar günleri duyuru gönderilemez."; break; }
 
                     const subscribers = settings.telegramSubscribers || [];
                     const subIds = subscribers.map(s => String(s.id));
@@ -737,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (active.length === 0) reply = "📂 Bekleyen yok.";
                     else {
                         const inlineKeyboard = { inline_keyboard: active.map(i => [{ text: `✅ ${i.customerName} (${i.bagCount}) Teslim`, callback_data: `dlv_${i.id}` }]) };
-                        await sendTelegramNotification("📋 *Hızlı Teslimat Menüsü*", chatId, inlineKeyboard, { bypassSundayCheck: true });
+                        await sendTelegramNotification("📋 *Hızlı Teslimat Menüsü*", chatId, inlineKeyboard);
                         return;
                     }
                     break;
@@ -767,7 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!isAdmin) { reply = "⛔ Yetkiniz yok."; break; }
                     const data = { allItems, allCustomers, deliveryPersonnel, settings };
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    await sendTelegramDocument(chatId, blob, `yedek-${new Date().toISOString().slice(0, 10)}.json`, "📦 Manuel Yedek", { bypassSundayCheck: true });
+                    await sendTelegramDocument(chatId, blob, `yedek-${new Date().toISOString().slice(0, 10)}.json`, "📦 Manuel Yedek");
                     return; 
                 }
 
@@ -776,7 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const PDF = resolveJsPDFConstructor();
                     if (PDF) {
                         const blob = ui.getActiveItemsPDFBlob(allItems.filter(i => i.status === 'active'), ui.formatDate, PDF);
-                        if (blob) await sendTelegramDocument(chatId, blob, `liste-${new Date().toISOString().slice(0, 10)}.pdf`, "📄 Liste", { bypassSundayCheck: true });
+                        if (blob) await sendTelegramDocument(chatId, blob, `liste-${new Date().toISOString().slice(0, 10)}.pdf`, "📄 Liste");
                         else reply = "⚠️ PDF boş.";
                     } else reply = "⚠️ PDF motoru yok.";
                     return;
@@ -801,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         `📋 Poşet yoklaması\n👥 ${active.length} müşteri · ${totalBags} poşet\nAşağıda her müşteri ayrı mesajdadır.`,
                         chatId,
                         null,
-                        { bypassSundayCheck: true, parseMode: null },
+                        { parseMode: null },
                     );
                     let idx = 0;
                     for (const item of active) {
@@ -815,7 +824,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     { text: '❌ Teslim', callback_data: `ykdel_${item.id}` },
                                 ],
                             ],
-                        }, { bypassSundayCheck: true, parseMode: null });
+                        }, { parseMode: null });
                         await new Promise((r) => setTimeout(r, 180));
                     }
                     return;
@@ -869,15 +878,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (reply) {
                 if (shouldBroadcast) {
-                    await sendTelegramNotification(reply, null, null, { bypassSundayCheck: true }); 
+                    await sendTelegramNotification(reply, null, null);
                 } else {
-                    await sendTelegramNotification(reply, chatId, null, { bypassSundayCheck: true });
+                    await sendTelegramNotification(reply, chatId, null);
                 }
             }
 
         } catch (err) {
             console.error("Bot komut hatası:", err);
-            if (isAdmin) sendTelegramNotification("⚠️ Hata: " + err.message, chatId, null, { bypassSundayCheck: true });
+            if (isAdmin) sendTelegramNotification("⚠️ Hata: " + err.message, chatId, null);
         }
     }
 
@@ -927,9 +936,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (settings.telegramBotToken) {
-                if (settings.telegramBotToken !== oldBotToken) {
-                    isTelegramPolling = false; 
-                    setTimeout(() => startTelegramBotListener(), 1000); 
+                if (settings.telegramCloudWebhookActive) {
+                    isTelegramPolling = false;
+                    if (telegramPollTimeout) {
+                        clearTimeout(telegramPollTimeout);
+                        telegramPollTimeout = null;
+                    }
+                    telegramPollFetchInFlight = false;
+                } else if (settings.telegramBotToken !== oldBotToken) {
+                    isTelegramPolling = false;
+                    setTimeout(() => startTelegramBotListener(), 1000);
                 } else if (!isTelegramPolling) {
                     startTelegramBotListener();
                 }
@@ -968,16 +984,19 @@ document.addEventListener('DOMContentLoaded', () => {
             dataManager.saveSettings(db, userId, settings);
         }
 
-        if (day !== 0 && currentTime === "23:00" && settings.lastBackupDate !== todayStr && settings.telegramBotToken) {
-            const data = { allItems, allCustomers, deliveryPersonnel, settings };
-            const jsonString = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const filename = `oto-yedek-${todayStr}.json`;
-            
-            sendTelegramDocument(null, blob, filename, `🌙 *Otomatik Gece Yedeği* (${todayStr})`);
-            
-            settings.lastBackupDate = todayStr;
-            dataManager.saveSettings(db, userId, settings);
+        if (day !== 0 && settings.telegramBackupTime && currentTime === settings.telegramBackupTime && settings.lastBackupDate !== todayStr && settings.telegramBotToken) {
+            void (async () => {
+                await sendTelegramNotification('📦 Günlük Otomatik Veritabanı Yedeği hazırlanıyor...', null, null, { silent: true, parseMode: null });
+                const data = { allItems, allCustomers, deliveryPersonnel, settings };
+                const jsonString = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const pad = (n) => String(n).padStart(2, '0');
+                const loc = new Date();
+                const filename = `yedek_${pad(loc.getDate())}_${pad(loc.getMonth() + 1)}_${loc.getFullYear()}.json`;
+                await sendTelegramDocument(null, blob, filename, 'Günlük otomatik yedek', { silent: true });
+                settings.lastBackupDate = todayStr;
+                await dataManager.saveSettings(db, userId, settings);
+            })();
         }
 
     }, 60000); 
@@ -1464,24 +1483,65 @@ document.addEventListener('DOMContentLoaded', () => {
                     showLoadingMsg('Doğrulanıyor...');
                     try {
                         await auth.reauthenticate(currentUser, password);
-                        
+
+                        const previousToken = (settings.telegramBotToken || '').trim();
                         settings.telegramBotToken = dom.telegram.botTokenInput.value.trim();
                         settings.telegramChatId = dom.telegram.chatIdInput.value.trim();
-                        
+
                         if (dom.telegram.reportTimeInput) {
                             settings.telegramReportTime = dom.telegram.reportTimeInput.value;
                         }
-                        
-                        await dataManager.saveSettings(db, userId, settings);
-                        hideLoadingMsg();
-                        await ui.showSimpleMessageModal(dom, 'Başarılı', 'Telegram ayarları güvenle kaydedildi.', true);
-                        
-                        if (settings.telegramBotToken) {
-                             if (!isTelegramPolling) startTelegramBotListener();
-                        } else {
-                             isTelegramPolling = false; 
+                        if (dom.telegram.backupTimeInput) {
+                            settings.telegramBackupTime = dom.telegram.backupTimeInput.value;
                         }
-                        
+
+                        if (!settings.telegramBotToken) {
+                            if (previousToken && functionsService) {
+                                showLoadingMsg('Telegram bulut bağlantısı kapatılıyor...');
+                                try {
+                                    const clearFn = httpsCallable(functionsService, 'clearTelegramWebhook');
+                                    await clearFn();
+                                } catch (clearErr) {
+                                    console.warn('clearTelegramWebhook:', clearErr);
+                                }
+                            }
+                            await dataManager.saveSettings(db, userId, settings);
+                            isTelegramPolling = false;
+                            if (telegramPollTimeout) {
+                                clearTimeout(telegramPollTimeout);
+                                telegramPollTimeout = null;
+                            }
+                            telegramPollFetchInFlight = false;
+                            hideLoadingMsg();
+                            await ui.showSimpleMessageModal(dom, 'Başarılı', 'Telegram ayarları güvenle kaydedildi.', true);
+                        } else {
+                            await dataManager.saveSettings(db, userId, settings);
+                            let cloudNote = '';
+                            if (functionsService) {
+                                try {
+                                    showLoadingMsg('Telegram bulut komutları kaydediliyor...');
+                                    const regFn = httpsCallable(functionsService, 'registerTelegramWebhook');
+                                    await regFn();
+                                    cloudNote = '\n\nKomutlar artık uygulama kapalıyken de işlenir (Firebase üzerinden webhook).';
+                                } catch (regErr) {
+                                    console.error('registerTelegramWebhook:', regErr);
+                                    const detail = regErr.code === 'functions/internal'
+                                        ? (regErr.details || regErr.message)
+                                        : (regErr.message || regErr.code || String(regErr));
+                                    cloudNote = `\n\nBulut webhook kaydı başarısız: ${detail}. Komutlar için uygulama açıkken tarayıcı dinleyicisi denenecek.`;
+                                    if (!isTelegramPolling) startTelegramBotListener();
+                                }
+                            } else if (!isTelegramPolling) {
+                                startTelegramBotListener();
+                            }
+                            hideLoadingMsg();
+                            await ui.showSimpleMessageModal(
+                                dom,
+                                'Başarılı',
+                                `Telegram ayarları güvenle kaydedildi.${cloudNote}`,
+                                true,
+                            );
+                        }
                     } catch (error) {
                         hideLoadingMsg();
                         const errMsg = error.code === 'auth/wrong-password' ? "Şifre yanlış." : "Bir hata oluştu: " + error.message;
@@ -2030,6 +2090,7 @@ document.addEventListener('DOMContentLoaded', () => {
             app = initializeApp(firebaseConfig);
             authInstance = getAuth(app);
             db = getFirestore(app);
+            functionsService = getFunctions(app, 'us-central1');
             auth.setupAuthEventListeners(authInstance, dom, {
                 showLoading: showLoadingMsg,
                 hideLoading: hideLoadingMsg,

@@ -14,8 +14,14 @@
  */
 
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { logger } = require("firebase-functions");
+const {
+    handleWebhookRequest,
+    registerWebhook,
+    clearWebhook,
+} = require("./telegram-bot");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -323,3 +329,48 @@ exports.onItemUpdated = onDocumentUpdated(
         await sendToUserDevices(userId, payload);
     }
 );
+
+/* -------------------------------------------------------------------------- */
+/* Telegram: HTTPS webhook (uygulama kapalıyken komutlar)                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Telegram Bot API bu adrese POST atar. Güvenlik: ?s= ile secret_token başlığı eşleşmeli.
+ */
+exports.telegramWebhook = onRequest(
+    {
+        region: "us-central1",
+        cors: false,
+        invoker: "public",
+        timeoutSeconds: 120,
+        memory: "512MiB",
+    },
+    async (req, res) => {
+        await handleWebhookRequest(req, res, db, logger);
+    },
+);
+
+/** Telegram setWebhook + Firestore eşlemesi (token ayarlardan okunur). */
+exports.registerTelegramWebhook = onCall({ region: "us-central1" }, async (request) => {
+    if (!request.auth || !request.auth.uid) {
+        throw new HttpsError("unauthenticated", "Giriş yapmanız gerekir.");
+    }
+    try {
+        return await registerWebhook(db, request.auth.uid, logger);
+    } catch (e) {
+        const code = e.code === "failed-precondition" ? "failed-precondition" : "internal";
+        throw new HttpsError(code, e.message || String(e));
+    }
+});
+
+/** Webhook kaldırma — Firestore'daki token silinmeden ÖNCE çağrılmalıdır. */
+exports.clearTelegramWebhook = onCall({ region: "us-central1" }, async (request) => {
+    if (!request.auth || !request.auth.uid) {
+        throw new HttpsError("unauthenticated", "Giriş yapmanız gerekir.");
+    }
+    try {
+        return await clearWebhook(db, request.auth.uid, logger);
+    } catch (e) {
+        throw new HttpsError("internal", e.message || String(e));
+    }
+});

@@ -337,6 +337,7 @@ export function getDomRefs() {
             botTokenInput: document.getElementById('telegram-bot-token'),
             chatIdInput: document.getElementById('telegram-chat-id'),
             reportTimeInput: document.getElementById('telegram-report-time'),
+            backupTimeInput: document.getElementById('telegram-backup-time'),
             saveBtn: document.getElementById('save-telegram-settings-btn')
         },
         dashboard: {
@@ -404,6 +405,7 @@ export function applySettings(dom, settings, viewMode, updateViewToggleButtonsFn
     if (dom.telegram.botTokenInput) dom.telegram.botTokenInput.value = settings.telegramBotToken || '';
     if (dom.telegram.chatIdInput) dom.telegram.chatIdInput.value = settings.telegramChatId || '';
     if (dom.telegram.reportTimeInput) dom.telegram.reportTimeInput.value = settings.telegramReportTime || '09:00';
+    if (dom.telegram.backupTimeInput) dom.telegram.backupTimeInput.value = settings.telegramBackupTime || '19:00';
 
     if (updateViewToggleButtonsFn) updateViewToggleButtonsFn();
 }

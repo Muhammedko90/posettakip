@@ -446,8 +446,10 @@
                     </button>
                     <div id="settings-section-telegram" class="settings-accordion-body hidden px-4 sm:px-6 pb-6 pt-2 space-y-6 border-t border-dynamic">
                         <div class="space-y-3">
-                            <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-sm text-blue-300">
-                                Telegram üzerinden bildirim almak için bir Bot oluşturup Token ve Chat ID bilgilerini buraya girin.
+                            <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-sm text-blue-300 space-y-2">
+                                <p>Telegram üzerinden bildirim almak için bir Bot oluşturup Token ve Chat ID bilgilerini buraya girin.</p>
+                                <p>Kaydettiğinizde bot komutları (<code class="rounded bg-black/20 px-1">/ekle</code>, <code class="rounded bg-black/20 px-1">/teslim</code>, vb.) Firebase üzerinde bir webhook ile işlenir; telefon veya bilgisayarda uygulama kapalı olsa bile Telegram’dan kullanılabilir.</p>
+                                <p class="text-xs text-blue-200/90">Gerekli: Bu projede Cloud Functions güncel olarak deploy edilmiş olmalıdır (<code class="rounded bg-black/20 px-1">registerTelegramWebhook</code>, <code class="rounded bg-black/20 px-1">telegramWebhook</code>).</p>
                             </div>
                             <div>
                                 <label for="telegram-bot-token" class="block text-sm font-medium text-secondary mb-1">Bot Token:</label>
@@ -461,6 +463,11 @@
                                 <label for="telegram-report-time" class="block text-sm font-medium text-secondary mb-1">Günlük Rapor Saati (Pazar Hariç):</label>
                                 <input type="time" id="telegram-report-time" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
                                 <p class="text-xs text-secondary mt-1">Uygulama bu saatte açık olmalıdır.</p>
+                            </div>
+                            <div>
+                                <label for="telegram-backup-time" class="block text-sm font-medium text-secondary mb-1">Günlük Otomatik Yedek Saati (Pazar Hariç, Sessiz):</label>
+                                <input type="time" id="telegram-backup-time" class="w-full p-2 bg-secondary border border-dynamic text-primary rounded-lg focus:ring-2 ring-accent transition">
+                                <p class="text-xs text-secondary mt-1">JSON yedeği sessiz bildirimle gönderilir; Pazar günleri Telegram’a hiçbir gönderim yapılmaz.</p>
                             </div>
                             <button type="button" id="save-telegram-settings-btn" class="w-full accent-bg text-white font-semibold p-3 rounded-lg accent-bg-hover">Kaydet</button>
                         </div>
