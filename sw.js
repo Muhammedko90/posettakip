@@ -1,6 +1,6 @@
 // Önbellek (cache) adı ve versiyonu.
 // Versiyonu yükselterek tarayıcının yeni dosyaları almasını sağlıyoruz.
-const CACHE_NAME = 'emre-bebe-takip-cache-v40';
+const CACHE_NAME = 'emre-bebe-takip-cache-v42';
 
 // Sadece aynı kaynak (origin) dosyaları önbelleğe alınır.
 // Harici CDN'ler CORS vermediği için cache.add ile eklenemez; index.html zaten script ile yükler.
@@ -8,7 +8,7 @@ const CACHE_NAME = 'emre-bebe-takip-cache-v40';
 const urlsToCache = [
   'index.html',
   'manifest.json',
-  'assets/css/styles.css?v=40',
+  'assets/css/styles.css?v=53',
   'assets/js/gradient-border.js?v=1'
 ];
 
@@ -50,6 +50,23 @@ self.addEventListener('fetch', event => {
       );
       return;
   }
+
+  // Uygulama JS'i (telegram bot vb.) SW önbelleğinde kalırsa eski kod çalışır; her zaman önce ağdan dene.
+  try {
+    const reqUrl = new URL(event.request.url);
+    const p = reqUrl.pathname;
+    if (p.endsWith('.js') && p.includes('/assets/js/')) {
+      event.respondWith(
+        fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.ok) return networkResponse;
+            return caches.match(event.request).then((cached) => cached || networkResponse);
+          })
+          .catch(() => caches.match(event.request))
+      );
+      return;
+    }
+  } catch (_) { /* pathname yoksa varsayılan akış */ }
   
   event.respondWith(
     caches.match(event.request)
@@ -63,7 +80,13 @@ self.addEventListener('fetch', event => {
             if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'opaque') {
               return networkResponse;
             }
-            
+            try {
+              const putPath = new URL(event.request.url).pathname;
+              if (putPath.endsWith('.js') && putPath.includes('/assets/js/')) {
+                return networkResponse;
+              }
+            } catch (_) { /* yaz */ }
+
             let responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then(cache => {

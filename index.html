@@ -567,14 +567,14 @@
     </button>
 
     <script src="assets/js/gradient-border.js?v=1" defer></script>
-    <script type="module" src="assets/js/app.js"></script>
+    <script type="module" src="assets/js/app.js?v=42"></script>
     
     <script>
         // Capacitor/Android WebView içinde Service Worker sorun çıkarabildiği için yalnızca tarayıcıda kayıt.
         window.addEventListener('load', () => {
             if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return;
             if (!('serviceWorker' in navigator)) return;
-            navigator.serviceWorker.register('sw.js').then(registration => {
+            navigator.serviceWorker.register('sw.js?v=42', { updateViaCache: 'none' }).then(registration => {
                 console.log('ServiceWorker kaydı başarılı, scope: ', registration.scope);
             }, err => {
                 console.log('ServiceWorker kaydı başarısız: ', err);
