@@ -800,21 +800,21 @@ export function renderItems(dom, items, sortState, viewMode, searchQuery, format
 
 const ARCHIVE_ICONS = {
     clock: '<svg class="archive-meta-icon pointer-events-none h-3.5 w-3.5 shrink-0 self-center opacity-90 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
-    user: '<svg class="archive-meta-icon pointer-events-none h-3.5 w-3.5 shrink-0 self-center opacity-90 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+    user: '<svg class="archive-meta-icon archive-meta-icon--deliverer pointer-events-none h-3 w-3 shrink-0 self-center text-gray-500 opacity-95 sm:h-3.5 sm:w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
 };
 
 function createArchiveItemElement(item, formatDateFn) {
     const div = document.createElement('div');
     div.className =
-        'archive-item-card gradient-border group flex items-center justify-between gap-2 rounded-xl border border-gray-700/35 bg-gray-900/25 p-3 shadow-sm transition-all duration-200 hover:border-gray-600/50 hover:bg-gray-800/50 sm:gap-3 sm:p-4';
+        'archive-item-card gradient-border group flex items-center justify-between gap-2 rounded-xl border border-gray-700/35 bg-gray-900/25 p-3 shadow-sm transition-all duration-200 hover:border-gray-600/45 hover:bg-white/10 sm:gap-3 sm:p-4';
     div.dataset.id = item.id;
     const tgDeliver = isDeliveredViaTelegram(item);
     const deliveredByHtml = item.deliveredBy
-        ? `<div class="archive-meta-row flex min-w-0 items-center gap-2 text-xs leading-tight text-gray-400/95 sm:text-sm">${ARCHIVE_ICONS.user}<span class="min-w-0 flex-1 break-words"><span class="text-gray-500">Teslim Eden:</span> ${escapeHtmlText(item.deliveredBy)}</span>${tgDeliver ? '<span class="inline-flex shrink-0 items-center rounded-md bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300 ring-1 ring-sky-500/25" title="Telegram üzerinden teslim">Telegram</span>' : ''}</div>`
+        ? `<div class="archive-meta-row flex min-w-0 items-center gap-1.5 text-[11px] leading-tight text-gray-500 sm:text-xs">${ARCHIVE_ICONS.user}<span class="min-w-0 flex-1 break-words"><span class="text-gray-500/75">Teslim Eden:</span> ${escapeHtmlText(item.deliveredBy)}</span>${tgDeliver ? '<span class="inline-flex shrink-0 items-center rounded-md bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-300 ring-1 ring-sky-500/25" title="Telegram üzerinden teslim">Telegram</span>' : ''}</div>`
         : '';
     const kargoHtml =
         item.kargoIleGonderildi || item.cargoDesi != null || item.ambarIleGonderildi
-            ? `<p class="item-subtext pt-0.5 text-xs font-medium leading-snug text-accent-text">${item.ambarIleGonderildi ? 'Ambar' : 'Kargo'}: ${item.cargoDesi != null ? Number(item.cargoDesi).toFixed(2) + ' desi' : '—'}${item.ambarIleGonderildi ? ' · Ambarla gönderildi' : (item.kargoIleGonderildi ? ' · Kargo ile gönderildi' : '')}</p>`
+            ? `<p class="archive-kargo-detail item-subtext pt-0.5 text-[11px] font-normal leading-snug text-gray-500/80 sm:text-xs">${item.ambarIleGonderildi ? 'Ambar' : 'Kargo'}: ${item.cargoDesi != null ? Number(item.cargoDesi).toFixed(2) + ' desi' : '—'}${item.ambarIleGonderildi ? ' · Ambarla gönderildi' : (item.kargoIleGonderildi ? ' · Kargo ile gönderildi' : '')}</p>`
             : '';
     div.innerHTML = `
         <div class="item-details flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
@@ -853,7 +853,7 @@ function applyArchiveFilters(items, filters = {}) {
 
 /**
  * Arşivdeki öğelerden müşteri ve teslim eden listelerini çıkarıp select'leri doldurur.
- * Önceki seçim listede yoksa otomatik olarak "Tümü"ne döner.
+ * Önceki seçim listede yoksa otomatik olarak boş (placeholder) seçeneğe döner.
  */
 export function populateArchiveFilters(dom, archivedItems, currentFilters = {}) {
     const customerSel = dom.archiveFilterCustomer;
@@ -880,7 +880,7 @@ export function populateArchiveFilters(dom, archivedItems, currentFilters = {}) 
     const customers = [...customerSet.values()].sort(trCmp);
     const deliverers = [...delivererSet.values()].sort(trCmp);
 
-    const fillSelect = (select, values, currentValue, placeholder = 'Tümü') => {
+    const fillSelect = (select, values, currentValue, placeholder = 'Seçin') => {
         const desired = currentValue || '';
         const exists = !desired || values.some(v => v === desired);
         const finalValue = exists ? desired : '';
@@ -891,8 +891,8 @@ export function populateArchiveFilters(dom, archivedItems, currentFilters = {}) 
         return finalValue;
     };
 
-    const nextCustomer = fillSelect(customerSel, customers, currentFilters.customer);
-    const nextDeliverer = fillSelect(delivererSel, deliverers, currentFilters.deliverer);
+    const nextCustomer = fillSelect(customerSel, customers, currentFilters.customer, 'Müşteri');
+    const nextDeliverer = fillSelect(delivererSel, deliverers, currentFilters.deliverer, 'Teslim Eden');
 
     const shipmentValue = currentFilters.shipment || '';
     shipmentSel.value = shipmentValue;

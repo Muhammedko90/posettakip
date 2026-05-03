@@ -4,7 +4,9 @@
     --accent-color: #a78bfa; --accent-color-dark: #8b5cf6;
     --accent-bg-light: #a78bfa26; --accent-text-light: var(--accent-color);
     --font-size-base: 16px;
-    --side-nav-width: 13.75rem;
+    --side-nav-rail-width: 3.625rem;
+    --side-nav-panel-width: 13.75rem;
+    --bottom-tab-bar-height: 4.375rem;
 }
 .theme-sunset {
     --bg-primary: #2c1b3e; --bg-secondary: #1a0f29; --bg-tertiary: #402a5c;
@@ -36,9 +38,7 @@
     --accent-color: #58a6ff; --accent-color-dark: #388bfd;
     --accent-bg-light: #58a6ff26; --accent-text-light: #58a6ff;
 }
-html.side-nav-collapsed {
-    --side-nav-width: 3.625rem;
-}
+/* side-nav-collapsed: yalnızca panel genişliği ve içerik düzeni için sınıf; içerik ofseti her zaman --side-nav-rail-width */
 html {
     scroll-behavior: smooth;
     scroll-padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
@@ -66,17 +66,20 @@ input[type="text"], input[type="search"], textarea { text-transform: uppercase; 
 .accent-bg-hover:hover { background-color: var(--accent-color); }
 .ring-accent:focus { --tw-ring-color: var(--accent-color); }
 
-/* Sol kenar gezinme: genişlet / daralt */
+/* Sol kenar gezinme: genişletildiğinde içerik daralmaz; panel içeriğin üzerine bindirilir (ofset her zaman dar şerit). */
 .app-with-side-nav:not(.hidden) {
-    padding-left: var(--side-nav-width);
-    transition: padding-left 0.3s ease;
+    padding-left: var(--side-nav-rail-width);
+    transition: padding-left 0.3s ease, padding-bottom 0.3s ease;
     box-sizing: border-box;
 }
 .side-nav.bottom-tab-bar {
-    width: var(--side-nav-width);
+    width: var(--side-nav-panel-width);
     transition: width 0.3s ease;
     padding-top: 0;
     padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+}
+html.side-nav-collapsed .side-nav.bottom-tab-bar {
+    width: var(--side-nav-rail-width);
 }
 .side-nav__header {
     -webkit-tap-highlight-color: transparent;
@@ -198,6 +201,120 @@ html.side-nav-collapsed .bottom-tab-bar__label {
     line-height: 1.1;
 }
 
+/* Geniş kenar çubuğu açıkken içerik daralmaz; panel üstte okunur kısımda gölge */
+@media (min-width: 768px) {
+    html:not(.side-nav-collapsed) .side-nav.bottom-tab-bar {
+        box-shadow: 4px 0 36px rgba(0, 0, 0, 0.38);
+    }
+}
+
+/* Mobil / PWA: gezinme sekmeleri ekranın altında, tam genişlik içerik */
+@media (max-width: 767px) {
+    .app-with-side-nav:not(.hidden) {
+        padding-left: 0;
+        padding-bottom: calc(var(--bottom-tab-bar-height) + env(safe-area-inset-bottom, 0px));
+    }
+
+    #bottom-tab-bar.side-nav.bottom-tab-bar,
+    html.side-nav-collapsed #bottom-tab-bar.side-nav.bottom-tab-bar,
+    html:not(.side-nav-collapsed) #bottom-tab-bar.side-nav.bottom-tab-bar {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100% !important;
+        max-width: 100%;
+        height: auto;
+        min-height: var(--bottom-tab-bar-height);
+        flex-direction: column;
+        border-right: none;
+        border-top: 1px solid rgba(71, 85, 105, 0.75);
+        padding-top: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        max-height: none;
+    }
+
+    .bottom-tab-bar__inner {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.35rem 0.35rem 0.3rem;
+        scrollbar-width: none;
+        flex-direction: row !important;
+    }
+    .bottom-tab-bar__inner::-webkit-scrollbar {
+        display: none;
+    }
+
+    .bottom-tab-bar__nav {
+        flex-direction: row !important;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: 0.12rem;
+        flex-wrap: nowrap;
+        min-height: calc(var(--bottom-tab-bar-height) - 0.75rem);
+    }
+
+    .bottom-tab-bar__btn {
+        flex: 1 1 0;
+        min-width: 0;
+        flex-direction: column !important;
+        justify-content: center;
+        align-items: center;
+        gap: 0.12rem;
+        padding: 0.25rem 0.08rem;
+        border-radius: 0.65rem;
+        box-sizing: border-box;
+        min-height: 3.625rem;
+    }
+
+    html.side-nav-collapsed .bottom-tab-bar__btn {
+        justify-content: center;
+        gap: 0.12rem;
+        padding-left: 0.08rem;
+        padding-right: 0.08rem;
+    }
+
+    /* Dar şerit modundaki erişilebilirlik gizlemesini mobilde kaldır: alt barda ikon + etiket görünsün */
+    html.side-nav-collapsed .bottom-tab-bar__label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+        border: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .side-nav .bottom-tab-bar__label {
+        text-align: center;
+        font-size: 0.5625rem;
+    }
+
+    /* Arşiv: yalnızca "Gönderilenler" — çok satır + Siparişler karması yok; kelime ortasından bölünmez */
+    #tab-archive .bottom-tab-bar__label--archive {
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        -webkit-box-orient: unset !important;
+        white-space: nowrap;
+        font-size: max(0.42rem, 1.65vw);
+        letter-spacing: 0.025em;
+        line-height: 1.15;
+        min-height: 1.15em;
+        hyphens: none;
+        word-break: normal;
+        overflow: visible;
+    }
+}
+
 .tab-button {
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
@@ -235,6 +352,27 @@ html.side-nav-collapsed .bottom-tab-bar__label {
 #tab-list.tab-active .bottom-tab-bar__icon {
     color: #38bdf8;
 }
+
+/* Mobil alt bar: aktif sekmede ikon scale + aşırı font-weight dikey yerleşimi kaydırıyordu */
+@media (max-width: 767px) {
+    .bottom-tab-bar__btn .bottom-tab-bar__icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    .tab-active .bottom-tab-bar__icon,
+    #tab-list.tab-active .bottom-tab-bar__icon {
+        transform: none;
+    }
+    .bottom-tab-bar__btn .bottom-tab-bar__label {
+        font-weight: 600;
+        line-height: 1.15;
+    }
+    .tab-active .bottom-tab-bar__label,
+    #tab-list.tab-active .bottom-tab-bar__label {
+        font-weight: 600;
+    }
+}
+
 /* Sekme/panel geçişinde animasyon yok — anında göster/gizle (önceden opacity/transform transition vardı).
    `display: none` kullanıyoruz; aksi halde gizli paneller (özellikle Ayarlar/Müşteriler) layout dışı
    olsa bile dokümanın scroll yüksekliğini büyütüyor ve kısa sekmelerde (Raporlar) gereksiz alt boşluk yaratıyordu.
@@ -276,7 +414,12 @@ html.side-nav-collapsed .bottom-tab-bar__label {
     bottom: calc(1.25rem + max(12px, env(safe-area-inset-bottom, 0px)));
     opacity: 0; visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
-    z-index: 45;
+    z-index: 55;
+}
+@media (max-width: 767px) {
+    #scroll-to-top-btn {
+        bottom: calc(1rem + var(--bottom-tab-bar-height) + env(safe-area-inset-bottom, 0px));
+    }
 }
 #scroll-to-top-btn.visible {
     opacity: 1; visibility: visible;
@@ -313,16 +456,6 @@ html.side-nav-collapsed .bottom-tab-bar__label {
     display: flex;
     flex-direction: column;
     min-width: 0;
-}
-
-.archive-filter-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgba(148, 163, 184, 0.85);
-    margin-bottom: 0.25rem;
-    padding-left: 0.15rem;
 }
 
 .archive-filter-select {
