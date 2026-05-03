@@ -537,8 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = message.from || { first_name: 'Kanal', last_name: 'Yöneticisi' };
         const senderName = message.chat.title ? `Kanal: ${message.chat.title}` : (user.first_name + ' ' + (user.last_name || '')).trim();
         
-        const parts = text.split(' ');
-        const command = parts[0].toLowerCase();
+        const parts = text.split(/\s+/);
+        /* Grup/sohbet seçicilerinde Telegram "/komut@BotAdi" gönderir; @ sonrasını atın. */
+        const command = (parts[0] && parts[0].split('@')[0] || '').toLowerCase();
         
         const adminIds = (settings.telegramChatId || '').split(',').map(id => id.trim());
         const isAdmin = adminIds.includes(String(chatId));
