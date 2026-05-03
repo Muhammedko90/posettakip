@@ -16,14 +16,6 @@ function toTrUpperCase(str) {
     return str ? String(str).toLocaleUpperCase("tr-TR") : "";
 }
 
-function isSundayIstanbul() {
-    const weekday = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Europe/Istanbul",
-        weekday: "long",
-    }).format(new Date());
-    return weekday === "Sunday";
-}
-
 function todayStrIstanbul() {
     return new Intl.DateTimeFormat("en-CA", {
         timeZone: "Europe/Istanbul",
@@ -107,7 +99,6 @@ async function tgApi(botToken, method, body) {
 }
 
 async function sendMessage(botToken, chatId, text, opts = {}) {
-    if (isSundayIstanbul()) return;
     const body = { chat_id: chatId, text };
     if (opts.reply_markup) body.reply_markup = opts.reply_markup;
     if (opts.silent) body.disable_notification = true;
@@ -122,7 +113,6 @@ async function sendMessage(botToken, chatId, text, opts = {}) {
 }
 
 async function sendDocumentBuffer(botToken, chatId, buf, filename, caption = "", parseMode = null, silent = false) {
-    if (isSundayIstanbul()) return;
     const form = new FormData();
     form.append("chat_id", String(chatId));
     form.append("caption", caption);
@@ -136,14 +126,12 @@ async function sendDocumentBuffer(botToken, chatId, buf, filename, caption = "",
 }
 
 async function editMessageText(botToken, chatId, messageId, text, replyMarkup = null) {
-    if (isSundayIstanbul()) return;
     const body = { chat_id: chatId, message_id: messageId, text };
     if (replyMarkup !== undefined) body.reply_markup = replyMarkup;
     await tgApi(botToken, "editMessageText", body);
 }
 
 async function answerCallback(botToken, cqId, text, showAlert = false) {
-    if (isSundayIstanbul()) return;
     await tgApi(botToken, "answerCallbackQuery", {
         callback_query_id: cqId,
         text,
@@ -565,10 +553,6 @@ async function processTelegramCommand(db, userId, settings, message, logger) {
                 const announcement = parts.slice(1).join(" ");
                 if (!announcement) {
                     reply = "⚠️ Mesaj yazmadınız. Örn: `/duyuru Yarın kapalıyız`";
-                    break;
-                }
-                if (isSundayIstanbul()) {
-                    reply = "⛔ Pazar günleri duyuru gönderilemez.";
                     break;
                 }
                 const subscribers = settings.telegramSubscribers || [];
@@ -1005,11 +989,6 @@ async function handleWebhookRequest(req, res, db, logger) {
 
     const owns = await tryClaimTelegramUpdate(db, userId, updateId);
     if (!owns) {
-        res.status(200).json({ ok: true });
-        return;
-    }
-
-    if (isSundayIstanbul()) {
         res.status(200).json({ ok: true });
         return;
     }

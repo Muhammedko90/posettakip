@@ -184,13 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function isSundayLocal() {
-        return new Date().getDay() === 0;
-    }
-
     async function sendTelegramNotification(message, chatId = null, replyMarkup = null, options = {}) {
         if (!settings.telegramBotToken) return;
-        if (isSundayLocal()) return;
 
         let targets = [];
         if (chatId) {
@@ -241,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function sendTelegramDocument(chatId, blob, filename, caption = '', options = {}) {
         if (!settings.telegramBotToken) return;
-        if (isSundayLocal()) return;
 
         if (!chatId && settings.telegramChatId) {
              const ids = settings.telegramChatId.split(',').map(id => id.trim()).filter(id => id);
@@ -378,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = callbackQuery.data;
         const message = callbackQuery.message;
         if (!message) return;
-        if (isSundayLocal()) return;
 
         const chatId = message.chat.id;
         const messageId = message.message_id;
@@ -551,7 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function processTelegramCommand(message) {
         if (!message || !message.text) return;
-        if (isSundayLocal()) return;
 
         const text = message.text.trim();
         const chatId = message.chat.id;
