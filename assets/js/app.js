@@ -136,6 +136,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let isTelegramPolling = false; 
     let telegramPollTimeout = null; 
     let lastKnownBotToken = null;
+    /** Aynı anda birden fazla getUpdates işlenmesini engeller (üçlü yanıtlar önlenir). */
+    let telegramPollFetchInFlight = false;
+    const recentTelegramUpdateIds = new Set();
+    const TELEGRAM_UPDATE_ID_CACHE_MAX = 400;
+
+    /** Son işlenmiş update_id'leri tutar; çok sekme/tekrarlama durumunda aynı güncelleme iki kez işlenmesin. */
+    function telegramUpdateAlreadyHandled(updateId) {
+        const id = typeof updateId === 'number' ? updateId : parseInt(String(updateId), 10);
+        if (!Number.isFinite(id)) return false;
+        return recentTelegramUpdateIds.has(id);
+    }
+
+    function rememberTelegramUpdateId(updateId) {
+        const id = typeof updateId === 'number' ? updateId : parseInt(String(updateId), 10);
+        if (!Number.isFinite(id)) return;
+        recentTelegramUpdateIds.add(id);
+        while (recentTelegramUpdateIds.size > TELEGRAM_UPDATE_ID_CACHE_MAX) {
+            recentTelegramUpdateIds.delete(recentTelegramUpdateIds.values().next().value);
+        }
+    }
 
     function showLoadingMsg(msg) { ui.showLoading(dom, msg); }
     function hideLoadingMsg() { ui.hideLoading(dom); }
@@ -289,55 +309,62 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const offset = (settings.telegramLastUpdateId || 0) + 1;
-        const url = `https://api.telegram.org/bot${settings.telegramBotToken}/getUpdates?offset=${offset}&timeout=10`;
+        if (telegramPollFetchInFlight) {
+            telegramPollTimeout = setTimeout(pollTelegram, 200);
+            return;
+        }
+
+        telegramPollFetchInFlight = true;
 
         try {
-            const response = await fetch(url);
-            if (response.status === 409) {
-                console.warn('Telegram 409: Webhook ile long polling çakışıyor — webhook siliniyor...');
-                await clearTelegramWebhookForLongPolling();
-                if (isTelegramPolling) {
-                    telegramPollTimeout = setTimeout(pollTelegram, 500);
+            const offset = (settings.telegramLastUpdateId || 0) + 1;
+            const url = `https://api.telegram.org/bot${settings.telegramBotToken}/getUpdates?offset=${offset}&timeout=10`;
+
+            try {
+                const response = await fetch(url);
+                if (response.status === 409) {
+                    console.warn('Telegram 409: Webhook ile long polling çakışıyor — webhook siliniyor...');
+                    await clearTelegramWebhookForLongPolling();
+                    if (isTelegramPolling) {
+                        telegramPollTimeout = setTimeout(pollTelegram, 500);
+                    }
+                    return;
                 }
-                return;
-            }
-            if (response.ok) {
-                const data = await response.json();
-                if (data.ok && data.result.length > 0) {
-                    let maxId = settings.telegramLastUpdateId || 0;
-                    let hasUpdates = false;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.ok && data.result.length > 0) {
+                        let maxId = settings.telegramLastUpdateId || 0;
 
-                    for (const update of data.result) {
-                        if (update.update_id > maxId) maxId = update.update_id;
-                        
-                        // 1. Normal Mesajlar
-                        if (update.message && update.message.text) {
-                            await processTelegramCommand(update.message);
-                            hasUpdates = true;
+                        for (const update of data.result) {
+                            if (update.update_id > maxId) maxId = update.update_id;
+
+                            if (telegramUpdateAlreadyHandled(update.update_id)) continue;
+                            rememberTelegramUpdateId(update.update_id);
+
+                            if (update.message && update.message.text) {
+                                await processTelegramCommand(update.message);
+                            }
+
+                            if (update.channel_post && update.channel_post.text) {
+                                await processTelegramCommand(update.channel_post);
+                            }
+
+                            if (update.callback_query) {
+                                await processCallbackQuery(update.callback_query);
+                            }
                         }
 
-                        // 2. Kanal Mesajları
-                        if (update.channel_post && update.channel_post.text) {
-                            await processTelegramCommand(update.channel_post);
-                            hasUpdates = true;
-                        }
-                        
-                        // 3. Buton Tıklamaları
-                        if (update.callback_query) {
-                            await processCallbackQuery(update.callback_query);
-                            hasUpdates = true;
+                        if (maxId > (settings.telegramLastUpdateId || 0)) {
+                            settings.telegramLastUpdateId = maxId;
+                            await dataManager.saveSettings(db, userId, { telegramLastUpdateId: maxId });
                         }
                     }
-
-                    if (hasUpdates && maxId > (settings.telegramLastUpdateId || 0)) {
-                        settings.telegramLastUpdateId = maxId;
-                        await dataManager.saveSettings(db, userId, { telegramLastUpdateId: maxId });
-                    }
                 }
+            } catch (err) {
+                await new Promise(resolve => setTimeout(resolve, 5000));
             }
-        } catch (err) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
+        } finally {
+            telegramPollFetchInFlight = false;
         }
 
         if (isTelegramPolling) {
@@ -2059,6 +2086,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         userId = null;
                         currentUser = null;
                         appLogicInitialized = false;
+                        if (telegramPollTimeout) {
+                            clearTimeout(telegramPollTimeout);
+                            telegramPollTimeout = null;
+                        }
+                        isTelegramPolling = false;
+                        telegramPollFetchInFlight = false;
+                        recentTelegramUpdateIds.clear();
                         if (itemsUnsubscribe) itemsUnsubscribe();
                         if (customersUnsubscribe) customersUnsubscribe();
                         if (deliveryPersonnelUnsubscribe) deliveryPersonnelUnsubscribe();
