@@ -220,24 +220,32 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const uniqueTargets = [...new Set(targets)];
 
+        const parseMode = options.parseMode === undefined ? 'Markdown' : options.parseMode;
+
         for (const targetId of uniqueTargets) {
             const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`;
-            const body = { 
-                chat_id: targetId, 
-                text: message, 
-                parse_mode: 'Markdown' 
+            const body = {
+                chat_id: targetId,
+                text: message,
             };
-            
+            if (parseMode) {
+                body.parse_mode = parseMode;
+            }
+
             if (replyMarkup) {
                 body.reply_markup = replyMarkup;
             }
 
             try {
-                await fetch(url, {
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(body),
                 });
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    console.warn('Telegram sendMessage:', res.status, errText);
+                }
             } catch (error) {
                 console.error("Telegram hatası:", error);
             }
@@ -812,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const totalBags = active.reduce((sum, row) => sum + row.bagCount, 0);
                     await sendTelegramNotification(
-                        `📋 *Poşet yoklaması başladı*\n\n👥 ${active.length} müşteri · 🛍️ ${totalBags} poşet\nHer satırda *Var* (beklemede) veya *Teslim* (❌ teslim kaydı) seçin.`,
+                        `📋 *Poşet yoklaması*\n👥 ${active.length} müşteri · ${totalBags} poşet\n_Aşağıda her müşteri ayrı mesajdadır._`,
                         chatId,
                         null,
                         { bypassSundayCheck: true },
@@ -820,8 +828,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     let idx = 0;
                     for (const item of active) {
                         idx += 1;
-                        const noteLine = item.note ? `\n📝 ${item.note}` : '';
-                        const body = `🔍 *Yoklama ${idx}/${active.length}*\n\n👤 ${item.customerName}\n🛍️ *${item.bagCount}* poşet${noteLine}`;
+                        const noteLine = item.note ? `\n📝 Not: ${item.note}` : '';
+                        const body = `Yoklama ${idx}/${active.length}\n\n${item.customerName}\n${item.bagCount} poşet${noteLine}`;
                         await sendTelegramNotification(body, chatId, {
                             inline_keyboard: [
                                 [
@@ -829,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     { text: '❌ Teslim', callback_data: `ykdel_${item.id}` },
                                 ],
                             ],
-                        }, { bypassSundayCheck: true });
+                        }, { bypassSundayCheck: true, parseMode: null });
                         await new Promise((r) => setTimeout(r, 120));
                     }
                     return;
