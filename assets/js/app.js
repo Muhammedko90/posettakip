@@ -426,10 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                  const dateStr = new Date().toLocaleString('tr-TR');
                  sendTelegramNotification(
-                     `✅ *Teslimat Yapıldı (Telegram)*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim Edilen: ${item.bagCount} Adet\n📱 *Kaynak:* Telegram hızlı teslim\n📅 Tarih: ${dateStr}`,
+                     `✅ Teslimat (Telegram)\n\nMüşteri: ${item.customerName}\nTeslim edilen: ${item.bagCount} adet\nKaynak: Hızlı teslim\nTarih: ${dateStr}`,
                      null,
                      null,
-                     { bypassSundayCheck: true }
+                     { bypassSundayCheck: true, parseMode: null },
                  );
 
                  const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
@@ -439,9 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
                      body: JSON.stringify({
                          chat_id: chatId,
                          message_id: messageId,
-                         text: `✅ *${item.customerName}* teslim edildi.\n📱 _Telegram üzerinden kaydedildi._`,
-                         parse_mode: 'Markdown'
-                     })
+                         text: `✅ ${item.customerName}\nteslim edildi.\nTelegram hızlı teslim.`,
+                     }),
                  });
              } else {
                  const editUrl = `https://api.telegram.org/bot${settings.telegramBotToken}/editMessageText`;
@@ -451,9 +450,8 @@ document.addEventListener('DOMContentLoaded', () => {
                      body: JSON.stringify({
                          chat_id: chatId,
                          message_id: messageId,
-                         text: `❌ Bu kayıt artık aktif değil.`,
-                         parse_mode: 'Markdown'
-                     })
+                         text: '❌ Bu kayıt artık aktif değil.',
+                     }),
                  });
              }
         }
@@ -469,9 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         chat_id: chatId,
                         message_id: messageId,
-                        text:
-                            `✅ *Var* — *${item.customerName}*\n🛍️ Bekleyen: *${item.bagCount}* poşet\n_Beklemede (yoklamada doğrulandı)._`,
-                        parse_mode: 'Markdown',
+                        text: `✅ Var — ${item.customerName}\nBekleyen: ${item.bagCount} poşet\n(Beklemede, yoklama doğrulandı.)`,
                         reply_markup: emptyKb,
                     }),
                 });
@@ -482,8 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         chat_id: chatId,
                         message_id: messageId,
-                        text: `ℹ️ *${item.customerName}* için kayıt artık bekleyen listede değil.`,
-                        parse_mode: 'Markdown',
+                        text: `${item.customerName} için kayıt artık bekleyen listede değil.`,
                         reply_markup: emptyKb,
                     }),
                 });
@@ -495,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         chat_id: chatId,
                         message_id: messageId,
                         text: '❌ Kayıt bulunamadı.',
-                        parse_mode: 'Markdown',
                         reply_markup: emptyKb,
                     }),
                 });
@@ -518,10 +512,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const dateStr = new Date().toLocaleString('tr-TR');
                 sendTelegramNotification(
-                    `✅ *Teslimat (Telegram yoklama)*\n\n👤 Müşteri: ${item.customerName}\n🛍️ Teslim edilen: ${item.bagCount} adet\n📱 *Kaynak:* Telegram yoklaması — ❌ teslim\n📅 Tarih: ${dateStr}`,
+                    `✅ Teslimat (Telegram yoklama)\n\nMüşteri: ${item.customerName}\nTeslim edilen: ${item.bagCount} adet\nKaynak: Yoklama — Teslim\nTarih: ${dateStr}`,
                     null,
                     null,
-                    { bypassSundayCheck: true },
+                    { bypassSundayCheck: true, parseMode: null },
                 );
 
                 await fetch(editUrl, {
@@ -530,8 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         chat_id: chatId,
                         message_id: messageId,
-                        text: `❌ *Teslim edildi (yoklama)*\n\n👤 ${item.customerName}\n🛍️ ${item.bagCount} adet\n_Teslim eden:_ Telegram yoklama`,
-                        parse_mode: 'Markdown',
+                        text: `Teslim edildi (yoklama)\n\n${item.customerName}\n${item.bagCount} adet\nTeslim eden: Telegram yoklama`,
                         reply_markup: emptyKb,
                     }),
                 });
@@ -542,8 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         chat_id: chatId,
                         message_id: messageId,
-                        text: `❌ *${item.customerName}* zaten teslim veya güncellenmiş.`,
-                        parse_mode: 'Markdown',
+                        text: `${item.customerName} — zaten teslim veya güncellenmiş.`,
                         reply_markup: emptyKb,
                     }),
                 });
@@ -555,7 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         chat_id: chatId,
                         message_id: messageId,
                         text: '❌ Kayıt bulunamadı.',
-                        parse_mode: 'Markdown',
                         reply_markup: emptyKb,
                     }),
                 });
@@ -820,10 +811,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const totalBags = active.reduce((sum, row) => sum + row.bagCount, 0);
                     await sendTelegramNotification(
-                        `📋 *Poşet yoklaması*\n👥 ${active.length} müşteri · ${totalBags} poşet\n_Aşağıda her müşteri ayrı mesajdadır._`,
+                        `📋 Poşet yoklaması\n👥 ${active.length} müşteri · ${totalBags} poşet\nAşağıda her müşteri ayrı mesajdadır.`,
                         chatId,
                         null,
-                        { bypassSundayCheck: true },
+                        { bypassSundayCheck: true, parseMode: null },
                     );
                     let idx = 0;
                     for (const item of active) {
@@ -838,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ],
                             ],
                         }, { bypassSundayCheck: true, parseMode: null });
-                        await new Promise((r) => setTimeout(r, 120));
+                        await new Promise((r) => setTimeout(r, 180));
                     }
                     return;
                 }
