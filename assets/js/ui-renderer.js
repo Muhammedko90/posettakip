@@ -264,6 +264,10 @@ export const icons = {
     delete: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/></svg>',
     save: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>',
     cancel: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg>',
+    /** Teslim personeli varsayılan (dolu yıldız) */
+    star_filled: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>',
+    /** Varsayılan değil (boş yıldız) */
+    star_outline: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
 };
 
 /**
@@ -319,6 +323,8 @@ export function getDomRefs() {
         archiveFilterSummary: document.getElementById('archive-filter-summary'),
         archiveFilterSummaryText: document.getElementById('archive-filter-summary-text'),
         archiveFilterClear: document.getElementById('archive-filter-clear'),
+        archiveFiltersToggle: document.getElementById('archive-filters-toggle'),
+        archiveFiltersDropdown: document.getElementById('archive-filters-dropdown'),
         notesList: document.getElementById('notes-list'),
         emptyNotesMessage: document.getElementById('empty-notes-message'),
         modalContainer: document.getElementById('modal-container'),
@@ -446,6 +452,12 @@ export function switchTab(target, instant = false) {
             panel.classList.toggle('hidden', !isTargetPanel);
         }
     });
+    if (target !== 'archive') {
+        const archiveDd = document.getElementById('archive-filters-dropdown');
+        const archiveTgl = document.getElementById('archive-filters-toggle');
+        archiveDd?.classList.add('hidden');
+        archiveTgl?.setAttribute('aria-expanded', 'false');
+    }
     resetScrollAfterTabSwitch();
 }
 
@@ -1024,8 +1036,8 @@ export function populateArchiveFilters(dom, archivedItems, currentFilters = {}) 
         return finalValue;
     };
 
-    const nextCustomer = fillSelect(customerSel, customers, currentFilters.customer, 'Müşteri');
-    const nextDeliverer = fillSelect(delivererSel, deliverers, currentFilters.deliverer, 'Teslim Eden');
+    const nextCustomer = fillSelect(customerSel, customers, currentFilters.customer, 'Tümü');
+    const nextDeliverer = fillSelect(delivererSel, deliverers, currentFilters.deliverer, 'Tümü');
 
     const shipmentValue = currentFilters.shipment || '';
     shipmentSel.value = shipmentValue;
@@ -1060,6 +1072,15 @@ export function renderArchive(dom, archivedItems, searchQuery, archiveCurrentPag
             summaryText.innerHTML = '';
         }
     }
+
+    const filterToggle = dom.archiveFiltersToggle;
+    if (filterToggle) {
+        filterToggle.classList.toggle(
+            'archive-filters-toggle--active',
+            !!(normalizedFilters.customer || normalizedFilters.deliverer || normalizedFilters.shipment),
+        );
+    }
+
     const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
     const start = (archiveCurrentPage - 1) * itemsPerPage;
     const pageItems = sorted.slice(start, start + itemsPerPage);
@@ -1771,10 +1792,18 @@ export function showConfirmationModal(dom, message, confirmText = 'Onayla', isDe
     });
 }
 
+/** Varsayılan işaretli teslim personelinin adı; yoksa ilk kişi. */
+export function preferredDeliverByNameFromPersonnel(personnel) {
+    if (!personnel || personnel.length === 0) return '';
+    const starred = personnel.find(p => p.isDefault);
+    return starred?.name ?? personnel[0].name ?? '';
+}
+
 export function showDeliverConfirmationModal(dom, item, deliveryPersonnel, formatDateFn, allCustomers = []) {
     return new Promise(resolve => {
         const bagCount = item.bagCount ?? 1;
-        const optionsHtml = deliveryPersonnel.length > 0 ? deliveryPersonnel.map(p => `<option value="${p.name}">${p.name}</option>`).join('') : '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
+        const preferredDeliverer = preferredDeliverByNameFromPersonnel(deliveryPersonnel);
+        const optionsHtml = deliveryPersonnel.length > 0 ? deliveryPersonnel.map(p => `<option value="${p.name}"${preferredDeliverer && p.name === preferredDeliverer ? ' selected' : ''}>${p.name}</option>`).join('') : '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
         
         // Yerel saati doğru hesaplamak için (TZ offseti çıkararak düzeltme)
         const now = new Date();
@@ -1937,8 +1966,9 @@ export function showKargoDesiFullModal(dom, allCustomers = [], activeItems = [],
         const optionsHtml = active.length > 0
             ? active.map(i => `<option value="${i.id}">${i.customerName}</option>`).join('')
             : '<option value="">Bekleyen müşteri yok</option>';
+        const preferredDeliverer = preferredDeliverByNameFromPersonnel(deliveryPersonnel);
         const personnelOptionsHtml = deliveryPersonnel.length > 0
-            ? deliveryPersonnel.map(p => `<option value="${p.name}">${p.name}</option>`).join('')
+            ? deliveryPersonnel.map(p => `<option value="${p.name}"${preferredDeliverer && p.name === preferredDeliverer ? ' selected' : ''}>${p.name}</option>`).join('')
             : '<option value="" disabled>Lütfen ayarlardan personel ekleyin</option>';
         const saveDisabled = active.length === 0 || deliveryPersonnel.length === 0;
 
@@ -2603,7 +2633,13 @@ export function renderDeliveryPersonnelModalList(listContainerId, deliveryPerson
         div.className = 'p-2 bg-tertiary/50 rounded-md';
         div.dataset.personId = person.id;
         div.dataset.personName = person.name;
-        div.innerHTML = `<div class="person-display flex justify-between items-center"><span class="person-name-text text-primary text-sm">${person.name}</span><div class="flex items-center gap-2"><button data-person-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${iconsRef.edit}</button><button data-person-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${iconsRef.delete}</button></div></div><div class="person-edit hidden flex items-center gap-2"><input type="text" value="${person.name}" class="person-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button data-person-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${iconsRef.save}</button><button data-person-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${iconsRef.cancel}</button></div></div>`;
+        const isDef = !!person.isDefault;
+        const starBtnClass = isDef
+            ? 'p-1 text-amber-400 hover:text-amber-300 transition'
+            : 'p-1 text-secondary hover:text-amber-400 transition';
+        const starTitle = isDef ? 'Teslim ekranında varsayılan (kaldırmak için tıklayın)' : 'Teslim ekranında varsayılan yap';
+        const starIcon = isDef ? iconsRef.star_filled : iconsRef.star_outline;
+        div.innerHTML = `<div class="person-display flex justify-between items-center gap-2"><span class="person-name-text text-primary text-sm min-w-0 flex-1 break-words">${person.name}</span><div class="flex shrink-0 items-center gap-1"><button type="button" data-person-action="toggle-default" class="${starBtnClass}" title="${starTitle}">${starIcon}</button><button type="button" data-person-action="edit" class="p-1 text-secondary hover:text-yellow-400 transition" title="Düzenle">${iconsRef.edit}</button><button type="button" data-person-action="delete" class="p-1 text-secondary hover:text-red-500 transition" title="Sil">${iconsRef.delete}</button></div></div><div class="person-edit hidden flex items-center gap-2"><input type="text" value="${person.name}" class="person-name-input flex-grow p-1 bg-secondary border border-dynamic text-primary rounded-md text-sm focus:ring-1 ring-accent transition"><div class="flex items-center gap-1"><button type="button" data-person-action="save-edit" class="p-1 text-green-400 hover:text-green-300 transition" title="Kaydet">${iconsRef.save}</button><button type="button" data-person-action="cancel-edit" class="p-1 text-red-500 hover:text-red-400 transition" title="İptal">${iconsRef.cancel}</button></div></div>`;
         listContainer.appendChild(div);
     });
 }

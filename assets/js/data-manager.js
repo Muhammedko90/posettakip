@@ -49,6 +49,21 @@ export async function saveSettings(db, userId, settings) {
 }
 
 /**
+ * Cloud Functions `onAutoBackupAuditCreated` tetiklemesi için başarılı yedek sinyali.
+ * Yolu: users/{userId}/backupAudit/{autoId}
+ */
+export async function addBackupAuditDoc(db, userId, extra = {}) {
+    if (!userId || !db) return;
+    const colRef = collection(db, 'users', userId, 'backupAudit');
+    await addDoc(colRef, {
+        ok: true,
+        source: 'auto',
+        at: serverTimestamp(),
+        ...extra,
+    });
+}
+
+/**
  * Telegram Bot API update_id için atomik hak (bir kez işle).
  * Aynı hesapta çok sekme/cihaz açıkken aynı komutun birden fazla yanıt vermesini engeller.
  * @returns {Promise<boolean>} true = bu süreç komutu işlesin.
@@ -103,7 +118,10 @@ export function listenToCustomers(db, userId, onUpdate, onError) {
 export function listenToDeliveryPersonnel(db, userId, onUpdate, onError) {
     const q = query(collection(db, 'users', userId, 'deliveryPersonnel'));
     return onSnapshot(q, (snapshot) => {
-        const personnel = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+        const personnel = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
+            const o = Number(!!b.isDefault) - Number(!!a.isDefault);
+            return o !== 0 ? o : a.name.localeCompare(b.name, 'tr');
+        });
         onUpdate(personnel);
     }, onError || (err => console.error("Error listening to delivery personnel:", err)));
 }
@@ -220,6 +238,21 @@ export async function deleteDeliveryPerson(db, userId, personId) {
 export async function updateDeliveryPerson(db, userId, personId, name) {
     const personRef = doc(db, 'users', userId, 'deliveryPersonnel', personId);
     await updateDoc(personRef, { name });
+}
+
+/**
+ * Yalnızca bir teslim personeli varsayılan olabilir. personId null ise hepsinin işareti kalkar.
+ */
+export async function setDefaultDeliveryPerson(db, userId, personId) {
+    const colRef = collection(db, 'users', userId, 'deliveryPersonnel');
+    const snapshot = await getDocs(colRef);
+    if (snapshot.empty) return;
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(d => {
+        const on = !!(personId && d.id === personId);
+        batch.update(d.ref, { isDefault: on });
+    });
+    await batch.commit();
 }
 
 /**

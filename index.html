@@ -233,8 +233,8 @@
 
             <div id="panel-list" class="panel hidden customers-page space-y-4 customers-page--padded">
                  <div class="customers-quick gradient-border pl-4 pr-0 py-3 sm:py-3.5">
-                    <form id="add-item-form" class="flex w-full min-w-0 flex-row flex-nowrap items-center gap-x-4">
-                        <div class="relative min-w-0 flex-1">
+                    <form id="add-item-form" class="flex w-full min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:flex-nowrap sm:items-center sm:gap-x-4">
+                        <div class="relative w-full min-w-0 sm:flex-1">
                             <label for="customer-name" class="customers-quick__label sr-only">Müşteri adı veya listede ara</label>
                             <div class="relative glow-search">
                                 <span class="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-secondary/45" aria-hidden="true">
@@ -247,7 +247,7 @@
                             </div>
                             <div id="suggestions-box" class="customers-quick__suggestions absolute left-0 right-0 top-full z-20 mt-1 hidden max-h-60 overflow-y-auto"></div>
                         </div>
-                        <div class="flex shrink-0 items-center gap-x-4 ml-auto pr-3">
+                        <div class="flex w-full shrink-0 items-center justify-end gap-x-4 pr-3 sm:ml-auto sm:w-auto">
                             <div class="customers-quick__qty-group flex h-11 shrink-0 overflow-hidden rounded-[10px] border border-dynamic bg-tertiary shadow-sm">
                                 <button type="button" id="bag-count-dec" class="customers-quick__qty-btn flex w-9 items-center justify-center border-0 bg-secondary/90 text-xl font-semibold leading-none text-primary/90 transition" aria-label="Adeti azalt">−</button>
                                 <input type="number" id="bag-count" placeholder="Adet" value="1" min="1" class="customers-quick__input customers-quick__input--qty h-11 w-[2.75rem] shrink-0 border-0 border-x border-dynamic bg-tertiary py-0 text-center text-sm font-semibold tabular-nums focus:ring-0 focus:outline-none" required inputmode="numeric">
@@ -293,41 +293,54 @@
                  <div class="flex flex-col gap-4 mb-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                     <h2 class="text-2xl font-semibold text-primary shrink-0">Teslim Edilenler Arşivi</h2>
                      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto sm:justify-end">
-                        <div class="relative w-full sm:w-72 min-w-0 glow-search">
-                            <span class="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-gray-500" aria-hidden="true">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </span>
-                            <input type="search" id="search-archive-input" placeholder="ARŞİVDE ARA..." autocomplete="off" class="archive-search-input w-full rounded-xl border border-gray-700 bg-[#1F2937] py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-gray-500 shadow-inner transition focus:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50">
+                        <div class="flex min-w-0 w-full flex-col gap-2 sm:w-auto sm:max-w-xl sm:flex-row sm:items-center sm:gap-3">
+                            <div class="relative min-w-0 flex-1 glow-search sm:w-72">
+                                <span class="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-gray-500" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </span>
+                                <input type="search" id="search-archive-input" placeholder="ARŞİVDE ARA..." autocomplete="off" class="archive-search-input w-full rounded-xl border border-gray-700 bg-[#1F2937] py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-gray-500 shadow-inner transition focus:border-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50">
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0 justify-end">
-                        <button type="button" id="export-archive-pdf-btn" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-700/80 bg-gray-800 text-gray-300 shadow-sm transition-all duration-200 hover:bg-gray-700 hover:text-blue-400" title="Arşivi PDF Olarak Aktar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-                        </button>
-                        <button id="kargo-archive-calc-btn" type="button" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 whitespace-nowrap" title="Kargo desi hesaplama">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V9a1 1 0 011-1h2l3 3v5a1 1 0 01-1 1h-1"/></svg>
-                            Kargo Hesaplama
-                        </button>
+                        <div class="flex min-w-0 w-full flex-wrap items-center gap-2 shrink-0 justify-start sm:justify-end sm:w-auto">
+                            <div class="relative z-[100] shrink-0">
+                                <button type="button" id="archive-filters-toggle" class="archive-filters-toggle inline-flex h-10 w-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-[#1F2937] px-0 text-sm font-medium text-slate-200 shadow-sm transition hover:border-gray-600 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-accent/50 sm:w-auto sm:px-3" aria-expanded="false" aria-controls="archive-filters-dropdown" aria-haspopup="dialog" aria-label="Arşiv filtreleri">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                    <span class="hidden sm:inline">Filtreler</span>
+                                </button>
+                                <div id="archive-filters-dropdown" class="archive-filters-dropdown hidden" role="dialog" aria-label="Arşiv filtre seçenekleri" tabindex="-1">
+                                    <div id="archive-filters" class="archive-filters archive-filters--popover grid grid-cols-1 gap-2">
+                                        <div class="archive-filter-field">
+                                            <label for="archive-filter-customer" class="archive-filter-popover-label">Müşteri</label>
+                                            <select id="archive-filter-customer" class="archive-filter-select" aria-label="Müşteri filtresi">
+                                                <option value="">Tümü</option>
+                                            </select>
+                                        </div>
+                                        <div class="archive-filter-field">
+                                            <label for="archive-filter-deliverer" class="archive-filter-popover-label">Teslim eden</label>
+                                            <select id="archive-filter-deliverer" class="archive-filter-select" aria-label="Teslim eden filtresi">
+                                                <option value="">Tümü</option>
+                                            </select>
+                                        </div>
+                                        <div class="archive-filter-field">
+                                            <label for="archive-filter-shipment" class="archive-filter-popover-label">Sevkiyat</label>
+                                            <select id="archive-filter-shipment" class="archive-filter-select" aria-label="Sevkiyat filtresi">
+                                                <option value="">Tümü</option>
+                                                <option value="kargo">Kargo</option>
+                                                <option value="ambar">Ambar</option>
+                                                <option value="none">Sevkiyatsız</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="export-archive-pdf-btn" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-700/80 bg-gray-800 text-gray-300 shadow-sm transition-all duration-200 hover:bg-gray-700 hover:text-blue-400" title="Arşivi PDF Olarak Aktar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+                            </button>
+                            <button id="kargo-archive-calc-btn" type="button" class="inline-flex min-w-0 h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 whitespace-nowrap sm:flex-initial sm:px-4" title="Kargo desi hesaplama">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 opacity-95" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V9a1 1 0 011-1h2l3 3v5a1 1 0 01-1 1h-1"/></svg>
+                                Kargo Hesaplama
+                            </button>
                         </div>
-                    </div>
-                </div>
-                <div id="archive-filters" class="archive-filters grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                    <div class="archive-filter-field">
-                        <select id="archive-filter-customer" class="archive-filter-select" aria-label="Müşteri filtresi">
-                            <option value="">Müşteri</option>
-                        </select>
-                    </div>
-                    <div class="archive-filter-field">
-                        <select id="archive-filter-deliverer" class="archive-filter-select" aria-label="Teslim eden filtresi">
-                            <option value="">Teslim Eden</option>
-                        </select>
-                    </div>
-                    <div class="archive-filter-field">
-                        <select id="archive-filter-shipment" class="archive-filter-select" aria-label="Sevkiyat filtresi">
-                            <option value="">Sevkiyat</option>
-                            <option value="kargo">Kargo</option>
-                            <option value="ambar">Ambar</option>
-                            <option value="none">Sevkiyatsız</option>
-                        </select>
                     </div>
                 </div>
                 <div id="archive-filter-summary" class="archive-filter-summary hidden">

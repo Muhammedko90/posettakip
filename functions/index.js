@@ -1,19 +1,27 @@
 /**
- * Poşet Takip - Cloud Functions (FCM tetikleyicileri)
+ * Poşet Takip - Cloud Functions (FCM + Firestore tetikleyicileri)
  *
- * Firestore'da bir poşet eklendiğinde / "teslim edildi" olarak güncellendiğinde
- * ilgili kullanıcının kayıtlı tüm cihazlarına push bildirimi gönderir.
+ * Firestore yolu: users/{userId}/items/{itemId}
  *
- * Kullanılan modern API'lar:
- *   - firebase-functions v2 (onDocumentCreated / onDocumentUpdated)
- *   - firebase-admin getMessaging().sendEachForMulticast(...)
+ * FCM token örneği (bu projede kullanılan yapı):
+ *   users/{userId}/devices/{deviceDocId}  → alan: token (veya doc id = token)
  *
- * (Eski sendToDevice / sendMulticast deprecated; sendEachForMulticast HTTP v1
- *  protokolünü kullanır ve cevapta her token için ayrı status döner -
- *  invalid token'ları otomatik temizleyebilmemiz buna dayanıyor.)
+ * Alternatif örnek (kendi şemanıza göre loadUserDevices içinde düzenleyin):
+ *   db.collection("users").doc(userId).collection("tokens").get()
+ *   db.collection("fcmTokens").where("userId", "==", userId).get()
+ *
+ * Mobil bildirimler: her cihaz için admin.messaging().send(...) (tekil gönderim).
+ *
+ * Telegram: telegram-bot.js şu an yalnızca webhook / registerWebhook export ediyor; poşet
+ * olayları için hazır bir "notify" export'u yok. telegram-bot.js'e dokunmadan, aynı
+ * Firestore ayar yolu (users/.../settings/appSettings) ve Bot API ile mesaj gönderilir.
  */
 
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const {
+    onDocumentCreated,
+    onDocumentUpdated,
+    onDocumentDeleted,
+} = require("firebase-functions/v2/firestore");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { logger } = require("firebase-functions");
@@ -28,39 +36,25 @@ const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
 
-// Firestore veritabanınız `nam5` (North America multi-region) üzerinde olduğu için
-// fonksiyonu da aynı kıtada (us-central1) çalıştırmak Eventarc tetikleyicisinin
-// cross-region atlamasını ve ekstra gecikme/maliyeti önler.
 setGlobalOptions({
     region: "us-central1",
-    maxInstances: 10
+    maxInstances: 10,
 });
 
 const db = getFirestore();
 const messaging = getMessaging();
 
-const FCM_BATCH_LIMIT = 500;
-
-// Bilgilendirici sabitler: Android tarafında PosetMessagingService.java
-// data.type'a göre bu kanallara yönlendirme yapıyor.
-//   - "new_bag"   -> "poset_yeni"
-//   - "delivered" -> "poset_teslim"
-// Cloud Function'dan ekstra bir kanal alanı GÖNDERMİYORUZ; eşleşme tamamen
-// data-only payload üzerinden yapılıyor.
-
 const INVALID_TOKEN_ERRORS = new Set([
     "messaging/invalid-registration-token",
     "messaging/registration-token-not-registered",
-    "messaging/invalid-argument"
+    "messaging/invalid-argument",
 ]);
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
+/* Helpers — Firestore / FCM                                                   */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Bir kullanıcının kayıtlı tüm cihaz token'larını yükler.
- *
  * @param {string} userId
  * @returns {Promise<Array<{ docId: string, token: string }>>}
  */
@@ -77,10 +71,6 @@ async function loadUserDevices(userId) {
     return devices;
 }
 
-/**
- * Geçersiz / artık kayıtlı olmayan token'ların Firestore'daki belgelerini siler.
- * Bu sayede aynı kullanıcıya bir daha boşa mesaj gönderilmez.
- */
 async function cleanupInvalidTokens(userId, invalidDocIds) {
     if (invalidDocIds.length === 0) return;
     const batch = db.batch();
@@ -96,9 +86,6 @@ async function cleanupInvalidTokens(userId, invalidDocIds) {
     }
 }
 
-/**
- * lastSeen alanını "şimdi" olarak günceller (başarılı şekilde gönderilen cihazlar için).
- */
 async function touchLastSeen(userId, docIds) {
     if (docIds.length === 0) return;
     const batch = db.batch();
@@ -114,113 +101,7 @@ async function touchLastSeen(userId, docIds) {
 }
 
 /**
- * Verilen kullanıcının tüm cihazlarına aynı bildirimi gönderir.
- *
- * payload:
- *   - type:    "new_bag" | "delivered" | string
- *   - title:   bildirim başlığı (dinamik)
- *   - body:    bildirim içeriği (dinamik)
- *   - extra:   ek serbest data alanları (itemId, customerName, ...)
- *
- * Tasarım notları:
- *   * Sadece "data" payload'u kullanıyoruz; böylece android-side
- *     PosetMessagingService.java mesajı yakalayıp doğru NotificationChannel'a
- *     yönlendirebiliyor (ön plan + arka plan için tutarlı davranış).
- *   * "android.priority = high" -> cihazı uyandırır (Doze modunda dahi).
- *   * webpush konfigürasyonu firebase-messaging-sw.js'in onBackgroundMessage
- *     handler'ı ile birlikte çalışacak şekilde data-only.
- */
-async function sendToUserDevices(userId, payload) {
-    if (!userId) return { sent: 0, removed: 0 };
-
-    const devices = await loadUserDevices(userId);
-    if (devices.length === 0) {
-        logger.info(`[fcm] user=${userId} için kayıtlı cihaz yok.`);
-        return { sent: 0, removed: 0 };
-    }
-
-    const data = {
-        type: String(payload.type || "default"),
-        title: String(payload.title || "Poşet Takip"),
-        body: String(payload.body || ""),
-        ...stringifyExtra(payload.extra)
-    };
-
-    let totalSuccess = 0;
-    const invalidDocIds = [];
-    const successDocIds = [];
-
-    for (let i = 0; i < devices.length; i += FCM_BATCH_LIMIT) {
-        const chunk = devices.slice(i, i + FCM_BATCH_LIMIT);
-        const message = {
-            tokens: chunk.map((d) => d.token),
-            data,
-            android: {
-                priority: "high",
-                ttl: 60 * 60 * 1000, // 1 saat
-                collapseKey: data.type
-            },
-            apns: {
-                headers: {
-                    "apns-priority": "10"
-                },
-                payload: {
-                    aps: {
-                        alert: { title: data.title, body: data.body },
-                        sound: "default",
-                        "thread-id": data.type
-                    }
-                }
-            },
-            webpush: {
-                headers: {
-                    Urgency: "high",
-                    TTL: "3600"
-                },
-                fcmOptions: {
-                    // Bildirime tıklayınca uygulamanın açacağı URL.
-                    link: "/"
-                }
-            },
-            fcmOptions: {
-                analyticsLabel: data.type
-            }
-        };
-
-        let response;
-        try {
-            response = await messaging.sendEachForMulticast(message);
-        } catch (err) {
-            logger.error("[fcm] sendEachForMulticast tamamen başarısız:", err);
-            continue;
-        }
-
-        response.responses.forEach((resp, idx) => {
-            const device = chunk[idx];
-            if (resp.success) {
-                totalSuccess += 1;
-                successDocIds.push(device.docId);
-            } else {
-                const code = resp.error && resp.error.code;
-                logger.warn(`[fcm] gönderim hatası user=${userId} token=${device.docId} code=${code}`);
-                if (INVALID_TOKEN_ERRORS.has(code)) {
-                    invalidDocIds.push(device.docId);
-                }
-            }
-        });
-    }
-
-    await Promise.all([
-        cleanupInvalidTokens(userId, invalidDocIds),
-        touchLastSeen(userId, successDocIds)
-    ]);
-
-    logger.info(`[fcm] user=${userId} type=${data.type} sent=${totalSuccess}/${devices.length} removed=${invalidDocIds.length}`);
-    return { sent: totalSuccess, removed: invalidDocIds.length };
-}
-
-/**
- * FCM data payload'unun TÜM değerleri string olmak zorunda. Karışık tipleri stringe çeviriyoruz.
+ * FCM data payload değerleri string olmalı.
  */
 function stringifyExtra(extra) {
     if (!extra || typeof extra !== "object") return {};
@@ -233,18 +114,184 @@ function stringifyExtra(extra) {
 }
 
 /**
- * Firestore item belgesinden okunabilir başlık/içerik üretir.
+ * Kullanıcının tüm cihazlarına bildirim — her biri için messaging.send().
  */
+async function sendToUserDevices(userId, payload) {
+    if (!userId) return { sent: 0, removed: 0 };
+
+    let devices;
+    try {
+        devices = await loadUserDevices(userId);
+    } catch (err) {
+        logger.error("[fcm] loadUserDevices hatası:", err);
+        return { sent: 0, removed: 0 };
+    }
+
+    if (devices.length === 0) {
+        logger.info(`[fcm] user=${userId} için kayıtlı cihaz yok.`);
+        return { sent: 0, removed: 0 };
+    }
+
+    const data = {
+        type: String(payload.type || "default"),
+        title: String(payload.title || "Poşet Takip"),
+        body: String(payload.body || ""),
+        ...stringifyExtra(payload.extra),
+    };
+
+    let totalSuccess = 0;
+    const invalidDocIds = [];
+    const successDocIds = [];
+
+    for (const device of devices) {
+        const message = {
+            token: device.token,
+            data,
+            android: {
+                priority: "high",
+                ttl: 60 * 60 * 1000,
+                collapseKey: data.type,
+            },
+            apns: {
+                headers: {
+                    "apns-priority": "10",
+                },
+                payload: {
+                    aps: {
+                        alert: { title: data.title, body: data.body },
+                        sound: "default",
+                        "thread-id": data.type,
+                    },
+                },
+            },
+            webpush: {
+                headers: {
+                    Urgency: "high",
+                    TTL: "3600",
+                },
+                fcmOptions: {
+                    link: "/",
+                },
+            },
+            fcmOptions: {
+                analyticsLabel: data.type,
+            },
+        };
+
+        try {
+            await messaging.send(message);
+            totalSuccess += 1;
+            successDocIds.push(device.docId);
+        } catch (err) {
+            const code = err.code || err?.errorInfo?.code;
+            logger.warn(`[fcm] send() hatası user=${userId} doc=${device.docId} code=${code}`, err.message || err);
+            if (INVALID_TOKEN_ERRORS.has(code)) {
+                invalidDocIds.push(device.docId);
+            }
+        }
+    }
+
+    try {
+        await Promise.all([
+            cleanupInvalidTokens(userId, invalidDocIds),
+            touchLastSeen(userId, successDocIds),
+        ]);
+    } catch (err) {
+        logger.warn("[fcm] cleanup/touchLastSeen:", err);
+    }
+
+    logger.info(`[fcm] user=${userId} type=${data.type} sent=${totalSuccess}/${devices.length} removed=${invalidDocIds.length}`);
+    return { sent: totalSuccess, removed: invalidDocIds.length };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Helpers — Telegram (telegram-bot.js export etmediği için minimal Bot API)    */
+/* -------------------------------------------------------------------------- */
+
+async function loadAppSettings(dbRef, userId) {
+    const ref = dbRef.collection("users").doc(userId).collection("settings").doc("appSettings");
+    const snap = await ref.get();
+    return snap.exists ? snap.data() || {} : {};
+}
+
+/**
+ * Ayarlardaki telegramChatId (virgülle ayrılmış) adreslerine düz metin gönderir.
+ * Hatalar loglanır; throw etmez.
+ */
+async function notifyTelegramAdminsPlain(dbRef, userId, text) {
+    try {
+        const settings = await loadAppSettings(dbRef, userId);
+        const botToken = (settings.telegramBotToken || "").trim();
+        const adminIds = (settings.telegramChatId || "")
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean);
+        if (!botToken || adminIds.length === 0) {
+            logger.info(`[tg] user=${userId} için bot token veya chat id yok, atlanıyor.`);
+            return;
+        }
+        const targets = [...new Set(adminIds)];
+        for (const chatId of targets) {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: String(text || ""),
+                    }),
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || json.ok === false) {
+                    logger.warn(`[tg] sendMessage başarısız chat=${chatId}`, json.description || res.status);
+                }
+            } catch (err) {
+                logger.warn(`[tg] sendMessage ağ hatası chat=${chatId}:`, err);
+            }
+        }
+    } catch (err) {
+        logger.error("[tg] notifyTelegramAdminsPlain:", err);
+    }
+}
+
+function tgLineNewBag(item) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const count = Number(item.bagCount) || 0;
+    const note = (item.note || "").toString().trim();
+    const noteLine = note ? `\n📝 Not: ${note}` : "";
+    return `🆕 Yeni poşet (uygulama)\n👤 ${customer}\n🛍️ ${count} adet${noteLine}`;
+}
+
+function tgLineDelivered(item, before) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const count = Number(item.bagCount) || Number(before && before.bagCount) || 0;
+    const by = (item.deliveredBy || "").toString().trim();
+    const byLine = by ? `\n👷 ${by}` : "";
+    return `✅ Teslim edildi (uygulama)\n👤 ${customer}\n🛍️ ${count} adet${byLine}`;
+}
+
+function tgLineNote(item) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const note = (item.note || "").toString().trim();
+    return `📝 Not güncellendi (uygulama)\n👤 ${customer}\n📄 ${note || "(boş)"}`;
+}
+
+function tgLineDeleted(item) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const count = Number(item.bagCount) || 0;
+    return `🗑️ Kayıt silindi (uygulama)\n👤 ${customer}\n🛍️ kayıtlı adet: ${count}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Payload builders (FCM data-only — PosetMessagingService.java ile uyumlu)      */
+/* -------------------------------------------------------------------------- */
+
 function buildNewBagPayload(userId, itemId, item) {
     const customer = (item.customerName || "Bilinmeyen müşteri").toString();
     const count = Number(item.bagCount) || 0;
     const note = (item.note || "").toString().trim();
-
     const title = "🛍️ Yeni Poşet Eklendi";
-    const body = note
-        ? `${customer} • ${count} adet • Not: ${note}`
-        : `${customer} için ${count} poşet kaydedildi.`;
-
+    const body = note ? `${customer} • ${count} adet • Not: ${note}` : `${customer} için ${count} poşet kaydedildi.`;
     return {
         type: "new_bag",
         title,
@@ -253,8 +300,8 @@ function buildNewBagPayload(userId, itemId, item) {
             userId,
             itemId,
             customerName: customer,
-            bagCount: count
-        }
+            bagCount: count,
+        },
     };
 }
 
@@ -262,12 +309,10 @@ function buildDeliveredPayload(userId, itemId, item, before) {
     const customer = (item.customerName || "Bilinmeyen müşteri").toString();
     const count = Number(item.bagCount) || Number(before && before.bagCount) || 0;
     const deliveredBy = (item.deliveredBy || "").toString().trim();
-
     const title = "✅ Poşet Teslim Edildi";
     const body = deliveredBy
         ? `${customer} • ${count} adet • Teslim eden: ${deliveredBy}`
         : `${customer} için ${count} poşet teslim edildi.`;
-
     return {
         type: "delivered",
         title,
@@ -277,42 +322,76 @@ function buildDeliveredPayload(userId, itemId, item, before) {
             itemId,
             customerName: customer,
             bagCount: count,
-            deliveredBy
-        }
+            deliveredBy,
+        },
+    };
+}
+
+function buildNoteUpdatedPayload(userId, itemId, item) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const note = (item.note || "").toString().trim();
+    const title = "📝 Not Güncellendi";
+    const body = note ? `${customer}: ${note}` : `${customer}: not temizlendi veya güncellendi.`;
+    return {
+        type: "note_updated",
+        title,
+        body,
+        extra: {
+            userId,
+            itemId,
+            customerName: customer,
+        },
+    };
+}
+
+function buildDeletedPayload(userId, itemId, item) {
+    const customer = (item.customerName || "Bilinmeyen müşteri").toString();
+    const count = Number(item.bagCount) || 0;
+    const title = "🗑️ Kayıt Silindi";
+    const body = `${customer} (${count} adet) kaydı silindi.`;
+    return {
+        type: "item_deleted",
+        title,
+        body,
+        extra: {
+            userId,
+            itemId,
+            customerName: customer,
+            bagCount: count,
+        },
     };
 }
 
 /* -------------------------------------------------------------------------- */
-/* Trigger 1: Yeni poşet eklendi                                              */
+/* Trigger: Yeni poşet                                                          */
 /* -------------------------------------------------------------------------- */
 
-exports.onItemCreated = onDocumentCreated(
-    "users/{userId}/items/{itemId}",
-    async (event) => {
+exports.onItemCreated = onDocumentCreated("users/{userId}/items/{itemId}", async (event) => {
+    try {
         const snap = event.data;
         if (!snap) return;
         const item = snap.data() || {};
         const { userId, itemId } = event.params;
 
-        // Eğer poşet ZATEN delivered olarak yaratıldıysa (örn. iade akışı), yeni-poşet
-        // bildirimi göndermeyelim; teslim bildirimi mantığı update tetikleyicisi tarafında.
         if (item.status === "delivered") {
-            logger.debug(`[fcm] onItemCreated: status=delivered, atlanıyor (user=${userId} item=${itemId})`);
+            logger.debug(`[fcm] onItemCreated: delivered olarak oluşturuldu, yeni poşet bildirimi yok (user=${userId} item=${itemId})`);
             return;
         }
 
         const payload = buildNewBagPayload(userId, itemId, item);
         await sendToUserDevices(userId, payload);
+        await notifyTelegramAdminsPlain(db, userId, tgLineNewBag(item));
+    } catch (err) {
+        logger.error("[onItemCreated] beklenmeyen hata:", err);
     }
-);
+});
 
 /* -------------------------------------------------------------------------- */
-/* Trigger 2: Poşet "teslim edildi" olarak güncellendi                         */
+/* Trigger: Teslim veya not güncellemesi                                       */
 /* -------------------------------------------------------------------------- */
 
-exports.onItemUpdated = onDocumentUpdated(
-    "users/{userId}/items/{itemId}",
-    async (event) => {
+exports.onItemUpdated = onDocumentUpdated("users/{userId}/items/{itemId}", async (event) => {
+    try {
         if (!event.data) return;
         const before = event.data.before.data() || {};
         const after = event.data.after.data() || {};
@@ -320,23 +399,79 @@ exports.onItemUpdated = onDocumentUpdated(
 
         const wasDelivered = before.status === "delivered";
         const isDelivered = after.status === "delivered";
+        const noteBefore = String(before.note ?? "");
+        const noteAfter = String(after.note ?? "");
+        const noteChanged = noteBefore !== noteAfter;
 
-        // Sadece active -> delivered geçişlerinde bildirim gönderiyoruz.
-        // Aksi halde başka alanlardaki her güncelleme spam yaratır.
-        if (wasDelivered || !isDelivered) return;
+        let payload = null;
+        let tgText = null;
 
-        const payload = buildDeliveredPayload(userId, itemId, after, before);
+        if (!wasDelivered && isDelivered) {
+            payload = buildDeliveredPayload(userId, itemId, after, before);
+            tgText = tgLineDelivered(after, before);
+        } else if (!isDelivered && noteChanged) {
+            payload = buildNoteUpdatedPayload(userId, itemId, after);
+            tgText = tgLineNote(after);
+        }
+
+        if (!payload) return;
+
         await sendToUserDevices(userId, payload);
+        await notifyTelegramAdminsPlain(db, userId, tgText);
+    } catch (err) {
+        logger.error("[onItemUpdated] beklenmeyen hata:", err);
     }
-);
+});
 
 /* -------------------------------------------------------------------------- */
-/* Telegram: HTTPS webhook (uygulama kapalıyken komutlar)                        */
+/* Trigger: Silme                                                               */
 /* -------------------------------------------------------------------------- */
 
+exports.onItemDeleted = onDocumentDeleted("users/{userId}/items/{itemId}", async (event) => {
+    try {
+        const snap = event.data;
+        if (!snap) return;
+        const item = snap.data() || {};
+        const { userId, itemId } = event.params;
+
+        const payload = buildDeletedPayload(userId, itemId, item);
+        await sendToUserDevices(userId, payload);
+        await notifyTelegramAdminsPlain(db, userId, tgLineDeleted(item));
+    } catch (err) {
+        logger.error("[onItemDeleted] beklenmeyen hata:", err);
+    }
+});
+
+/* -------------------------------------------------------------------------- */
+/* Trigger: Otomatik yedek tamamlandı — yalnızca Telegram                      */
+/* -------------------------------------------------------------------------- */
 /**
- * Telegram Bot API bu adrese POST atar. Güvenlik: ?s= ile secret_token başlığı eşleşmeli.
+ * İstemci, otomatik yedek Telegram'a gönderildikten sonra (veya başarıyla bittiğinde)
+ * örnek: addDoc(collection(db, 'users', uid, 'backupAudit'), { ok: true, source: 'auto' })
+ * yazarsa bu fonksiyon tetiklenir ve yöneticilere kısa bilgi gider.
+ *
+ * Mobil bildirim gönderilmez.
  */
+exports.onAutoBackupAuditCreated = onDocumentCreated("users/{userId}/backupAudit/{auditId}", async (event) => {
+    try {
+        const snap = event.data;
+        if (!snap) return;
+        const row = snap.data() || {};
+        if (row.ok === false || row.success === false) {
+            logger.info("[backupAudit] ok=false, Telegram atlanıyor.");
+            return;
+        }
+        const { userId } = event.params;
+        await notifyTelegramAdminsPlain(db, userId, "Otomatik yedek başarıyla gönderildi");
+    } catch (err) {
+        logger.error("[onAutoBackupAuditCreated]:", err);
+    }
+});
+
+/* -------------------------------------------------------------------------- */
+/* Telegram: HTTPS webhook (mevcut — telegram-bot.js)                         */
+/* -------------------------------------------------------------------------- */
+
 exports.telegramWebhook = onRequest(
     {
         region: "us-central1",
@@ -350,7 +485,6 @@ exports.telegramWebhook = onRequest(
     },
 );
 
-/** Telegram setWebhook + Firestore eşlemesi (token ayarlardan okunur). */
 exports.registerTelegramWebhook = onCall({ region: "us-central1" }, async (request) => {
     if (!request.auth || !request.auth.uid) {
         throw new HttpsError("unauthenticated", "Giriş yapmanız gerekir.");
@@ -363,7 +497,6 @@ exports.registerTelegramWebhook = onCall({ region: "us-central1" }, async (reque
     }
 });
 
-/** Webhook kaldırma — Firestore'daki token silinmeden ÖNCE çağrılmalıdır. */
 exports.clearTelegramWebhook = onCall({ region: "us-central1" }, async (request) => {
     if (!request.auth || !request.auth.uid) {
         throw new HttpsError("unauthenticated", "Giriş yapmanız gerekir.");

@@ -235,14 +235,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sendTelegramDocument(chatId, blob, filename, caption = '', options = {}) {
-        if (!settings.telegramBotToken) return;
+        if (!settings.telegramBotToken) return false;
 
         if (!chatId && settings.telegramChatId) {
              const ids = settings.telegramChatId.split(',').map(id => id.trim()).filter(id => id);
              if (ids.length > 0) chatId = ids[0];
         }
 
-        if (!chatId) return;
+        if (!chatId) return false;
         
         const url = `https://api.telegram.org/bot${settings.telegramBotToken}/sendDocument`;
         const formData = new FormData();
@@ -254,12 +254,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            await fetch(url, {
+            const res = await fetch(url, {
                 method: 'POST',
-                body: formData
+                body: formData,
             });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.ok === false) {
+                console.warn('Telegram sendDocument:', res.status, data.description || data);
+                return false;
+            }
+            return true;
         } catch (error) {
             console.error("Telegram dosya gönderme hatası:", error);
+            return false;
         }
     }
 
@@ -985,9 +992,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pad = (n) => String(n).padStart(2, '0');
                 const loc = new Date();
                 const filename = `yedek_${pad(loc.getDate())}_${pad(loc.getMonth() + 1)}_${loc.getFullYear()}.json`;
-                await sendTelegramDocument(null, blob, filename, 'Günlük otomatik yedek', { silent: true });
-                settings.lastBackupDate = todayStr;
-                await dataManager.saveSettings(db, userId, settings);
+                const sent = await sendTelegramDocument(null, blob, filename, 'Günlük otomatik yedek', { silent: true });
+                if (sent) {
+                    settings.lastBackupDate = todayStr;
+                    await dataManager.saveSettings(db, userId, settings);
+                    try {
+                        await dataManager.addBackupAuditDoc(db, userId, { filename });
+                    } catch (e) {
+                        console.warn('[backupAudit] Firestore yazılamadı:', e);
+                    }
+                } else {
+                    console.warn('[auto-backup] Telegram gönderimi başarısız; tarih güncellenmedi, CF tetiklenmedi.');
+                }
             })();
         }
 
@@ -1685,6 +1701,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const displayView = personDiv.querySelector('.person-display');
             const editView = personDiv.querySelector('.person-edit');
             switch (action) {
+                case 'toggle-default': {
+                    const cur = deliveryPersonnel.find(p => p.id === personId);
+                    if (cur?.isDefault) await dataManager.setDefaultDeliveryPerson(db, userId, null);
+                    else await dataManager.setDefaultDeliveryPerson(db, userId, personId);
+                    break;
+                }
                 case 'delete':
                     if (await ui.showConfirmationModal(dom, "Bu kişiyi silmek istediğinizden emin misiniz?", "Evet, Sil", true)) {
                         await dataManager.deleteDeliveryPerson(db, userId, personId);
@@ -1820,6 +1842,24 @@ document.addEventListener('DOMContentLoaded', () => {
             archiveCurrentPage = 1;
             renderAll();
         };
+        const closeArchiveFiltersPopover = () => {
+            dom.archiveFiltersDropdown?.classList.add('hidden');
+            dom.archiveFiltersToggle?.setAttribute('aria-expanded', 'false');
+        };
+        dom.archiveFiltersToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dd = dom.archiveFiltersDropdown;
+            const tgl = dom.archiveFiltersToggle;
+            if (!dd || !tgl) return;
+            const opening = dd.classList.contains('hidden');
+            if (opening) {
+                dd.classList.remove('hidden');
+                tgl.setAttribute('aria-expanded', 'true');
+            } else {
+                dd.classList.add('hidden');
+                tgl.setAttribute('aria-expanded', 'false');
+            }
+        });
         dom.archiveFilterCustomer?.addEventListener('change', archiveFilterChanged);
         dom.archiveFilterDeliverer?.addEventListener('change', archiveFilterChanged);
         dom.archiveFilterShipment?.addEventListener('change', archiveFilterChanged);
@@ -1829,6 +1869,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dom.archiveFilterDeliverer) dom.archiveFilterDeliverer.value = '';
             if (dom.archiveFilterShipment) dom.archiveFilterShipment.value = '';
             archiveCurrentPage = 1;
+            closeArchiveFiltersPopover();
             renderAll();
         });
 
@@ -2021,6 +2062,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetTab === 'notifications') {
                     ui.renderNotificationsPage(dom, allItems, seenNotifications, ui.formatRelativeTime, ui.formatDate, onMarkNotifAsRead, onMarkAllNotifsRead);
                 }
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (dom.archiveFiltersDropdown && !dom.archiveFiltersDropdown.classList.contains('hidden')) {
+                if (!e.target.closest('#archive-filters-dropdown') && !e.target.closest('#archive-filters-toggle')) {
+                    closeArchiveFiltersPopover();
+                }
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (dom.archiveFiltersDropdown && !dom.archiveFiltersDropdown.classList.contains('hidden')) {
+                closeArchiveFiltersPopover();
             }
         });
         dom.customerNameInput?.addEventListener('input', () => {
